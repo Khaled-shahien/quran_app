@@ -1,0 +1,60 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/theme/app_colors.dart';
+
+class TabSwitcherWidget extends StatelessWidget {
+  final Function(int) onTabChanged;
+  final int selectedIndex;
+
+  const TabSwitcherWidget({
+    super.key,
+    required this.onTabChanged,
+    this.selectedIndex = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6B4D3F).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          _tabButton('جميع التصنيفات', 0),
+          _tabButton('كل الوسائط', 1),
+          _tabButton('أوقات الصلاة', 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabButton(String text, int index) {
+    bool active = selectedIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          onTabChanged(index);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: active ? AppColors.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: active ? Colors.white : AppColors.lightPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
