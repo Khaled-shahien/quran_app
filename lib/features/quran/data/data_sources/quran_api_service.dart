@@ -46,7 +46,7 @@ class QuranApiService extends BaseApiService {
         '/search',
         queryParams: {
           'q': query,
-          'language': ?language,
+          if (language != null) 'language': language,
           'page': page.toString(),
           'limit': limit.toString(),
         },
