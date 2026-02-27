@@ -3,6 +3,9 @@ import '../../../../core/api/models/base_response.dart';
 import '../../../../core/api/api_logger.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../models/surah_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// Surah API Service
 ///
@@ -11,6 +14,20 @@ import '../models/surah_model.dart';
 class SurahApiService extends BaseApiService {
   static const String _baseUrl = 'https://api.alquran.cloud/v1';
   static const String _surahEndpoint = '/surah';
+
+  // In-memory cache for Surahs to prevent redundant network requests
+  // Static to share across instances (Singleton-like behavior for data)
+  static List<SurahModel>? _memCache;
+
+  SurahApiService({
+    http.Client? httpClient,
+    Logger? logger,
+    Connectivity? connectivity,
+  }) : super(
+         httpClient: httpClient,
+         logger: logger,
+         connectivity: connectivity,
+       );
 
   /// Get complete list of all 114 Surahs
   ///
@@ -23,6 +40,16 @@ class SurahApiService extends BaseApiService {
   /// Returns: Future<BaseResponse<List<SurahModel>>>
   /// Throws: NetworkException, ApiException
   Future<BaseResponse<List<SurahModel>>> getAllSurahs() async {
+    // Check in-memory cache first
+    if (_memCache != null) {
+      ApiLogger.logDebug('Returning ${_memCache!.length} Surahs from in-memory cache');
+      return BaseResponse.success(
+        data: _memCache,
+        message: 'Successfully fetched ${_memCache!.length} Surahs (Cached)',
+        code: 200,
+      );
+    }
+
     try {
       // Log the API request
       ApiLogger.logRequest(method: 'GET', url: '$_baseUrl$_surahEndpoint');
@@ -55,6 +82,9 @@ class SurahApiService extends BaseApiService {
         );
       }
 
+      // Update cache
+      _memCache = surahs;
+
       return BaseResponse.success(
         data: surahs,
         message: 'Successfully fetched ${surahs.length} Surahs',
@@ -85,6 +115,19 @@ class SurahApiService extends BaseApiService {
         message: 'Surah index must be between 1 and 114',
         code: 400,
       );
+    }
+
+    // Optimization: Check if we have the surah in cache
+    if (_memCache != null && _memCache!.length >= index) {
+      // Index is 1-based, list is 0-based
+      // Ensure index is valid for cache access
+      if (index <= _memCache!.length) {
+         return BaseResponse.success(
+          data: _memCache![index - 1],
+          message: 'Successfully fetched Surah ${_memCache![index - 1].surahName} (Cached)',
+          code: 200,
+        );
+      }
     }
 
     try {
@@ -140,7 +183,7 @@ class SurahApiService extends BaseApiService {
     }
 
     try {
-      // Get all Surahs first
+      // Get all Surahs first (will use cache if available)
       final allSurahsResponse = await getAllSurahs();
 
       if (!allSurahsResponse.status || allSurahsResponse.data == null) {
@@ -190,7 +233,7 @@ class SurahApiService extends BaseApiService {
     }
 
     try {
-      // Get all Surahs first
+      // Get all Surahs first (will use cache if available)
       final allSurahsResponse = await getAllSurahs();
 
       if (!allSurahsResponse.status || allSurahsResponse.data == null) {
@@ -267,5 +310,11 @@ class SurahApiService extends BaseApiService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Clear the in-memory cache
+  /// Useful for testing or forcing a refresh
+  void clearCache() {
+    _memCache = null;
   }
 }
