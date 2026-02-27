@@ -359,6 +359,11 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
       key: Key('tasbeeh_$index'),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
+        // Step 1: Capture the item and its index before removing it
+        final deletedItem = tasbeehPhrases[index];
+        final deletedIndex = index;
+        final wasSelected = selectedIndex == index;
+
         setState(() {
           tasbeehPhrases.removeAt(index);
 
@@ -377,6 +382,33 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
             selectedIndex--;
           }
         });
+
+        // Step 2: Show SnackBar with Undo action
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم حذف "$title"', style: GoogleFonts.cairo()),
+            action: SnackBarAction(
+              label: 'تراجع',
+              textColor: AppColors.accent,
+              onPressed: () {
+                setState(() {
+                  // Step 3: Restore the item
+                  tasbeehPhrases.insert(deletedIndex, deletedItem);
+
+                  // Restore selection if it was the selected item or if we need to adjust index
+                  if (wasSelected) {
+                    selectedIndex = deletedIndex;
+                    count = deletedItem['count'];
+                  } else if (selectedIndex >= deletedIndex) {
+                    selectedIndex++;
+                  }
+                });
+              },
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
       },
       background: Container(
         alignment: Alignment.centerRight,
