@@ -22,9 +22,17 @@ class ApiConstants {
     'Accept': 'application/json',
   };
 
-  // API Keys (these should be moved to secure storage in production)
-  static const String quranApiKey = 'YOUR_QURAN_API_KEY';
-  static const String prayerApiKey = 'YOUR_PRAYER_API_KEY';
+  // API Keys
+  // Securely passed at build time. Example:
+  // flutter run --dart-define=QURAN_API_KEY=your_key --dart-define=PRAYER_API_KEY=your_key
+  static const String quranApiKey = String.fromEnvironment(
+    'QURAN_API_KEY',
+    defaultValue: 'YOUR_QURAN_API_KEY',
+  );
+  static const String prayerApiKey = String.fromEnvironment(
+    'PRAYER_API_KEY',
+    defaultValue: 'YOUR_PRAYER_API_KEY',
+  );
 
   // Common query parameters
   static const String languageParam = 'language';
