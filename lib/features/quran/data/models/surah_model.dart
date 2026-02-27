@@ -23,22 +23,25 @@ class SurahModel {
     // Handle different API response formats
     // alquran.cloud API uses different field names
     return SurahModel(
-      surahName:
-          json['englishName'] as String? ?? json['name'] as String? ?? '',
-      surahNameArabic:
-          json['name'] as String? ?? json['surahNameArabic'] as String? ?? '',
-      surahNameArabicLong:
-          json['name'] as String? ?? json['surahNameArabic'] as String? ?? '',
-      surahNameTranslation:
+      surahName: json['surahName'] as String? ??
           json['englishName'] as String? ??
-          json['surahNameTranslation'] as String? ??
+          json['name'] as String? ??
           '',
-      revelationPlace:
+      surahNameArabic: json['surahNameArabic'] as String? ??
+          json['name'] as String? ??
+          '',
+      surahNameArabicLong: json['surahNameArabicLong'] as String? ??
+          json['name'] as String? ??
+          '',
+      surahNameTranslation: json['surahNameTranslation'] as String? ??
+          json['englishName'] as String? ??
+          '',
+      revelationPlace: json['revelationPlace'] as String? ??
           json['revelationType'] as String? ??
-          json['revelationPlace'] as String? ??
           '',
-      totalAyah:
-          json['numberOfAyahs'] as int? ?? json['totalAyah'] as int? ?? 0,
+      totalAyah: json['totalAyah'] as int? ??
+          json['numberOfAyahs'] as int? ??
+          0,
     );
   }
 
