@@ -73,39 +73,38 @@ class _QuranScreenState extends State<_QuranScreenContent> {
   @override
   Widget build(BuildContext context) {
     // استخدم ألوان التطبيق
-    const Color primaryColor =
-        AppColors.lightPrimary; // اللون الأخضر الداكن في الأعلى
-    const Color backgroundColor =
-        AppColors.scaffoldBackground; // لون الخلفية المائل للبيج
-    const Color cardBackground = AppColors.surface; // لون الكروت الأبيض
-    const Color accentColor =
-        AppColors.lightPrimary; // لون الأرقام والنصوص الرئيسية
+    final ThemeData theme = Theme.of(context);
+    final Color primaryColor = theme.colorScheme.primary;
+    final Color backgroundColor = theme.scaffoldBackgroundColor;
+    final Color cardBackground = theme.colorScheme.surface;
+    final Color accentColor = theme.colorScheme.primary;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(
           'القرآن الكريم',
           style: GoogleFonts.cairo(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: primaryColor,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Directionality(
         textDirection: TextDirection.rtl,
-        child: _buildBody(accentColor, cardBackground),
+        child: _buildBody(theme, accentColor, cardBackground),
       ),
     );
   }
 
-  Widget _buildBody(Color accentColor, Color cardBackground) {
+  Widget _buildBody(ThemeData theme, Color accentColor, Color cardBackground) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -136,26 +135,25 @@ class _QuranScreenState extends State<_QuranScreenContent> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadSurahs,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        itemCount: _surahs.length,
-        itemBuilder: (context, index) {
-          final surah = _surahs[index];
-          return SurahCard(
-            index: index + 1,
-            arabicName: surah.name,
-            englishName: surah.englishName,
-            translation: surah.englishNameTranslation,
-            versesCount: surah.totalAyah,
-            type: _getRevelationPlaceArabic(surah.revelationType),
-            accentColor: accentColor,
-            cardBackground: cardBackground,
-            onTap: () => _onSurahTap(context, surah, index + 1),
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      itemCount: _surahs.length,
+      itemBuilder: (context, index) {
+        final surah = _surahs[index];
+        return SurahCard(
+          index: index + 1,
+          arabicName: surah.name,
+          englishName: surah.englishName,
+          translation: surah.englishNameTranslation,
+          versesCount: surah.totalAyah,
+          type: _getRevelationPlaceArabic(surah.revelationType),
+          accentColor: accentColor,
+          cardBackground: cardBackground,
+          textColor: theme.colorScheme.onSurface,
+          secondaryTextColor: theme.colorScheme.onSurfaceVariant,
+          onTap: () => _onSurahTap(context, surah, index + 1),
+        );
+      },
     );
   }
 
@@ -194,6 +192,8 @@ class SurahCard extends StatelessWidget {
   final String type;
   final Color accentColor;
   final Color cardBackground;
+  final Color textColor;
+  final Color secondaryTextColor;
   final VoidCallback onTap;
 
   const SurahCard({
@@ -206,6 +206,8 @@ class SurahCard extends StatelessWidget {
     required this.type,
     required this.accentColor,
     required this.cardBackground,
+    required this.textColor,
+    required this.secondaryTextColor,
     required this.onTap,
   });
 
@@ -216,13 +218,7 @@ class SurahCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardBackground,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha((0.05 * 255).round()),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: accentColor, width: 1),
       ),
       child: Material(
         color: cardBackground,
@@ -263,6 +259,7 @@ class SurahCard extends StatelessWidget {
                         style: GoogleFonts.cairo(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: textColor,
                         ),
                       ),
                       Text(
@@ -275,7 +272,10 @@ class SurahCard extends StatelessWidget {
                       ),
                       Text(
                         translation,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: secondaryTextColor,
+                        ),
                       ),
                     ],
                   ),
@@ -307,7 +307,7 @@ class SurahCard extends StatelessWidget {
                       '$versesCount آية',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: secondaryTextColor,
                         fontFamily: 'Cairo',
                       ),
                     ),

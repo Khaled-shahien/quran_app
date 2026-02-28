@@ -3,11 +3,20 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/surah_entity.dart';
+
+class _SurahPageData {
+  final List<String> verses;
+  final int startVerseIndex;
+
+  _SurahPageData(this.verses, this.startVerseIndex);
+}
 
 /// Surah Details Screen
 ///
-/// Displays all verses of a selected Surah in traditional Mushaf style
+/// Displays all verses of a selected Surah in traditional Mushaf style vertically,
+/// or horizontally paginated depending on implementation.
 class SurahDetailsScreen extends StatefulWidget {
   final SurahEntity surah;
   final int surahNumber;
@@ -23,17 +32,24 @@ class SurahDetailsScreen extends StatefulWidget {
 }
 
 class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
-  List<String> _verses = [];
+  List<_SurahPageData> _surahPages = [];
   bool _isLoading = true;
   String? _error;
-  double _currentPage = 135; // Default page number
-  final double _minPage = 1;
-  final double _maxPage = 604;
+
+  late PageController _pageController;
+  int _currentSurahPage = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _loadVerses();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadVerses() async {
@@ -58,8 +74,28 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           .map((line) => line.trim())
           .toList();
 
+      List<_SurahPageData> paginatedVerses = [];
+      List<String> currentPageVerses = [];
+      int currentLength = 0;
+      int startIndex = 0;
+      const int maxCharsPerPage = 550; // Max characters per page
+
+      for (int i = 0; i < verses.length; i++) {
+        currentPageVerses.add(verses[i]);
+        currentLength += verses[i].length;
+
+        if (currentLength >= maxCharsPerPage || i == verses.length - 1) {
+          paginatedVerses.add(
+            _SurahPageData(List.from(currentPageVerses), startIndex),
+          );
+          currentPageVerses = [];
+          currentLength = 0;
+          startIndex = i + 1;
+        }
+      }
+
       setState(() {
-        _verses = verses;
+        _surahPages = paginatedVerses;
         _isLoading = false;
       });
     } catch (e) {
@@ -73,10 +109,9 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // الألوان المستوحاة من التصميم التقليدي للمصحف
-    const Color paperColor = Color(0xFFF4F1EA);
-    const Color topBarColor = Color(0xFF5D6363);
-    const Color textColor = Color(0xFF1A1A1A);
+    final Color paperColor = Theme.of(context).scaffoldBackgroundColor;
+    const Color topBarColor = Colors.transparent;
+    final Color textColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: paperColor,
@@ -85,38 +120,51 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: 'رجوع',
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           children: [
             Text(
               "سورة ${widget.surah.name}",
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-                fontFamily: 'Amiri',
-              ),
-            ),
-            Text(
-              "صفحة $_currentPage، جزء ${_getJuzForPage(_currentPage.toInt())}",
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[300],
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.primary,
                 fontFamily: 'Amiri',
+                fontWeight: FontWeight.bold,
               ),
             ),
+            if (_surahPages.isNotEmpty)
+              Text(
+                "صفحة ${_currentSurahPage + 1} من ${_surahPages.length}",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.7),
+                  fontFamily: 'Amiri',
+                ),
+              ),
           ],
         ),
         actions: [
           IconButton(
             tooltip: 'الإعدادات',
-            icon: const Icon(Icons.settings, color: Colors.white),
+            icon: Icon(
+              Icons.settings,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             onPressed: () {},
           ),
           IconButton(
             tooltip: 'حفظ العلامة',
-            icon: const Icon(Icons.bookmark, color: Colors.white),
+            icon: Icon(
+              Icons.bookmark,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             onPressed: () {},
           ),
         ],
@@ -125,145 +173,143 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       body: Column(
         children: [
           // شريط معلومات صغير (اختياري)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            color: Colors.black12,
-            width: double.infinity,
-            child: const Text(
-              "بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Amiri',
-              ),
-            ),
-          ),
-
-          // محتوى الآيات
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: RichText(
-                  textAlign: TextAlign.justify,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: textColor,
-                      height: 1.8, // للمسافة بين الأسطر
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Amiri',
-                    ),
-                    children: _buildVersesWithNumbers(),
-                  ),
+          if (widget.surahNumber != 9) // لا تبدأ سورة التوبة بالبسملة
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              color: Theme.of(context).colorScheme.secondary,
+              width: double.infinity,
+              child: Text(
+                "بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Amiri',
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
-          ),
+
+          // محتوى الآيات مع التمرير الأفقي
+          Expanded(child: _buildBodyContent(textColor)),
 
           // الشريط السفلي (Slider)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Slider(
-              value: _currentPage,
-              min: _minPage,
-              max: _maxPage,
-              divisions: (_maxPage - _minPage).toInt(),
-              activeColor: Colors.green[700],
-              inactiveColor: Colors.grey[400],
-              onChanged: (value) {
-                setState(() {
-                  _currentPage = value;
-                });
-              },
+          if (_surahPages.isNotEmpty && _surahPages.length > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Directionality(
+                textDirection:
+                    TextDirection.ltr, // Keep slider direction intuitive
+                child: Slider(
+                  value: _currentSurahPage.toDouble(),
+                  min: 0,
+                  max: (_surahPages.length - 1).toDouble(),
+                  divisions: _surahPages.length > 1
+                      ? _surahPages.length - 1
+                      : 1,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  inactiveColor: Theme.of(context).colorScheme.secondary,
+                  onChanged: (value) {
+                    _pageController.jumpToPage(value.toInt());
+                  },
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  // دالة لحساب الجزء بناءً على رقم الصفحة
-  int _getJuzForPage(int page) {
-    // تقسيم بسيط للصفحات إلى أجزاء
-    if (page <= 22) return 1;
-    if (page <= 42) return 2;
-    if (page <= 62) return 3;
-    if (page <= 82) return 4;
-    if (page <= 102) return 5;
-    if (page <= 122) return 6;
-    if (page <= 142) return 7;
-    if (page <= 162) return 8;
-    if (page <= 182) return 9;
-    if (page <= 202) return 10;
-    if (page <= 222) return 11;
-    if (page <= 242) return 12;
-    if (page <= 262) return 13;
-    if (page <= 282) return 14;
-    if (page <= 302) return 15;
-    if (page <= 322) return 16;
-    if (page <= 342) return 17;
-    if (page <= 362) return 18;
-    if (page <= 382) return 19;
-    if (page <= 402) return 20;
-    if (page <= 422) return 21;
-    if (page <= 442) return 22;
-    if (page <= 462) return 23;
-    if (page <= 482) return 24;
-    if (page <= 502) return 25;
-    if (page <= 522) return 26;
-    if (page <= 542) return 27;
-    if (page <= 562) return 28;
-    if (page <= 582) return 29;
-    return 30;
-  }
-
-  // دالة لبناء نص الآيات مع أرقامها داخل دوائر
-  List<InlineSpan> _buildVersesWithNumbers() {
+  Widget _buildBodyContent(Color textColor) {
     if (_isLoading) {
-      return [
-        const WidgetSpan(
-          child: Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5D6363)),
-            ),
-          ),
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5D6363)),
         ),
-      ];
+      );
     }
 
     if (_error != null) {
-      return [
-        TextSpan(
-          text: _error!,
+      return Center(
+        child: Text(
+          _error!,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.red,
             fontFamily: 'Amiri',
           ),
         ),
-      ];
+      );
     }
 
-    if (_verses.isEmpty) {
-      return [
-        const TextSpan(
-          text: "لا توجد آيات في هذه السورة",
+    if (_surahPages.isEmpty) {
+      return const Center(
+        child: Text(
+          "لا توجد آيات في هذه السورة",
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey,
             fontFamily: 'Amiri',
           ),
         ),
-      ];
+      );
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return PageView.builder(
+          controller: _pageController,
+          reverse: true, // Right to left swipe
+          itemCount: _surahPages.length,
+          onPageChanged: (index) {
+            setState(() {
+              _currentSurahPage = index;
+            });
+          },
+          itemBuilder: (context, pageIndex) {
+            final pageData = _surahPages[pageIndex];
+
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: constraints.maxWidth - 40, // Subtract padding
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: RichText(
+                        textAlign: TextAlign.justify,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: textColor,
+                            height: 1.8,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Amiri',
+                          ),
+                          children: _buildVersesWithNumbers(pageData),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // دالة لبناء نص الآيات مع أرقامها داخل دوائر
+  List<InlineSpan> _buildVersesWithNumbers(_SurahPageData pageData) {
     List<InlineSpan> spans = [];
 
-    for (int i = 0; i < _verses.length; i++) {
-      final verseText = _verses[i];
-      final verseNumber = i + 1;
+    for (int i = 0; i < pageData.verses.length; i++) {
+      final verseText = pageData.verses[i];
+      final verseNumber = pageData.startVerseIndex + i + 1;
 
       // إضافة نص الآية
       spans.add(TextSpan(text: "$verseText  "));
@@ -277,7 +323,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.green, width: 1),
+              color: Theme.of(context).colorScheme.primary,
             ),
             child: Text(
               verseNumber.toString(),
@@ -285,6 +331,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Amiri',
+                color: Colors.white,
               ),
             ),
           ),
@@ -292,8 +339,8 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       );
 
       // إضافة مسافة بين الآيات
-      if (i < _verses.length - 1) {
-        spans.add(const TextSpan(text: "\n\n"));
+      if (i < pageData.verses.length - 1) {
+        spans.add(const TextSpan(text: " "));
       }
     }
 

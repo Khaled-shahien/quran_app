@@ -23,8 +23,8 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
       );
       prayerProvider.fetchPrayerTimes(
         DateTime.now(),
-        21.4225, // Latitude for Makkah
-        39.8262, // Longitude for Makkah
+        30.0444, // Latitude for Cairo
+        31.2357, // Longitude for Cairo
       );
     });
   }
@@ -47,7 +47,7 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
                   style: GoogleFonts.cairo(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.lightPrimary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -69,7 +69,7 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
                   style: GoogleFonts.cairo(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.lightPrimary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -85,7 +85,7 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
                 style: GoogleFonts.cairo(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.lightPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -123,7 +123,7 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
     margin: const EdgeInsets.only(bottom: 10),
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: AppColors.lightSecondary,
+      color: Theme.of(context).colorScheme.secondary,
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
@@ -131,14 +131,17 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
       children: [
         Text(
           prayerName,
-          style: GoogleFonts.cairo(fontSize: 16, color: AppColors.lightPrimary),
+          style: GoogleFonts.cairo(
+            fontSize: 16,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         Text(
           prayerTime,
           style: GoogleFonts.cairo(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColors.lightPrimary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ],

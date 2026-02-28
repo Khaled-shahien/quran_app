@@ -26,8 +26,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       );
       prayerProvider.fetchPrayerTimes(
         DateTime.now(),
-        21.4225, // Latitude for Makkah
-        39.8262, // Longitude for Makkah
+        30.0444, // Latitude for Cairo
+        31.2357, // Longitude for Cairo
       );
     });
   }
@@ -41,7 +41,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           style: GoogleFonts.cairo(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.lightPrimary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         centerTitle: true,
@@ -76,8 +76,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     onPressed: () {
                       provider.fetchPrayerTimes(
                         DateTime.now(),
-                        21.4225, // Default coordinates
-                        39.8262,
+                        30.0444, // Default coordinates (Cairo)
+                        31.2357,
                       );
                     },
                     child: const Text('Retry'),
@@ -108,7 +108,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.lightSecondary,
+              color: Theme.of(context).colorScheme.secondary,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -118,7 +118,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   style: GoogleFonts.cairo(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.lightPrimary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -126,9 +126,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                   style: GoogleFonts.cairo(
                     fontSize: 14,
-                    color: AppColors.lightPrimary.withAlpha(
-                      (0.7 * 255).round(),
-                    ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withAlpha((0.7 * 255).round()),
                   ),
                 ),
               ],
@@ -162,7 +162,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.lightSecondary,
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -172,7 +172,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             _getArabicPrayerName(prayerName),
             style: GoogleFonts.cairo(
               fontSize: 16,
-              color: AppColors.lightPrimary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           Text(
@@ -180,7 +180,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.lightPrimary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],

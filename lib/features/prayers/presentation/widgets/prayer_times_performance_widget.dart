@@ -15,7 +15,7 @@ class PrayerTimesPerformanceWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -48,14 +48,14 @@ class _PrayerTimesHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.access_time, color: AppColors.lightPrimary, size: 20),
+        Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary, size: 20),
         const SizedBox(width: 8),
         Text(
           'أوقات الصلاة',
           style: GoogleFonts.cairo(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.lightPrimary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const Spacer(),
@@ -76,19 +76,19 @@ class _RefreshButton extends StatelessWidget {
         return IconButton(
           onPressed: provider.isLoading ? null : () => provider.refresh(),
           icon: provider.isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.lightPrimary,
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 )
-              : const Icon(
+              : Icon(
                   Icons.refresh,
-                  color: AppColors.lightPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
         );
@@ -131,14 +131,14 @@ class _LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightPrimary),
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
           ),
-          SizedBox(height: 16),
-          Text('جاري تحميل أوقات الصلاة...'),
+          const SizedBox(height: 16),
+          const Text('جاري تحميل أوقات الصلاة...'),
         ],
       ),
     );
@@ -233,10 +233,10 @@ class _PrayerTimeTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.lightBackground.withOpacity(0.7),
+        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.7),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.lightPrimary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -254,7 +254,7 @@ class _PrayerTimeTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.lightPrimary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -262,7 +262,7 @@ class _PrayerTimeTile extends StatelessWidget {
               style: GoogleFonts.cairo(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: AppColors.lightPrimary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),

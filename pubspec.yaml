@@ -49,7 +49,9 @@ dependencies:
   # Logging
   logger: ^2.0.2+1
   # State management
-  provider: ^6.1.1
+  provider: ^6.1.5+1
+  path: ^1.9.1
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -82,7 +84,10 @@ flutter:
   assets:
     - assets/images/
     - assets/ayaat/
+    - assets/hadeath/
     - assets/surah_metadata.json
+    - assets/prayers_data.json
+    - assets/quran_duas.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

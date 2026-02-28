@@ -19,15 +19,16 @@ abstract class AppColors {
   ); // Light mode on surface text
 
   // Dark Mode Colors
-  static const Color darkBackground = Color(0xFF141414); // Dark mode background
-  static const Color darkSecondary = Color(0xFF577B9B); // Dark mode secondary
-  static const Color darkPrimary = Color(0xFFFFFFFF); // Dark mode primary
-  static const Color darkPageAccent = Color(
-    0xFF8EADFF,
-  ); // Dark mode page/accent
+  static const Color darkBackground = Color(0xFF121212); // Deep dark background
+  static const Color darkSecondary = Color(0xFF1E1E1E); // Elevated dark surface
+  static const Color darkPrimary = Color(
+    0xFFD4B08C,
+  ); // Warm gold/brown accent for dark mode
+  static const Color darkPageAccent = Color(0xFF9E7C5D); // Muted gold/brown
   static const Color darkCardContent = Color(
-    0xFFFFE9C2,
-  ); // Dark mode card content (same as light)
+    0xFF242424,
+  ); // Dark card background
+  static const Color darkSurface = Color(0xFF1A1A1A); // Dark surface
 
   // Captions (for both modes)
   static const Color captions = Color(0xFF675757);

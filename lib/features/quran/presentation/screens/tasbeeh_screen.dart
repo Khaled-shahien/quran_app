@@ -28,13 +28,16 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.lightPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'التسبيح الإلكتروني',
           style: GoogleFonts.cairo(
-            color: AppColors.lightPrimary,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -52,13 +55,15 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 flex: 2,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.lightSecondary,
+                    color: Theme.of(context).colorScheme.secondary,
                     borderRadius: BorderRadius.circular(
                       AppConstants.kBorderRadiusLarge,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.lightPrimary.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -71,10 +76,10 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                color: AppColors.lightPrimary,
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 1.5,
                               ),
                             ),
@@ -84,7 +89,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                             style: GoogleFonts.cairo(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.lightPrimary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -125,20 +130,24 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppColors.lightPrimary.withAlpha((0.2 * 255).round()),
-                        AppColors.lightSecondary,
+                        Theme.of(
+                          context,
+                        ).colorScheme.primary.withAlpha((0.2 * 255).round()),
+                        Theme.of(context).colorScheme.secondary,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(
                       AppConstants.kBorderRadiusLarge,
                     ),
                     border: Border.all(
-                      color: AppColors.lightPrimary,
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.lightPrimary.withValues(alpha: 0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -152,7 +161,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                           : '',
                       style: GoogleFonts.amiri(
                         fontSize: 28,
-                        color: AppColors.lightPrimary,
+                        color: Theme.of(context).colorScheme.primary,
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
@@ -168,16 +177,21 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 width: 130,
                 height: 130,
                 decoration: BoxDecoration(
-                  color: AppColors.lightSecondary,
+                  color: Theme.of(context).colorScheme.secondary,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.lightPrimary.withValues(alpha: 0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
                   ],
-                  border: Border.all(color: AppColors.lightPrimary, width: 2),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -185,7 +199,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                     style: GoogleFonts.cairo(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.lightPrimary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),
@@ -196,7 +210,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
               // Increment button
               FloatingActionButton.extended(
                 onPressed: _incrementCounter,
-                backgroundColor: AppColors.lightPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 label: const Text('تسبيحة'),
                 icon: const Icon(Icons.add),
@@ -219,7 +233,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lightPrimary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppConstants.kPaddingMedium,
                         vertical: AppConstants.kPaddingSmall,
@@ -287,7 +301,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
             'إضافة تسبيحة جديدة',
             style: GoogleFonts.cairo(
               fontWeight: FontWeight.bold,
-              color: AppColors.lightPrimary,
+              color: Theme.of(context).colorScheme.primary,
               fontSize: 18,
             ),
           ),
@@ -297,22 +311,30 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
               hintText: 'أدخل نص التسبيحة',
               hintStyle: GoogleFonts.cairo(),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(
                   AppConstants.kBorderRadiusMedium,
                 ),
-                borderSide: const BorderSide(color: AppColors.lightPrimary, width: 1),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(
                   AppConstants.kBorderRadiusMedium,
                 ),
-                borderSide: const BorderSide(color: AppColors.lightPrimary, width: 2),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
               ),
             ),
             textAlign: TextAlign.right,
-            style: GoogleFonts.cairo(color: AppColors.lightPrimary),
+            style: GoogleFonts.cairo(
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           actions: [
             TextButton(
@@ -335,7 +357,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.lightPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
               ),
               child: Text(
                 'إضافة',
@@ -436,11 +458,13 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
             ),
             color: isSelected
                 ? AppColors.accent.withValues(alpha: 0.2)
-                : AppColors.background,
+                : Theme.of(context).scaffoldBackgroundColor,
             border: Border.all(
               color: isCompleted
                   ? Colors.green
-                  : (isSelected ? AppColors.lightPrimary : Colors.transparent),
+                  : (isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent),
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -453,7 +477,9 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                   title,
                   style: GoogleFonts.cairo(
                     fontSize: 16,
-                    color: isCompleted ? Colors.green : AppColors.lightPrimary,
+                    color: isCompleted
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.primary,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -464,7 +490,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(
                       AppConstants.kBorderRadiusSmall,
                     ),
@@ -473,7 +499,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                     counter,
                     style: GoogleFonts.cairo(
                       fontSize: 14,
-                      color: AppColors.lightPrimary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,

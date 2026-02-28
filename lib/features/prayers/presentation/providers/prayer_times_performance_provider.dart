@@ -31,7 +31,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
     DateTime date,
     double latitude,
     double longitude, {
-    int calculationMethod = 3,
+    int calculationMethod = 5,
   }) async {
     // Set loading state first
     _isLoadingNotifier.value = true;
@@ -71,7 +71,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
         DateTime.now(),
         _prayerTimesNotifier.value!.latitude ?? 0.0,
         _prayerTimesNotifier.value!.longitude ?? 0.0,
-        calculationMethod: _prayerTimesNotifier.value!.calculationMethod ?? 3,
+        calculationMethod: _prayerTimesNotifier.value!.calculationMethod ?? 5,
       );
     }
   }
@@ -103,6 +103,117 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
       };
     }
     return {};
+  }
+
+  /// Helper to parse time string "HH:MM" into a DateTime for today
+  DateTime _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      final now = DateTime.now();
+      return DateTime(
+        now.year,
+        now.month,
+        now.day,
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+      );
+    } catch (e) {
+      return DateTime.now(); // fallback
+    }
+  }
+
+  /// Format 24h time to 12h Arabic format (e.g., 15:30 -> 3:30 م)
+  String _formatArabicTime(String time24) {
+    if (time24 == 'N/A' || time24 == '--:--') return time24;
+    try {
+      final parsed = _parseTime(time24);
+      int hour = parsed.hour;
+      int min = parsed.minute;
+      String period = hour >= 12 ? 'م' : 'ص';
+      if (hour > 12) hour -= 12;
+      if (hour == 0) hour = 12;
+      String mStr = min.toString().padLeft(2, '0');
+      return '$hour:$mStr $period';
+    } catch (e) {
+      return time24;
+    }
+  }
+
+  /// Computes the current and next prayer along with their formatted times.
+  Map<String, String> getCurrentAndNextPrayer() {
+    final times = getMainPrayerTimes();
+    if (times.isEmpty) {
+      return {
+        'currentName': '---',
+        'currentTime': '--:--',
+        'nextName': '---',
+        'nextTime': '--:--',
+      };
+    }
+
+    final arabicNames = {
+      'Fajr': 'الفجر',
+      'Sunrise': 'الشروق',
+      'Dhuhr': 'الظهر',
+      'Asr': 'العصر',
+      'Maghrib': 'المغرب',
+      'Isha': 'العشاء',
+    };
+
+    final now = DateTime.now();
+
+    // Sort prayers chronologically
+    final prayers = [
+      {'key': 'Fajr', 'time': times['Fajr']},
+      {'key': 'Sunrise', 'time': times['Sunrise']},
+      {'key': 'Dhuhr', 'time': times['Dhuhr']},
+      {'key': 'Asr', 'time': times['Asr']},
+      {'key': 'Maghrib', 'time': times['Maghrib']},
+      {'key': 'Isha', 'time': times['Isha']},
+    ];
+
+    String currentName = 'العشاء';
+    String currentTime = times['Isha'] ?? '--:--';
+    String nextName = 'الفجر';
+    String nextTime = times['Fajr'] ?? '--:--';
+
+    for (int i = 0; i < prayers.length; i++) {
+      final pt = prayers[i];
+      if (pt['time'] == null || pt['time'] == 'N/A') continue;
+
+      final prayerTime = _parseTime(pt['time']!);
+      if (now.isBefore(prayerTime)) {
+        if (i == 0) {
+          // Before Fajr -> Current is Isha of previous day, Next is Fajr
+          currentName = 'العشاء';
+          currentTime = times['Isha']!;
+          nextName = arabicNames[pt['key']]!;
+          nextTime = pt['time']!;
+        } else {
+          final prev = prayers[i - 1];
+          currentName = arabicNames[prev['key']] ?? prev['key']!;
+          currentTime = prev['time']!;
+          nextName = arabicNames[pt['key']] ?? pt['key']!;
+          nextTime = pt['time']!;
+        }
+        break;
+      }
+
+      // If we reached the end and now > Isha time
+      if (i == prayers.length - 1 && now.isAfter(prayerTime)) {
+        currentName = 'العشاء';
+        currentTime = times['Isha']!;
+        nextName = 'الفجر';
+        nextTime = times['Fajr']!;
+      }
+    }
+
+    return {
+      'currentName': currentName,
+      'currentTime': _formatArabicTime(currentTime),
+      'nextName': nextName,
+      'nextTime': _formatArabicTime(nextTime),
+    };
   }
 
   /// Dispose of all notifiers to prevent memory leaks

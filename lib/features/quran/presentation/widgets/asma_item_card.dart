@@ -17,17 +17,23 @@ class AsmaItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: AppColors.lightSecondary,
+      color: Theme.of(context).colorScheme.secondary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: const BorderSide(color: AppColors.lightPrimary, width: 1),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1,
+        ),
       ),
       elevation: 2,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.lightSecondary,
+          color: Theme.of(context).colorScheme.secondary,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: AppColors.lightPrimary, width: 1),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1,
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -38,8 +44,8 @@ class AsmaItemCard extends StatelessWidget {
               Container(
                 width: 50,
                 height: 50,
-                decoration: const BoxDecoration(
-                  color: AppColors.lightPrimary,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Center(

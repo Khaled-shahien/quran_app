@@ -31,15 +31,15 @@ class ThemeShowcaseScreen extends StatelessWidget {
             ),
             _buildColorCard(
               'Background',
-              AppColors.lightBackground,
+              Theme.of(context).scaffoldBackgroundColor,
               AppColors.primaryText,
             ),
             _buildColorCard(
               'Secondary',
-              AppColors.lightSecondary,
+              Theme.of(context).colorScheme.secondary,
               AppColors.primaryText,
             ),
-            _buildColorCard('Primary', AppColors.lightPrimary, AppColors.white),
+            _buildColorCard('Primary', Theme.of(context).colorScheme.primary, AppColors.white),
             _buildColorCard(
               'Page/Accent',
               AppColors.lightPageAccent,

@@ -23,15 +23,15 @@ class TabSwitcherWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _tabButton('جميع التصنيفات', 0),
-          _tabButton('كل الوسائط', 1),
-          _tabButton('أوقات الصلاة', 2),
+          _tabButton(context, 'جميع التصنيفات', 0),
+          _tabButton(context, 'كل الوسائط', 1),
+          _tabButton(context, 'أوقات الصلاة', 2),
         ],
       ),
     );
   }
 
-  Widget _tabButton(String text, int index) {
+  Widget _tabButton(BuildContext context, String text, int index) {
     bool active = selectedIndex == index;
     return Expanded(
       child: InkWell(
@@ -48,7 +48,9 @@ class TabSwitcherWidget extends StatelessWidget {
             text,
             textAlign: TextAlign.center,
             style: GoogleFonts.cairo(
-              color: active ? Colors.white : AppColors.lightPrimary,
+              color: active
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),

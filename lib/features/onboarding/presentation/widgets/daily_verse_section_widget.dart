@@ -1,9 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'dart:math';
 import '../../../../core/theme/app_colors.dart';
+import '../providers/favorites_provider.dart';
 
-class DailyVerseSectionWidget extends StatelessWidget {
+class DailyVerseSectionWidget extends StatefulWidget {
   const DailyVerseSectionWidget({super.key});
+
+  @override
+  State<DailyVerseSectionWidget> createState() =>
+      _DailyVerseSectionWidgetState();
+}
+
+class _DailyVerseSectionWidgetState extends State<DailyVerseSectionWidget> {
+  final List<Map<String, String>> _dailyVerses = [
+    {
+      'surah': 'سورة الفاتحة',
+      'arabic': 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
+      'english': 'All praise and thanks be to the Lord of the worlds.',
+    },
+    {
+      'surah': 'سورة البقرة',
+      'arabic': 'لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا',
+      'english': 'Allah does not burden a soul beyond that it can bear.',
+    },
+    {
+      'surah': 'سورة غافر',
+      'arabic': 'وَقَالَ رَبُّكُمُ ادْعُونِي أَسْتَجِبْ لَكُمْ',
+      'english': 'And your Lord says, "Call upon Me; I will respond to you."',
+    },
+    {
+      'surah': 'سورة الشرح',
+      'arabic': 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا',
+      'english': 'For indeed, with hardship [will be] ease.',
+    },
+    {
+      'surah': 'سورة الرعد',
+      'arabic': 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنِّ الْقُلُوبُ',
+      'english':
+          'Unquestionably, by the remembrance of Allah hearts are assured.',
+    },
+    {
+      'surah': 'سورة طه',
+      'arabic': 'قَالَ لَا تَخَافَا ۖ إِنَّنِي مَعَكُمَا أَسْمَعُ وَأَرَىٰ',
+      'english':
+          'He said, "Fear not. Indeed, I am with you both; I hear and I see."',
+    },
+  ];
+
+  late Map<String, String> _selectedVerse;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedVerse = _dailyVerses[Random().nextInt(_dailyVerses.length)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +74,9 @@ class DailyVerseSectionWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                'سورة الفاتحة',
+                _selectedVerse['surah']!,
                 style: GoogleFonts.cairo(
-                  color: AppColors.lightPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontSize: 14,
                 ),
               ),
@@ -41,52 +93,46 @@ class DailyVerseSectionWidget extends StatelessWidget {
               right: BorderSide(color: AppColors.accent, width: 6),
             ),
           ),
-          child: Column(
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Icon(Icons.favorite_outline, color: Colors.white70),
-              ),
-              Text(
-                'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
-                style: GoogleFonts.amiri(
-                  fontSize: 26,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'All praise and thanks be to the Lord of the worlds.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.roboto(color: Colors.white70),
-              ),
-            ],
+          child: Consumer<FavoritesProvider>(
+            builder: (context, favoritesProvider, child) {
+              final isFav = favoritesProvider.isFavorite(_selectedVerse);
+              return Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_outline,
+                        color: isFav ? Colors.red : Colors.white70,
+                      ),
+                      onPressed: () {
+                        favoritesProvider.toggleFavorite(_selectedVerse);
+                      },
+                    ),
+                  ),
+                  Text(
+                    _selectedVerse['arabic']!,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.amiri(
+                      fontSize: 26,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _selectedVerse['english']!,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.roboto(color: Colors.white70),
+                  ),
+                ],
+              );
+            },
           ),
         ),
-        const SizedBox(height: 10),
-        _buildDotsIndicator(),
+        const SizedBox(height: 15),
       ],
     );
   }
-
-  Widget _buildDotsIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) => _dot(index == 0)).toList(),
-    );
-  }
-
-  Widget _dot(bool isActive) => AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    margin: const EdgeInsets.symmetric(horizontal: 4),
-    width: isActive ? 10 : 6,
-    height: 6,
-    decoration: BoxDecoration(
-      color: isActive
-          ? AppColors.lightPrimary
-          : AppColors.lightPrimary.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(12),
-    ),
-  );
 }

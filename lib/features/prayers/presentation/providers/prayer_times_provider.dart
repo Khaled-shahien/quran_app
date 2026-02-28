@@ -42,7 +42,7 @@ class PrayerTimesProvider extends ChangeNotifier {
     DateTime date,
     double latitude,
     double longitude, {
-    int calculationMethod = 3,
+    int calculationMethod = 5,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -75,7 +75,7 @@ class PrayerTimesProvider extends ChangeNotifier {
         DateTime.now(),
         _prayerTimes!.latitude ?? 0.0,
         _prayerTimes!.longitude ?? 0.0,
-        calculationMethod: _prayerTimes!.calculationMethod ?? 3,
+        calculationMethod: _prayerTimes!.calculationMethod ?? 5,
       );
     }
   }
@@ -98,14 +98,14 @@ class PrayerTimesProvider extends ChangeNotifier {
   /// Get main prayer times (excluding optional ones)
   Map<String, String> getMainPrayerTimes() {
     if (_prayerTimes != null) {
-      final times = _prayerTimes!.getMainPrayerTimes();
+      final formattedTimes = _prayerTimes!.getFormattedPrayerTimes();
       return {
-        'Fajr': times['Fajr'] ?? 'N/A',
-        'Sunrise': times['Sunrise'] ?? 'N/A',
-        'Dhuhr': times['Dhuhr'] ?? 'N/A',
-        'Asr': times['Asr'] ?? 'N/A',
-        'Maghrib': times['Maghrib'] ?? 'N/A',
-        'Isha': times['Isha'] ?? 'N/A',
+        'Fajr': formattedTimes['Fajr'] ?? 'N/A',
+        'Sunrise': formattedTimes['Sunrise'] ?? 'N/A',
+        'Dhuhr': formattedTimes['Dhuhr'] ?? 'N/A',
+        'Asr': formattedTimes['Asr'] ?? 'N/A',
+        'Maghrib': formattedTimes['Maghrib'] ?? 'N/A',
+        'Isha': formattedTimes['Isha'] ?? 'N/A',
       };
     }
     return {};

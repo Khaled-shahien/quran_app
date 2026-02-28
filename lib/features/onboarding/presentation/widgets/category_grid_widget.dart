@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../quran/presentation/screens/tasbeeh_screen.dart';
 import '../../../quran/presentation/screens/asma_al_husna_screen.dart';
 import '../../../quran/presentation/screens/quran_screen.dart';
+import '../../../hadeath/presentation/screens/hadeath_screen.dart';
+import '../../../duas/presentation/screens/azkar_screen.dart';
+import '../../../duas/presentation/screens/duas_screen.dart';
 
 class CategoryGridWidget extends StatelessWidget {
   const CategoryGridWidget({super.key});
@@ -20,8 +22,17 @@ class CategoryGridWidget extends StatelessWidget {
           childAspectRatio: 0.8,
         ),
         delegate: SliverChildListDelegate([
-          _catCard('الأدعية', 'assets/images/الادعيه.png'),
           _catCard(
+            context,
+            'الأدعية',
+            'assets/images/الادعيه.png',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DuasScreen()),
+            ),
+          ),
+          _catCard(
+            context,
             'التسبيح',
             'assets/images/التسبيح_الالكتروني.png',
             onTap: () => Navigator.push(
@@ -30,6 +41,7 @@ class CategoryGridWidget extends StatelessWidget {
             ),
           ),
           _catCard(
+            context,
             'الأسماء',
             'assets/images/اسماء_الله_الحسني.png',
             onTap: () => Navigator.push(
@@ -40,6 +52,7 @@ class CategoryGridWidget extends StatelessWidget {
             ),
           ),
           _catCard(
+            context,
             'القرآن',
             'assets/images/القران.png',
             onTap: () => Navigator.push(
@@ -47,14 +60,31 @@ class CategoryGridWidget extends StatelessWidget {
               MaterialPageRoute(builder: (context) => const QuranScreen()),
             ),
           ),
-          _catCard('الأذكار', 'assets/images/الاذكار.png'),
-          _catCard('الأحاديث', 'assets/images/الاحاديث.png'),
+          _catCard(
+            context,
+            'الأذكار',
+            'assets/images/الاذكار.png',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AzkarScreen()),
+            ),
+          ),
+          _catCard(
+            context,
+            'الأحاديث',
+            'assets/images/الاحاديث.png',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HadeathScreen()),
+            ),
+          ),
         ]),
       ),
     );
   }
 
   Widget _catCard(
+    BuildContext context,
     String title,
     String imagePath, {
     VoidCallback? onTap,
@@ -62,7 +92,7 @@ class CategoryGridWidget extends StatelessWidget {
     onTap: onTap,
     child: Container(
       decoration: BoxDecoration(
-        color: AppColors.lightSecondary,
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(

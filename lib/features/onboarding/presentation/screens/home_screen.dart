@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/header_card_widget.dart';
 import '../widgets/daily_verse_section_widget.dart';
 import '../widgets/tab_switcher_widget.dart';
 import '../widgets/category_grid_widget.dart';
 import '../widgets/media_tiles_widget.dart';
 import '../widgets/prayer_times_widget.dart';
+import '../../../prayers/presentation/providers/prayer_times_performance_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,8 +23,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int selectedTabIndex = 0; // 0: جميع التصنيفات, 1: كل الوسائط, 2: أوقات الصلاة
   int drawerSubTab = 0; // 0 للأعدادات، 1 للمفضلة
-  bool isDarkMode = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final prayerProvider = Provider.of<PrayerTimesPerformanceProvider>(
+        context,
+        listen: false,
+      );
+      // Fetch prayer times for Cairo by default
+      prayerProvider.fetchPrayerTimes(DateTime.now(), 30.0444, 31.2357);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,23 +79,23 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      leading: const Icon(
+      leading: Icon(
         Icons.search,
-        color: AppColors.lightPrimary,
+        color: Theme.of(context).colorScheme.primary,
         size: 28,
       ),
       title: Text(
         'القرآن الكريم',
         style: GoogleFonts.cairo(
-          color: AppColors.lightPrimary,
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.segment,
-            color: AppColors.lightPrimary,
+            color: Theme.of(context).colorScheme.primary,
             size: 30,
           ),
           onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
@@ -91,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNavigationDrawer() {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.85,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Column(
@@ -164,11 +181,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- مكونات واجهة المستخدم المساعدة ---
 
-  Widget _drawerItem(String title, IconData icon) => ListTile(
-    leading: Icon(icon, color: AppColors.primary),
-    title: Text(title, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
-    onTap: () {},
-  );
+  Widget _drawerItem(String title, IconData icon, [VoidCallback? onTap]) =>
+      ListTile(
+        leading: Icon(icon, color: AppColors.primary),
+        title: Text(
+          title,
+          style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
+        ),
+        onTap: onTap,
+      );
 
   Widget _drawerTabItem(String label, int index) {
     bool active = drawerSubTab == index;
@@ -195,16 +216,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSettingsList() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
+    void showComingSoon() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'هذه الميزة ستتوفر قريباً إن شاء الله',
+            style: GoogleFonts.cairo(),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      Navigator.pop(context); // Close drawer after showing
+    }
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        _drawerItem('التفسير', Icons.auto_stories),
-        _drawerItem('الأجزاء', Icons.menu_book),
-        _drawerItem('الأحزاب', Icons.bookmark_border),
-        _drawerItem('السجدات', Icons.pan_tool_alt_outlined),
-        _drawerItem('الركوع', Icons.accessibility_new),
+        _drawerItem('التفسير', Icons.auto_stories, showComingSoon),
+        _drawerItem('الأجزاء', Icons.menu_book, showComingSoon),
+        _drawerItem('الأحزاب', Icons.bookmark_border, showComingSoon),
+        _drawerItem('السجدات', Icons.pan_tool_alt_outlined, showComingSoon),
+        _drawerItem('الركوع', Icons.accessibility_new, showComingSoon),
         const Divider(height: 30, indent: 20, endIndent: 20),
-        _drawerItem('الصفحة الرئيسية', Icons.home_outlined),
+        _drawerItem('الصفحة الرئيسية', Icons.home_outlined, () {
+          Navigator.pop(context);
+        }),
         ListTile(
           leading: const Icon(
             Icons.dark_mode_outlined,
@@ -212,50 +253,112 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           title: Text('تفعيل الوضع الليلي', style: GoogleFonts.cairo()),
           trailing: Switch(
-            value: isDarkMode,
+            value: isDark,
             activeThumbColor: AppColors.primary,
-            onChanged: (v) => setState(() => isDarkMode = v),
+            onChanged: (v) {
+              themeProvider.toggleTheme(v);
+            },
           ),
         ),
-        _drawerItem('مشاركة التطبيق', Icons.share_outlined),
+        _drawerItem('مشاركة التطبيق', Icons.share_outlined, () {
+          Navigator.pop(context); // Close drawer before sharing
+          Share.share(
+            'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
+          );
+        }),
       ],
     );
   }
 
   Widget _buildFavoritesList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: 3,
-      itemBuilder: (context, index) => Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Icon(Icons.cancel, color: AppColors.primary, size: 20),
-                Text(
-                  'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
-                  style: GoogleFonts.amiri(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+    return Consumer<FavoritesProvider>(
+      builder: (context, favoritesProvider, child) {
+        final favorites = favoritesProvider.favoriteVerses;
+
+        if (favorites.isEmpty) {
+          return Center(
+            child: Text(
+              'لا توجد آيات مفضلة',
+              style: GoogleFonts.cairo(
+                fontSize: 16,
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.6),
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: favorites.length,
+          itemBuilder: (context, index) {
+            final verse = favorites[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          Icons.cancel,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          favoritesProvider.removeFavorite(verse);
+                        },
+                      ),
+                      Expanded(
+                        child: Text(
+                          verse['arabic'] ?? '',
+                          textAlign: TextAlign.right,
+                          style: GoogleFonts.amiri(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            Text(
-              'سورة الفاتحة - آية ١',
-              style: GoogleFonts.cairo(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
+                  const SizedBox(height: 8),
+                  Text(
+                    verse['surah'] ?? '',
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  if (verse['english'] != null)
+                    Text(
+                      verse['english']!,
+                      style: GoogleFonts.roboto(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.6),
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
