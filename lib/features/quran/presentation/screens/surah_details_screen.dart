@@ -84,6 +84,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         backgroundColor: topBarColor,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'رجوع',
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
@@ -109,10 +110,12 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'الإعدادات',
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {},
           ),
           IconButton(
+            tooltip: 'حفظ العلامة',
             icon: const Icon(Icons.bookmark, color: Colors.white),
             onPressed: () {},
           ),
