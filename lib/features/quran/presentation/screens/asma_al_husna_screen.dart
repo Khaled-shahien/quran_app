@@ -304,7 +304,7 @@ class _AsmaAlHusnaScreenState extends State<AsmaAlHusnaScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppColors.lightPrimary),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.lightPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),

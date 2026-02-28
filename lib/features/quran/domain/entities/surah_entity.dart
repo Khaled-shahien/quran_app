@@ -2,56 +2,56 @@
 ///
 /// Domain entity representing a Surah (chapter) of the Quran
 class SurahEntity {
+  final int number;
   final String name;
-  final String nameArabic;
-  final String nameArabicLong;
-  final String translation;
-  final String revelationPlace;
+  final String englishName;
+  final String englishNameTranslation;
+  final String revelationType;
   final int totalAyah;
 
   SurahEntity({
+    required this.number,
     required this.name,
-    required this.nameArabic,
-    required this.nameArabicLong,
-    required this.translation,
-    required this.revelationPlace,
+    required this.englishName,
+    required this.englishNameTranslation,
+    required this.revelationType,
     required this.totalAyah,
   });
 
-  /// Get revelation place in Arabic
-  String get revelationPlaceArabic {
-    if (revelationPlace.toLowerCase() == 'mecca') {
+  /// Get revelation type in Arabic
+  String get revelationTypeArabic {
+    if (revelationType.toLowerCase() == 'mecca') {
       return 'مكة';
-    } else if (revelationPlace.toLowerCase() == 'madina') {
+    } else if (revelationType.toLowerCase() == 'medina') {
       return 'المدينة';
     }
-    return revelationPlace;
+    return revelationType;
   }
 
   /// Check if this is a Meccan Surah
-  bool get isMeccan => revelationPlace.toLowerCase() == 'mecca';
+  bool get isMeccan => revelationType.toLowerCase() == 'mecca';
 
-  /// Check if this is a Median Surah
-  bool get isMedian => revelationPlace.toLowerCase() == 'madina';
+  /// Check if this is a Medinan Surah
+  bool get isMedinan => revelationType.toLowerCase() == 'medina';
 
   @override
   String toString() {
-    return 'SurahEntity(name: $name, nameArabic: $nameArabic, '
-        'translation: $translation, revelationPlace: $revelationPlace, '
-        'totalAyah: $totalAyah)';
+    return 'SurahEntity(number: $number, name: $name, '
+        'englishName: $englishName, englishNameTranslation: $englishNameTranslation, '
+        'revelationType: $revelationType, totalAyah: $totalAyah)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is SurahEntity &&
+        other.number == number &&
         other.name == name &&
-        other.nameArabic == nameArabic &&
         other.totalAyah == totalAyah;
   }
 
   @override
   int get hashCode {
-    return Object.hash(name, nameArabic, totalAyah);
+    return Object.hash(number, name, totalAyah);
   }
 }

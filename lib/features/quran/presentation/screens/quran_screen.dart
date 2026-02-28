@@ -1,35 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../data/models/surah_model.dart';
-import '../../data/data_sources/surah_api_service.dart';
+import '../../domain/repositories/surah_repository.dart';
+import '../../domain/entities/surah_entity.dart';
+import 'surah_details_screen.dart';
 
 /// Quran Screen
 ///
 /// Displays the list of all 114 Surahs in the Quran with their details
-class QuranScreen extends StatefulWidget {
+class QuranScreen extends StatelessWidget {
   const QuranScreen({super.key});
 
   @override
-  State<QuranScreen> createState() => _QuranScreenState();
+  Widget build(BuildContext context) {
+    return Consumer<SurahRepository>(
+      builder: (context, repository, child) {
+        return _QuranScreenContent(repository: repository);
+      },
+    );
+  }
 }
 
-class _QuranScreenState extends State<QuranScreen> {
-  late SurahApiService _apiService;
-  List<SurahModel> _surahs = [];
+class _QuranScreenContent extends StatefulWidget {
+  final SurahRepository repository;
+
+  const _QuranScreenContent({required this.repository});
+
+  @override
+  State<_QuranScreenContent> createState() => _QuranScreenState();
+}
+
+class _QuranScreenState extends State<_QuranScreenContent> {
+  late SurahRepository _repository;
+  List<SurahEntity> _surahs = [];
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _apiService = SurahApiService();
+    _repository = widget.repository;
     _loadSurahs();
   }
 
   @override
   void dispose() {
-    _apiService.close();
+    // No need to close repository
     super.dispose();
   }
 
@@ -40,18 +57,11 @@ class _QuranScreenState extends State<QuranScreen> {
     });
 
     try {
-      final response = await _apiService.getAllSurahs();
-      if (response.status && response.data != null) {
-        setState(() {
-          _surahs = response.data!;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _error = response.message ?? 'Failed to load Surahs';
-          _isLoading = false;
-        });
-      }
+      final surahs = await _repository.getAllSurahs();
+      setState(() {
+        _surahs = surahs;
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -63,12 +73,12 @@ class _QuranScreenState extends State<QuranScreen> {
   @override
   Widget build(BuildContext context) {
     // استخدم ألوان التطبيق
-    final Color primaryColor =
+    const Color primaryColor =
         AppColors.lightPrimary; // اللون الأخضر الداكن في الأعلى
-    final Color backgroundColor =
+    const Color backgroundColor =
         AppColors.scaffoldBackground; // لون الخلفية المائل للبيج
-    final Color cardBackground = AppColors.surface; // لون الكروت الأبيض
-    final Color accentColor =
+    const Color cardBackground = AppColors.surface; // لون الكروت الأبيض
+    const Color accentColor =
         AppColors.lightPrimary; // لون الأرقام والنصوص الرئيسية
 
     return Scaffold(
@@ -84,7 +94,7 @@ class _QuranScreenState extends State<QuranScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -105,7 +115,7 @@ class _QuranScreenState extends State<QuranScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -135,11 +145,11 @@ class _QuranScreenState extends State<QuranScreen> {
           final surah = _surahs[index];
           return SurahCard(
             index: index + 1,
-            arabicName: surah.surahNameArabic,
-            englishName: surah.surahName,
-            translation: surah.surahNameTranslation,
+            arabicName: surah.name,
+            englishName: surah.englishName,
+            translation: surah.englishNameTranslation,
             versesCount: surah.totalAyah,
-            type: _getRevelationPlaceArabic(surah.revelationPlace),
+            type: _getRevelationPlaceArabic(surah.revelationType),
             accentColor: accentColor,
             cardBackground: cardBackground,
             onTap: () => _onSurahTap(context, surah, index + 1),
@@ -163,76 +173,15 @@ class _QuranScreenState extends State<QuranScreen> {
     return revelationPlace;
   }
 
-  void _onSurahTap(BuildContext context, SurahModel surah, int number) {
-    // Show a snackbar with the selected surah info
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'تم اختيار سورة ${surah.surahNameArabic} (${surah.surahName})',
-          style: GoogleFonts.cairo(),
-        ),
-        duration: const Duration(seconds: 2),
+  void _onSurahTap(BuildContext context, SurahEntity surah, int number) {
+    // Navigate to the Surah details screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            SurahDetailsScreen(surah: surah, surahNumber: number),
       ),
     );
-
-    // Call the specific endpoint for this Surah
-    _callSurahEndpoint(context, number, surah);
-  }
-
-  /// Calls the specific endpoint for the selected Surah
-  Future<void> _callSurahEndpoint(
-    BuildContext context,
-    int surahNumber,
-    SurahModel surah,
-  ) async {
-    try {
-      // Show loading indicator
-      final snackBar = SnackBar(
-        content: Text(
-          'جاري تحميل تفاصيل سورة ${surah.surahNameArabic}...',
-          style: GoogleFonts.cairo(),
-        ),
-        duration: const Duration(seconds: 2),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
-      // Example endpoints might be:
-      // - https://quranapi.pages.dev/api/surah/{surahNumber}.json
-      // - https://quranapi.pages.dev/api/surah/{surahNumber}/ayahs
-      // For demonstration, I'll use a mock call
-      // Removed print statement for production code
-      // print('Calling endpoint for Surah $surahNumber (${surah.surahName})');
-
-      // Here you would typically make an API call to get specific Surah data
-      // For example:
-      // final response = await _apiService.get('surah/$surahNumber.json');
-
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Show success message
-      final successSnackBar = SnackBar(
-        content: Text(
-          'تم تحميل تفاصيل سورة ${surah.surahNameArabic} بنجاح',
-          style: GoogleFonts.cairo(),
-        ),
-        backgroundColor: Colors.green,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(successSnackBar);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'حدث خطأ أثناء تحميل تفاصيل السورة: $e',
-              style: GoogleFonts.cairo(),
-            ),
-          ),
-        );
-      }
-    }
   }
 }
 

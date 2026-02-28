@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/errors/api_exception.dart';
-import '../../../../core/errors/network_exception.dart';
 import '../../../../core/api/api_error_handler.dart';
-import '../data_sources/surah_api_service.dart';
+import '../data_sources/local_surah_data_source.dart';
 import '../models/surah_model.dart';
 import '../../domain/repositories/surah_repository.dart';
 import '../../domain/entities/surah_entity.dart';
@@ -11,9 +10,9 @@ import '../../domain/entities/surah_entity.dart';
 /// Surah Repository
 ///
 /// Repository pattern implementation for Surah data access.
-/// Handles data fetching, caching, and error management.
+/// Handles data fetching from local storage.
 class SurahRepositoryImpl implements SurahRepository {
-  final SurahApiService _apiService;
+  final LocalSurahDataSource _localDataSource;
   final ApiErrorHandler _errorHandler;
   final SharedPreferences _prefs;
 
@@ -23,32 +22,31 @@ class SurahRepositoryImpl implements SurahRepository {
   static const int _cacheDurationHours = 24; // Cache for 24 hours
 
   SurahRepositoryImpl({
-    required SurahApiService apiService,
+    required LocalSurahDataSource localDataSource,
     required SharedPreferences sharedPreferences,
     ApiErrorHandler? errorHandler,
-  }) : _apiService = apiService,
+  }) : _localDataSource = localDataSource,
        _prefs = sharedPreferences,
        _errorHandler = errorHandler ?? ApiErrorHandler();
 
   /// Convert SurahModel to SurahEntity
   SurahEntity _modelToEntity(SurahModel model) {
     return SurahEntity(
-      name: model.surahName,
-      nameArabic: model.surahNameArabic,
-      nameArabicLong: model.surahNameArabicLong,
-      translation: model.surahNameTranslation,
-      revelationPlace: model.revelationPlace,
-      totalAyah: model.totalAyah,
+      number: model.number,
+      name: model.name,
+      englishName: model.englishName,
+      englishNameTranslation: model.englishNameTranslation,
+      revelationType: model.revelationType,
+      totalAyah: model.numberOfAyahs,
     );
   }
 
-  /// Get all Surahs with caching support
+  /// Get all Surahs from local storage
   ///
-  /// First checks local cache, then fetches from API if cache is expired
-  /// or not available.
+  /// First checks local cache, then loads from local assets if cache is not available.
   ///
   /// Returns: Future<List<SurahEntity>>
-  /// Throws: NetworkException, ApiException
+  /// Throws: ApiException
   @override
   Future<List<SurahEntity>> getAllSurahs() async {
     try {
@@ -58,28 +56,13 @@ class SurahRepositoryImpl implements SurahRepository {
         return cachedSurahsModels.map(_modelToEntity).toList();
       }
 
-      // Fetch from API
-      final response = await _apiService.getAllSurahs();
+      // Load from local assets
+      final surahs = await _localDataSource.loadAllSurahs();
 
-      if (response.status && response.data != null) {
-        // Cache the results
-        await _cacheSurahs(response.data!);
-        return response.data!.map(_modelToEntity).toList();
-      } else {
-        throw ApiException(
-          message: response.message ?? 'Failed to fetch Surahs',
-          code: response.code ?? 500,
-        );
-      }
-    } on NetworkException {
-      // If network fails, try to return cached data even if expired
-      final cachedDataModels = await _getExpiredCachedSurahs();
-      if (cachedDataModels != null) {
-        return cachedDataModels.map(_modelToEntity).toList();
-      }
-      rethrow;
-    } on ApiException {
-      rethrow;
+      // Cache the results
+      await _cacheSurahs(surahs);
+
+      return surahs.map(_modelToEntity).toList();
     } catch (e) {
       throw ApiException(message: _errorHandler.handleError(e), code: 0);
     }
@@ -91,7 +74,7 @@ class SurahRepositoryImpl implements SurahRepository {
   /// - [index]: Surah number (1-114)
   ///
   /// Returns: Future<SurahEntity>
-  /// Throws: NetworkException, ApiException
+  /// Throws: ApiException
   @override
   Future<SurahEntity> getSurahByIndex(int index) async {
     try {
@@ -117,25 +100,20 @@ class SurahRepositoryImpl implements SurahRepository {
   /// - [query]: Search term
   ///
   /// Returns: Future<List<SurahEntity>>
-  /// Throws: NetworkException, ApiException
+  /// Throws: ApiException
   @override
   Future<List<SurahEntity>> searchSurahs(String query) async {
     try {
-      // For search, we'll fetch fresh data to ensure accuracy
-      final response = await _apiService.searchSurahs(query);
+      final allSurahs = await getAllSurahs();
+      final lowerQuery = query.toLowerCase();
 
-      if (response.status && response.data != null) {
-        return response.data!.map(_modelToEntity).toList();
-      } else {
-        throw ApiException(
-          message: response.message ?? 'Search failed',
-          code: response.code ?? 500,
-        );
-      }
-    } on NetworkException {
-      rethrow;
-    } on ApiException {
-      rethrow;
+      final filteredSurahs = allSurahs.where((surah) {
+        return surah.name.toLowerCase().contains(lowerQuery) ||
+            surah.englishName.toLowerCase().contains(lowerQuery) ||
+            surah.englishNameTranslation.toLowerCase().contains(lowerQuery);
+      }).toList();
+
+      return filteredSurahs;
     } catch (e) {
       throw ApiException(message: _errorHandler.handleError(e), code: 0);
     }
@@ -147,24 +125,29 @@ class SurahRepositoryImpl implements SurahRepository {
   /// - [place]: 'Mecca' or 'Madina'
   ///
   /// Returns: Future<List<SurahEntity>>
-  /// Throws: NetworkException, ApiException
+  /// Throws: ApiException
   @override
   Future<List<SurahEntity>> getSurahsByRevelationPlace(String place) async {
     try {
-      final response = await _apiService.getSurahsByRevelationPlace(place);
+      final allSurahs = await getAllSurahs();
+      final normalizedPlace = place.toLowerCase();
 
-      if (response.status && response.data != null) {
-        return response.data!.map(_modelToEntity).toList();
-      } else {
-        throw ApiException(
-          message: response.message ?? 'Failed to fetch Surahs by place',
-          code: response.code ?? 500,
-        );
-      }
-    } on NetworkException {
-      rethrow;
-    } on ApiException {
-      rethrow;
+      final filteredSurahs = allSurahs.where((surah) {
+        final surahPlace = surah.revelationType.toLowerCase();
+        // Match both the old format (mecca/madina) and new format (meccan/medinan)
+        if (normalizedPlace == 'mecca' || normalizedPlace == 'meccan') {
+          return surahPlace == 'mecca' ||
+              surahPlace == 'meccan' ||
+              surahPlace == 'mc';
+        } else {
+          // madina
+          return surahPlace == 'madina' ||
+              surahPlace == 'medinan' ||
+              surahPlace == 'md';
+        }
+      }).toList();
+
+      return filteredSurahs;
     } catch (e) {
       throw ApiException(message: _errorHandler.handleError(e), code: 0);
     }
@@ -173,11 +156,32 @@ class SurahRepositoryImpl implements SurahRepository {
   /// Get Surah statistics
   ///
   /// Returns: Future<Map<String, dynamic>>
-  /// Throws: NetworkException, ApiException
+  /// Throws: ApiException
   @override
   Future<Map<String, dynamic>> getSurahStatistics() async {
     try {
-      return await _apiService.getSurahStatistics();
+      final allSurahs = await getAllSurahs();
+
+      final meccanCount = allSurahs.where((surah) {
+        final place = surah.revelationType.toLowerCase();
+        return place == 'mecca' || place == 'meccan' || place == 'mc';
+      }).length;
+      final medinanCount = allSurahs.where((surah) {
+        final place = surah.revelationType.toLowerCase();
+        return place == 'madina' || place == 'medinan' || place == 'md';
+      }).length;
+      final totalVerses = allSurahs.fold<int>(
+        0,
+        (sum, surah) => sum + surah.totalAyah,
+      );
+
+      return {
+        'totalSurahs': allSurahs.length,
+        'meccanSurahs': meccanCount,
+        'medinanSurahs': medinanCount,
+        'totalVerses': totalVerses,
+        'averageVersesPerSurah': totalVerses / allSurahs.length,
+      };
     } catch (e) {
       throw ApiException(message: _errorHandler.handleError(e), code: 0);
     }

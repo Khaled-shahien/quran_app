@@ -7,6 +7,9 @@ import 'features/prayers/presentation/providers/prayer_times_provider.dart';
 import 'features/prayers/data/data_sources/prayer_times_api_service.dart';
 import 'features/prayers/data/repositories/prayer_times_repository_impl.dart';
 import 'features/prayers/domain/repositories/prayer_times_repository.dart';
+import 'features/quran/data/data_sources/local_surah_data_source.dart';
+import 'features/quran/data/repositories/surah_repository.dart';
+import 'features/quran/domain/repositories/surah_repository.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized before any async operations
@@ -24,12 +27,18 @@ class MyApp extends StatelessWidget {
 
   // Cache repositories to prevent recreation
   late final PrayerTimesRepository _prayerTimesRepository;
+  late final SurahRepository _surahRepository;
   late final PrayerTimesProvider _prayerTimesProvider;
 
   MyApp({super.key, required this.prefs}) {
     // Initialize repositories once during construction (lazy initialization)
     _prayerTimesRepository = PrayerTimesRepositoryImpl(
       apiService: PrayerTimesApiService(),
+      sharedPreferences: prefs,
+    );
+
+    _surahRepository = SurahRepositoryImpl(
+      localDataSource: LocalSurahDataSource(),
       sharedPreferences: prefs,
     );
 
@@ -45,10 +54,11 @@ class MyApp extends StatelessWidget {
         // Provide SharedPreferences as a value (no recreation needed)
         Provider<SharedPreferences>.value(value: prefs),
 
-        // Provide repository as a value (pre-initialized)
+        // Provide repositories as values (pre-initialized)
         Provider<PrayerTimesRepository>.value(value: _prayerTimesRepository),
+        Provider<SurahRepository>.value(value: _surahRepository),
 
-        // Provide provider as a value (pre-initialized)
+        // Provide providers as values (pre-initialized)
         ChangeNotifierProvider<PrayerTimesProvider>.value(
           value: _prayerTimesProvider,
         ),

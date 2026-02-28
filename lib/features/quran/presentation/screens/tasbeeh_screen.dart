@@ -71,7 +71,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
                                 color: AppColors.lightPrimary,
@@ -198,7 +198,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 onPressed: _incrementCounter,
                 backgroundColor: AppColors.lightPrimary,
                 foregroundColor: Colors.white,
-                label: Text('تسبيحة'),
+                label: const Text('تسبيحة'),
                 icon: const Icon(Icons.add),
               ),
 
@@ -302,13 +302,13 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                 borderRadius: BorderRadius.circular(
                   AppConstants.kBorderRadiusMedium,
                 ),
-                borderSide: BorderSide(color: AppColors.lightPrimary, width: 1),
+                borderSide: const BorderSide(color: AppColors.lightPrimary, width: 1),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(
                   AppConstants.kBorderRadiusMedium,
                 ),
-                borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                borderSide: const BorderSide(color: AppColors.lightPrimary, width: 2),
               ),
             ),
             textAlign: TextAlign.right,

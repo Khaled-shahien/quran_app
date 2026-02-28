@@ -20,7 +20,7 @@ class AsmaItemCard extends StatelessWidget {
       color: AppColors.lightSecondary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: AppColors.lightPrimary, width: 1),
+        side: const BorderSide(color: AppColors.lightPrimary, width: 1),
       ),
       elevation: 2,
       child: Container(
@@ -38,14 +38,14 @@ class AsmaItemCard extends StatelessWidget {
               Container(
                 width: 50,
                 height: 50,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.lightPrimary,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     number,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -66,7 +66,7 @@ class AsmaItemCard extends StatelessWidget {
               Text(
                 meaning,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.secondaryText,
                   fontStyle: FontStyle.italic,
