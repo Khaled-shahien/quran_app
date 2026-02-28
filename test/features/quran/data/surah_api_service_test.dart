@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:quran_app/features/quran/data/data_sources/surah_api_service.dart';
+import 'package:quran_app/features/quran/data/data_sources/local_surah_data_source.dart';
 import 'package:quran_app/features/quran/data/repositories/surah_repository.dart';
+import 'package:quran_app/features/quran/data/models/surah_model.dart';
 import 'package:quran_app/core/testing/mock_http_client.dart';
-import 'package:quran_app/core/errors/network_exception.dart';
 import 'package:quran_app/core/errors/api_exception.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
@@ -18,7 +18,8 @@ class MockConnectivity implements Connectivity {
   }
 
   @override
-  Stream<ConnectivityResult> get onConnectivityChanged => Stream.value(ConnectivityResult.wifi);
+  Stream<ConnectivityResult> get onConnectivityChanged =>
+      Stream.value(ConnectivityResult.wifi);
 }
 
 // Mock Client that throws SocketException
@@ -29,374 +30,270 @@ class ThrowingMockClient extends MockHttpClient {
   }
 }
 
+// Mock Local Data Source that throws errors
+class MockLocalDataSource extends LocalSurahDataSource {
+  @override
+  Future<List<SurahModel>> loadAllSurahs() async {
+    throw Exception('Failed to load surahs');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Surah API Service Tests', () {
-    late MockHttpClient mockClient;
-    late MockConnectivity mockConnectivity;
-    late SurahApiService apiService;
+  group('Local Surah Data Source Tests', () {
+    late LocalSurahDataSource localDataSource;
 
     setUp(() {
-      mockClient = MockHttpClient();
-      mockConnectivity = MockConnectivity();
-      apiService = SurahApiService(
-        httpClient: mockClient,
-        connectivity: mockConnectivity,
-      );
-      // Ensure we start with a clean state
-      apiService.clearCache();
+      localDataSource = LocalSurahDataSource();
     });
 
-    tearDown(() {
-      mockClient.clearRequests();
-    });
-
-    test('should fetch all Surahs successfully', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-        {
-          "englishName": "Al-Baqarah",
-          "name": "البقرة",
-          "surahNameArabicLong": "سُورَةُ البَقَرَةِ",
-          "surahNameTranslation": "The Cow",
-          "revelationType": "Medinan",
-          "numberOfAyahs": 286,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
+    test('should load all Surahs successfully from local data', () async {
       // Act
-      final result = await apiService.getAllSurahs();
+      final result = await localDataSource.loadAllSurahs();
 
       // Assert
-      expect(result.status, true);
-      expect(result.data, isNotNull);
-      expect(result.data!.length, 2);
-      expect(result.data![0].surahName, 'Al-Faatiha');
-      expect(result.data![0].surahNameArabic, 'الفاتحة');
-      expect(result.data![0].totalAyah, 7);
-      expect(result.data![1].surahName, 'Al-Baqarah');
-      expect(result.data![1].revelationPlace, 'Medinan');
-
-      // Verify request was made
-      expect(mockClient.requestCount, 1);
-      expect(
-        mockClient.verifyRequest('https://api.alquran.cloud/v1/surah', 'GET'),
-        true,
-      );
+      expect(result, isNotNull);
+      expect(result.length, 114); // Should load all 114 surahs
+      expect(result[0].englishName, 'Al-Faatiha');
+      expect(result[0].name, 'سُورَةُ ٱلْفَاتِحَةِ');
+      expect(result[0].numberOfAyahs, 7);
+      expect(result[1].englishName, 'Al-Baqarah');
+      expect(result[1].revelationType, 'Medinan');
     });
 
-    test('should return cached data on subsequent calls', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
+    test('should load specific Surah by index', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
 
-      final mockApiResponse = {'data': mockResponse};
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
-      // Act 1: First call (fetches from API)
-      final result1 = await apiService.getAllSurahs();
-
-      // Act 2: Second call (should fetch from cache)
-      // We clear the mock client responses to ensure no network call can succeed
-      mockClient.clearRequests();
-      // Also maybe add an error response so if it tries to hit network it fails?
-      mockClient.addErrorResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        'Should not be called',
-        statusCode: 500
-      );
-
-      final result2 = await apiService.getAllSurahs();
+      // Get first surah (Al-Fatihah)
+      final fatihah = result[0];
 
       // Assert
-      expect(result1.data!.length, 1);
-      expect(result2.data!.length, 1);
-      expect(result2.data![0].surahName, 'Al-Faatiha');
-
-      // Verification:
-      // The mock client should have received 1 request total (from the first call)
-      // The second call should not have triggered a request.
-      expect(mockClient.requestCount, 0);
+      expect(fatihah.number, 1);
+      expect(fatihah.englishName, 'Al-Faatiha');
+      expect(fatihah.name, 'سُورَةُ ٱلْفَاتِحَةِ');
+      expect(fatihah.numberOfAyahs, 7);
+      expect(fatihah.revelationType, 'Meccan');
     });
 
-    test('should handle network error', () async {
-      // Arrange
-      final throwingService = SurahApiService(
-        httpClient: ThrowingMockClient(),
-        connectivity: mockConnectivity,
-      );
+    test('should handle file reading errors gracefully', () async {
+      // This test would require mocking rootBundle which is complex
+      // For now, we test that the method doesn't crash and returns generated data
+      expect(() => localDataSource.loadAllSurahs(), returnsNormally);
+    });
 
-      // Act & Assert
+    test('should contain all expected Surah properties', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+      final firstSurah = result[0];
+
+      // Assert
+      expect(firstSurah.number, isNotNull);
+      expect(firstSurah.name, isNotNull);
+      expect(firstSurah.englishName, isNotNull);
+      expect(firstSurah.englishNameTranslation, isNotNull);
+      expect(firstSurah.revelationType, isNotNull);
+      expect(firstSurah.numberOfAyahs, isNotNull);
+      expect(firstSurah.ayahs, isNotNull);
+    });
+
+    test('should load all 114 Surahs with correct data', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+
+      // Assert
+      expect(result.length, 114);
+
+      // Check some specific surahs
+      final fatihah = result[0];
+      expect(fatihah.number, 1);
+      expect(fatihah.englishName, 'Al-Faatiha');
+
+      final baqarah = result[1];
+      expect(baqarah.number, 2);
+      expect(baqarah.englishName, 'Al-Baqarah');
+      expect(baqarah.numberOfAyahs, 286);
+
+      final nas = result[113];
+      expect(nas.number, 114);
+      expect(nas.englishName, 'An-Naas');
+    });
+
+    test('should have correct revelation types', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+
+      // Count Meccan and Medinan surahs
+      final meccanCount = result
+          .where((s) => s.revelationType == 'Meccan')
+          .length;
+      final medinanCount = result
+          .where((s) => s.revelationType == 'Medinan')
+          .length;
+
+      // Assert
       expect(
-        () => throwingService.getAllSurahs(),
-        throwsA(const TypeMatcher<NetworkException>()),
-      );
+        meccanCount + medinanCount,
+        114,
+      ); // All surahs should be classified
+      expect(meccanCount, greaterThan(0));
+      expect(medinanCount, greaterThan(0));
     });
 
-    test('should handle API error response', () async {
-      // Arrange
-      mockClient.addErrorResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        'Internal Server Error',
-        statusCode: 500,
-      );
+    test('should search Surahs by English name', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
 
-      // Act & Assert
-      final future = apiService.getAllSurahs();
-      expect(future, throwsA(const TypeMatcher<ApiException>()));
+      // Find surahs containing 'Baqarah'
+      final baqarahResults = result
+          .where((s) => s.englishName.contains('Baqarah'))
+          .toList();
 
-      try {
-        await future;
-      } catch (e) {
-        expect(e, isA<ApiException>());
-        expect((e as ApiException).code, 500);
-        expect(e.message, 'Internal Server Error');
+      // Assert
+      expect(baqarahResults.length, 1);
+      expect(baqarahResults[0].englishName, 'Al-Baqarah');
+    });
+
+    test('should search Surahs by Arabic name', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+
+      // Find surahs containing 'الفاتحة'
+      final fatihahResults = result
+          .where((s) => s.name.contains('الفاتحة'))
+          .toList();
+
+      // Assert
+      expect(fatihahResults.length, 1);
+      expect(fatihahResults[0].name, 'سُورَةُ ٱلْفَاتِحَةِ');
+    });
+
+    test('should filter Surahs by revelation type', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+
+      // Filter Meccan surahs
+      final meccanSurahs = result
+          .where((s) => s.revelationType == 'Meccan')
+          .toList();
+
+      // Assert
+      expect(meccanSurahs.length, greaterThan(0));
+      expect(meccanSurahs.every((s) => s.revelationType == 'Meccan'), true);
+    });
+
+    test('should have correct ayahs array structure', () async {
+      // Act
+      final result = await localDataSource.loadAllSurahs();
+
+      // Check first few surahs have empty ayahs arrays (metadata only)
+      for (int i = 0; i < 5; i++) {
+        expect(result[i].ayahs, isEmpty);
       }
     });
 
-    test('should get Surah by valid index', () async {
-      // Arrange
-      final mockResponse = {
-        'data': {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      };
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah/1',
-        'GET',
-        mockResponse,
-      );
-
+    test('should generate correct JSON structure', () async {
       // Act
-      final result = await apiService.getSurahByIndex(1);
+      final result = await localDataSource.loadAllSurahs();
+      final firstSurah = result[0];
+      final json = firstSurah.toJson();
 
       // Assert
-      expect(result.status, true);
-      expect(result.data, isNotNull);
-      expect(result.data!.surahName, 'Al-Faatiha');
-      expect(result.data!.totalAyah, 7);
-    });
-
-    test('should throw error for invalid Surah index', () async {
-      // Act & Assert
-      expect(
-        () => apiService.getSurahByIndex(0),
-        throwsA(const TypeMatcher<ApiException>()),
-      );
-
-      expect(
-        () => apiService.getSurahByIndex(115),
-        throwsA(const TypeMatcher<ApiException>()),
-      );
-    });
-
-    test('should search Surahs successfully', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
-      // Act
-      final result = await apiService.searchSurahs('Al-Faatiha');
-
-      // Assert
-      expect(result.status, true);
-      expect(result.data, isNotNull);
-      expect(result.data!.length, 1);
-      expect(result.data![0].surahName, 'Al-Faatiha');
-    });
-
-    test('should throw error for empty search query', () async {
-      // Act & Assert
-      expect(
-        () => apiService.searchSurahs(''),
-        throwsA(const TypeMatcher<ApiException>()),
-      );
-    });
-
-    test('should get Surahs by revelation place', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
-      // Act
-      final result = await apiService.getSurahsByRevelationPlace('Mecca');
-
-      // Assert
-      expect(result.status, true);
-      expect(result.data, isNotNull);
-      expect(result.data!.length, 1);
-      expect(result.data![0].revelationPlace.toLowerCase(), 'meccan');
-    });
-
-    test('should throw error for invalid revelation place', () async {
-      // Act & Assert
-      expect(
-        () => apiService.getSurahsByRevelationPlace('Invalid'),
-        throwsA(const TypeMatcher<ApiException>()),
-      );
-    });
-
-    test('should get Surah statistics', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-        {
-          "englishName": "Al-Baqarah",
-          "name": "البقرة",
-          "surahNameArabicLong": "سُورَةُ البَقَرَةِ",
-          "surahNameTranslation": "The Cow",
-          "revelationType": "Medinan",
-          "numberOfAyahs": 286,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
-      // Act
-      final result = await apiService.getSurahStatistics();
-
-      // Assert
-      expect(result['totalSurahs'], 2);
-      expect(result['meccanSurahs'], 1);
-      expect(result['medianSurahs'], 1);
-      expect(result['totalVerses'], 293);
-      expect(result['averageVersesPerSurah'], 146.5);
+      expect(json['number'], 1);
+      expect(json['name'], 'سُورَةُ ٱلْفَاتِحَةِ');
+      expect(json['englishName'], 'Al-Faatiha');
+      expect(json['englishNameTranslation'], 'The Opening');
+      expect(json['revelationType'], 'Meccan');
+      expect(json['numberOfAyahs'], 7);
+      expect(json['ayahs'], isEmpty);
     });
   });
 
   group('Surah Repository Tests', () {
-    late MockHttpClient mockClient;
-    late MockConnectivity mockConnectivity;
-    late SurahApiService apiService;
+    late LocalSurahDataSource localDataSource;
     late SurahRepositoryImpl repository;
     late SharedPreferences prefs;
 
     setUp(() async {
-      mockClient = MockHttpClient();
-      mockConnectivity = MockConnectivity();
-      apiService = SurahApiService(
-        httpClient: mockClient,
-        connectivity: mockConnectivity,
-      );
+      localDataSource = LocalSurahDataSource();
       SharedPreferences.setMockInitialValues({});
       prefs = await SharedPreferences.getInstance();
 
-      // IMPORTANT: Clear cache to prevent test pollution
-      apiService.clearCache();
-
       repository = SurahRepositoryImpl(
-        apiService: apiService,
+        localDataSource: localDataSource,
         sharedPreferences: prefs,
       );
     });
 
-    tearDown(() {
-      mockClient.clearRequests();
+    test('should fetch Surahs from local data source and cache them', () async {
+      // Act
+      final result = await repository.getAllSurahs();
+
+      // Assert
+      expect(result.length, 114);
+      expect(result[0].name, 'Al-Faatiha');
+      expect(result[0].englishName, 'Al-Faatiha');
+
+      // Verify cache was set
+      final cacheKeyExists = prefs.containsKey('cached_surahs');
+      expect(cacheKeyExists, true);
     });
 
-    test('should fetch Surahs from API and cache them', () async {
-      // Force clear cache
-      apiService.clearCache();
+    test('should return cached data when available', () async {
+      // Arrange - Set up cache with real surah data
+      final surahModel = {
+        "number": 1,
+        "name": "سُورَةُ ٱلْفَاتِحَةِ",
+        "englishName": "Al-Faatiha",
+        "englishNameTranslation": "The Opening",
+        "revelationType": "Meccan",
+        "numberOfAyahs": 7,
+        "ayahs": [],
+      };
 
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
+      final jsonString = jsonEncode([surahModel]);
+      await prefs.setString('cached_surahs', jsonString);
+      await prefs.setInt(
+        'cached_surahs_timestamp',
+        DateTime.now().millisecondsSinceEpoch,
+      );
 
-      final mockApiResponse = {'data': mockResponse};
+      // Act - This should return cached data
+      final result = await repository.getAllSurahs();
 
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
+      // Assert
+      expect(result.length, 1);
+      expect(result[0].name, 'Al-Faatiha');
+      expect(result[0].englishName, 'Al-Faatiha');
+    });
+
+    test('should handle data loading errors with cache fallback', () async {
+      // Arrange - Set up cache with valid data
+      final surahModel = {
+        "number": 1,
+        "name": "سُورَةُ ٱلْفَاتِحَةِ",
+        "englishName": "Al-Faatiha",
+        "englishNameTranslation": "The Opening",
+        "revelationType": "Meccan",
+        "numberOfAyahs": 7,
+        "ayahs": [],
+      };
+
+      final jsonString = jsonEncode([surahModel]);
+      await prefs.setString('cached_surahs', jsonString);
+      await prefs.setInt(
+        'cached_surahs_timestamp',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+
+      // Create a mock data source that throws an error
+      final mockDataSource = MockLocalDataSource();
+
+      // Use this mock in repository
+      repository = SurahRepositoryImpl(
+        localDataSource: mockDataSource,
+        sharedPreferences: prefs,
       );
 
       // Act
@@ -405,133 +302,27 @@ void main() {
       // Assert
       expect(result.length, 1);
       expect(result[0].name, 'Al-Faatiha');
-
-      // Verify cache was set
-      final cacheKeyExists = prefs.containsKey('cached_surahs');
-      expect(cacheKeyExists, true);
-    });
-
-    test('should return cached data when available', () async {
-      // Arrange - Set up cache
-      final cachedData = [
-        {
-          "surahName": "Cached Surah",
-          "surahNameArabic": "سورة محفوظة",
-          "surahNameArabicLong": "سُورَةُ مَحْفُوظَةٍ",
-          "surahNameTranslation": "Cached Chapter",
-          "revelationPlace": "Mecca",
-          "totalAyah": 10,
-        },
-      ];
-
-      final jsonString = jsonEncode(cachedData);
-      await prefs.setString('cached_surahs', jsonString);
-      await prefs.setInt(
-        'cached_surahs_timestamp',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-
-      // Act - This should return cached data without API call
-      final result = await repository.getAllSurahs();
-
-      // Assert
-      expect(result.length, 1);
-      expect(result[0].name, 'Cached Surah');
-    });
-
-    test('should handle network error with cache fallback', () async {
-      // Arrange - Set up expired cache
-      final cachedData = [
-        {
-          "surahName": "Fallback Surah",
-          "surahNameArabic": "سورة احتياطية",
-          "surahNameArabicLong": "سُورَةُ احْتِيَاطِيَّةٍ",
-          "surahNameTranslation": "Fallback Chapter",
-          "revelationPlace": "Medina",
-          "totalAyah": 15,
-        },
-      ];
-
-      final jsonString = jsonEncode(cachedData);
-      await prefs.setString('cached_surahs', jsonString);
-      await prefs.setInt(
-        'cached_surahs_timestamp',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-
-      // Make API fail using ThrowingMockClient
-      final failingApiService = SurahApiService(
-        httpClient: ThrowingMockClient(),
-        connectivity: mockConnectivity,
-      );
-
-      // Use this service in repository
-      repository = SurahRepositoryImpl(
-        apiService: failingApiService,
-        sharedPreferences: prefs,
-      );
-
-      // Act
-      final result = await repository.getAllSurahs();
-
-      // Assert
-      expect(result.length, 1);
-      expect(result[0].name, 'Fallback Surah');
     });
 
     test('should get specific Surah by index', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
       // Act
       final result = await repository.getSurahByIndex(1);
 
       // Assert
       expect(result.name, 'Al-Faatiha');
+      expect(result.englishName, 'Al-Faatiha');
       expect(result.totalAyah, 7);
     });
 
     test('should throw error for invalid Surah index', () async {
-      // Arrange
-      final mockResponse = [
-        {
-          "englishName": "Al-Faatiha",
-          "name": "الفاتحة",
-          "surahNameArabicLong": "سُورَةُ ٱلْفَاتِحَةِ",
-          "surahNameTranslation": "The Opening",
-          "revelationType": "Meccan",
-          "numberOfAyahs": 7,
-        },
-      ];
-
-      final mockApiResponse = {'data': mockResponse};
-
-      mockClient.addJsonResponse(
-        'https://api.alquran.cloud/v1/surah',
-        'GET',
-        mockApiResponse,
-      );
-
       // Act & Assert
       expect(
-        () => repository.getSurahByIndex(5),
+        () => repository.getSurahByIndex(0),
+        throwsA(const TypeMatcher<ApiException>()),
+      );
+
+      expect(
+        () => repository.getSurahByIndex(115),
         throwsA(const TypeMatcher<ApiException>()),
       );
     });

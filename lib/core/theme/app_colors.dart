@@ -13,6 +13,10 @@ abstract class AppColors {
   static const Color lightCardContent = Color(
     0xFFFFE9C2,
   ); // Light mode card content
+  static const Color lightSurface = Color(0xFFFFFBF9); // Light mode surface
+  static const Color lightOnSurface = Color(
+    0xFF1B1B1B,
+  ); // Light mode on surface text
 
   // Dark Mode Colors
   static const Color darkBackground = Color(0xFF141414); // Dark mode background

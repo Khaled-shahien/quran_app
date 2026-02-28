@@ -43,6 +43,15 @@ class AppTheme {
         surfaceTintColor: AppColors.lightCardContent,
       ),
       scaffoldBackgroundColor: AppColors.lightBackground,
+      // Enhanced Material 3 features
+      navigationBarTheme: _buildNavigationBarTheme(colorScheme),
+      bottomSheetTheme: _buildBottomSheetTheme(colorScheme),
+      dialogTheme: _buildDialogTheme(colorScheme),
+      inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
+      // Accessibility improvements
+      scrollbarTheme: _buildScrollbarTheme(),
+      // System UI overlay styling
+      extensions: [_buildThemeExtensions()],
     );
   }
 
@@ -228,6 +237,169 @@ class AppTheme {
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
+    );
+  }
+
+  // Material 3 Navigation Bar Theme
+  static NavigationBarThemeData _buildNavigationBarTheme(
+    ColorScheme colorScheme,
+  ) {
+    return NavigationBarThemeData(
+      indicatorColor: colorScheme.primary,
+      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+        Set<WidgetState> states,
+      ) {
+        return AppTypography.labelMedium.copyWith(
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.bold
+              : FontWeight.normal,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
+        Set<WidgetState> states,
+      ) {
+        return IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.primary
+              : colorScheme.onSurface.withOpacity(0.60),
+        );
+      }),
+    );
+  }
+
+  // Material 3 Bottom Sheet Theme
+  static BottomSheetThemeData _buildBottomSheetTheme(ColorScheme colorScheme) {
+    return BottomSheetThemeData(
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: colorScheme.surfaceTint,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      elevation: 1,
+      modalBarrierColor: Colors.black.withOpacity(0.32),
+      dragHandleColor: colorScheme.onSurface.withOpacity(0.40),
+      dragHandleSize: const Size(32, 4),
+    );
+  }
+
+  // Material 3 Dialog Theme
+  static DialogThemeData _buildDialogTheme(ColorScheme colorScheme) {
+    return DialogThemeData(
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: colorScheme.surfaceTint,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      elevation: 6,
+      titleTextStyle: AppTypography.titleLarge.copyWith(
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.bold,
+      ),
+      contentTextStyle: AppTypography.bodyMedium.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  // Input Decoration Theme
+  static InputDecorationTheme _buildInputDecorationTheme(
+    ColorScheme colorScheme,
+  ) {
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      focusColor: colorScheme.primary,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colorScheme.outline),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colorScheme.error, width: 2),
+      ),
+      labelStyle: AppTypography.bodyMedium.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
+      hintStyle: AppTypography.bodyMedium.copyWith(
+        color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+      ),
+      errorStyle: AppTypography.bodySmall.copyWith(color: colorScheme.error),
+    );
+  }
+
+  // Scrollbar Theme for better accessibility
+  static ScrollbarThemeData _buildScrollbarTheme() {
+    return ScrollbarThemeData(
+      thickness: WidgetStateProperty.all<double>(6),
+      radius: const Radius.circular(3),
+      thumbVisibility: WidgetStateProperty.all<bool>(true),
+      trackVisibility: WidgetStateProperty.all<bool>(false),
+      interactive: true,
+    );
+  }
+
+  // Custom Theme Extensions
+  static ThemeExtension<_AppThemeExtensions> _buildThemeExtensions() {
+    return const _AppThemeExtensions(
+      successColor: Color(0xFF4CAF50),
+      warningColor: Color(0xFFFF9800),
+      infoColor: Color(0xFF2196F3),
+      premiumGradient: LinearGradient(
+        colors: [Color(0xFF795547), Color(0xFF5D4037)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+  }
+}
+
+// Theme Extension for custom design tokens
+class _AppThemeExtensions extends ThemeExtension<_AppThemeExtensions> {
+  const _AppThemeExtensions({
+    required this.successColor,
+    required this.warningColor,
+    required this.infoColor,
+    required this.premiumGradient,
+  });
+
+  final Color successColor;
+  final Color warningColor;
+  final Color infoColor;
+  final LinearGradient premiumGradient;
+
+  @override
+  ThemeExtension<_AppThemeExtensions> copyWith({
+    Color? successColor,
+    Color? warningColor,
+    Color? infoColor,
+    LinearGradient? premiumGradient,
+  }) {
+    return _AppThemeExtensions(
+      successColor: successColor ?? this.successColor,
+      warningColor: warningColor ?? this.warningColor,
+      infoColor: infoColor ?? this.infoColor,
+      premiumGradient: premiumGradient ?? this.premiumGradient,
+    );
+  }
+
+  @override
+  ThemeExtension<_AppThemeExtensions> lerp(
+    ThemeExtension<_AppThemeExtensions>? other,
+    double t,
+  ) {
+    if (other is! _AppThemeExtensions) return this;
+    return _AppThemeExtensions(
+      successColor: Color.lerp(successColor, other.successColor, t)!,
+      warningColor: Color.lerp(warningColor, other.warningColor, t)!,
+      infoColor: Color.lerp(infoColor, other.infoColor, t)!,
+      premiumGradient: premiumGradient,
     );
   }
 }
