@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../../core/providers/settings_provider.dart';
+import '../../../../core/widgets/placeholder_screen.dart';
+import '../../../khatma/presentation/screens/khatma_location_screen.dart';
+import '../../../quran/domain/entities/surah_entity.dart';
+import '../../../quran/presentation/screens/surah_details_screen.dart';
+import '../../../prayers/presentation/screens/prayer_times_screen.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/header_card_widget.dart';
+import '../widgets/current_wird_widget.dart';
 import '../widgets/daily_verse_section_widget.dart';
 import '../widgets/tab_switcher_widget.dart';
 import '../widgets/category_grid_widget.dart';
@@ -22,7 +30,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int selectedTabIndex = 0; // 0: جميع التصنيفات, 1: كل الوسائط, 2: أوقات الصلاة
-  int drawerSubTab = 0; // 0 للأعدادات، 1 للمفضلة
+  int drawerSubTab = 0; // 0 للمزيد، 1 للمفضلة
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -51,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const BouncingScrollPhysics(),
           slivers: [
             const SliverToBoxAdapter(child: HeaderCardWidget()),
+            const SliverToBoxAdapter(child: CurrentWirdWidget()),
             const SliverToBoxAdapter(child: DailyVerseSectionWidget()),
             SliverToBoxAdapter(
               child: TabSwitcherWidget(
@@ -160,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Row(
                   children: [
-                    _drawerTabItem('الاعدادات', 0),
+                    _drawerTabItem('المزيد', 0),
                     _drawerTabItem('المفضلة', 1),
                   ],
                 ),
@@ -336,26 +345,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBadge(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5A7B1E), // Greenish color matching design
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.cairo(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
   Widget _buildSettingsList() {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final settingsProvider = Provider.of<SettingsProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
     void showComingSoon() {
@@ -372,6 +364,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    void navigateTo(Widget screen) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    }
+
+    Future<void> launchMyUrl(String url) async {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        showComingSoon(); // Fallback
+      }
+    }
+
     final Color iconColor = Theme.of(context).colorScheme.primary;
 
     return ListView(
@@ -381,8 +386,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildSectionHeader('دعم التطبيق'),
         _buildMoreMenuItem(
           title: 'قم بدعم التطبيق',
-          trailingWidget: const Icon(Icons.favorite, color: Colors.red),
-          onTap: showComingSoon,
+          leadingIcon: const Icon(Icons.favorite, color: Colors.red),
+          onTap: () => launchMyUrl('https://example.com/donate'),
         ),
         const Divider(height: 1),
 
@@ -390,61 +395,20 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildSectionHeader('الختمة الحالية'),
         _buildMoreMenuItem(
           title: 'الأوراد السابقة',
-          trailingWidget: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildBadge('6'),
-              const SizedBox(width: 12),
-              Icon(Icons.keyboard_arrow_left, size: 24, color: iconColor),
-            ],
-          ),
-          onTap: showComingSoon,
+          leadingIcon: Icon(Icons.history, color: iconColor),
+          onTap: () =>
+              navigateTo(const PlaceholderScreen(title: 'الأوراد السابقة')),
         ),
         _buildMoreMenuItem(
           title: 'الأوراد القادمة',
-          trailingWidget: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildBadge('23'),
-              const SizedBox(width: 12),
-              Icon(Icons.keyboard_arrow_left, size: 24, color: iconColor),
-            ],
-          ),
-          onTap: showComingSoon,
+          leadingIcon: Icon(Icons.next_plan_outlined, color: iconColor),
+          onTap: () =>
+              navigateTo(const PlaceholderScreen(title: 'الأوراد القادمة')),
         ),
         _buildMoreMenuItem(
           title: 'الفاصل',
-          trailingWidget: Icon(Icons.bookmark, color: iconColor),
-          onTap: showComingSoon,
-        ),
-        const Divider(height: 1),
-
-        // 3. أقسام القرآن (From old settings)
-        _buildSectionHeader('أقسام القرآن'),
-        _buildMoreMenuItem(
-          title: 'التفسير',
-          leadingIcon: Icon(Icons.auto_stories, color: iconColor),
-          onTap: showComingSoon,
-        ),
-        _buildMoreMenuItem(
-          title: 'الأجزاء',
-          leadingIcon: Icon(Icons.menu_book, color: iconColor),
-          onTap: showComingSoon,
-        ),
-        _buildMoreMenuItem(
-          title: 'الأحزاب',
           leadingIcon: Icon(Icons.bookmark_border, color: iconColor),
-          onTap: showComingSoon,
-        ),
-        _buildMoreMenuItem(
-          title: 'السجدات',
-          leadingIcon: Icon(Icons.pan_tool_alt_outlined, color: iconColor),
-          onTap: showComingSoon,
-        ),
-        _buildMoreMenuItem(
-          title: 'الركوع',
-          leadingIcon: Icon(Icons.accessibility_new, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () => navigateTo(const PlaceholderScreen(title: 'الفاصل')),
         ),
         const Divider(height: 1),
 
@@ -453,17 +417,59 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'سورة الكهف',
           leadingIcon: Icon(Icons.book, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () {
+            navigateTo(
+              SurahDetailsScreen(
+                surahNumber: 18,
+                surah: SurahEntity(
+                  number: 18,
+                  name: 'سورة الكهف',
+                  englishName: 'Al-Kahf',
+                  englishNameTranslation: 'The Cave',
+                  revelationType: 'Meccan',
+                  totalAyah: 110,
+                ),
+              ),
+            );
+          },
         ),
         _buildMoreMenuItem(
           title: 'سورة الملك',
           leadingIcon: Icon(Icons.menu_book, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () {
+            navigateTo(
+              SurahDetailsScreen(
+                surahNumber: 67,
+                surah: SurahEntity(
+                  number: 67,
+                  name: 'سورة الملك',
+                  englishName: 'Al-Mulk',
+                  englishNameTranslation: 'The Sovereignty',
+                  revelationType: 'Meccan',
+                  totalAyah: 30,
+                ),
+              ),
+            );
+          },
         ),
         _buildMoreMenuItem(
           title: 'سورة البقرة',
           leadingIcon: Icon(Icons.auto_stories, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () {
+            navigateTo(
+              SurahDetailsScreen(
+                surahNumber: 2,
+                surah: SurahEntity(
+                  number: 2,
+                  name: 'سورة البقرة',
+                  englishName: 'Al-Baqarah',
+                  englishNameTranslation: 'The Cow',
+                  revelationType: 'Medinan',
+                  totalAyah: 286,
+                ),
+              ),
+            );
+          },
         ),
         const Divider(height: 1),
 
@@ -481,12 +487,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'المنبه اليومي',
           leadingIcon: Icon(Icons.notifications, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () =>
+              navigateTo(const PlaceholderScreen(title: 'المنبه اليومي')),
         ),
         _buildMoreMenuItem(
           title: 'بدء ختمة جديدة',
           leadingIcon: Icon(Icons.add, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () => navigateTo(const KhatmaLocationScreen()),
         ),
         const Divider(height: 1),
 
@@ -495,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'إعدادات مواقيت الصلاة',
           leadingIcon: Icon(Icons.mosque, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () => navigateTo(const PrayerTimesScreen()),
         ),
         _buildMoreMenuItem(
           title: 'اتجاه القبلة',
@@ -506,7 +513,8 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isDark ? Colors.white : null,
             errorBuilder: (c, e, s) => Icon(Icons.explore, color: iconColor),
           ),
-          onTap: showComingSoon,
+          onTap: () =>
+              navigateTo(const PlaceholderScreen(title: 'اتجاه القبلة')),
         ),
         const Divider(height: 1),
 
@@ -517,16 +525,16 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'وقت منبه أذكار الصباح',
           rightSubtitle: 'AM 07:00',
           leadingIcon: Icon(Icons.wb_sunny, color: iconColor),
-          value: false,
-          onChanged: (val) => showComingSoon(),
+          value: settingsProvider.isMorningAlarmEnabled,
+          onChanged: (val) => settingsProvider.toggleMorningAlarm(val),
         ),
         _buildMoreMenuSwitch(
           title: 'منبه أذكار المساء',
           subtitle: 'وقت منبه أذكار المساء',
           rightSubtitle: 'PM 05:30',
           leadingIcon: Icon(Icons.nightlight_round, color: iconColor),
-          value: false,
-          onChanged: (val) => showComingSoon(),
+          value: settingsProvider.isEveningAlarmEnabled,
+          onChanged: (val) => settingsProvider.toggleEveningAlarm(val),
         ),
         const Divider(height: 1),
 
@@ -537,16 +545,16 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'وقت منبه سورة الملك',
           rightSubtitle: 'PM 09:00',
           leadingIcon: Icon(Icons.notifications, color: iconColor),
-          value: false,
-          onChanged: (val) => showComingSoon(),
+          value: settingsProvider.isMulkAlarmEnabled,
+          onChanged: (val) => settingsProvider.toggleMulkAlarm(val),
         ),
         _buildMoreMenuSwitch(
           title: 'منبه سورة البقرة',
           subtitle: 'وقت منبه سورة البقرة',
           rightSubtitle: 'PM 08:30',
           leadingIcon: Icon(Icons.notifications, color: iconColor),
-          value: false,
-          onChanged: (val) => showComingSoon(),
+          value: settingsProvider.isBaqarahAlarmEnabled,
+          onChanged: (val) => settingsProvider.toggleBaqarahAlarm(val),
         ),
         const Divider(height: 1),
 
@@ -562,12 +570,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'اللغة',
           leadingIcon: Icon(Icons.settings, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () =>
+              navigateTo(const PlaceholderScreen(title: 'إعدادات اللغة')),
         ),
         _buildMoreMenuItem(
           title: 'الإتصال بنا',
           leadingIcon: Icon(Icons.info_outline, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () => launchMyUrl(
+            'mailto:contact@quranapp.com?subject=تطبيق ختمة - تواصل',
+          ),
         ),
         _buildMoreMenuItem(
           title: 'تابعنا على تويتر',
@@ -575,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Icons.flutter_dash,
             color: Colors.lightBlue,
           ), // Placeholder for Twitter
-          onTap: showComingSoon,
+          onTap: () => launchMyUrl('https://twitter.com/quranapp'),
         ),
         _buildMoreMenuItem(
           title: 'تابعنا على انستقرام',
@@ -583,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Icons.camera_alt,
             color: Colors.purple,
           ), // Placeholder for Instagram
-          onTap: showComingSoon,
+          onTap: () => launchMyUrl('https://instagram.com/quranapp'),
         ),
         _buildMoreMenuItem(
           title: 'انشر التطبيق',
@@ -597,7 +608,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'قيم تطبيق ختمة',
           leadingIcon: Icon(Icons.thumb_up_alt_outlined, color: iconColor),
-          onTap: showComingSoon,
+          onTap: () => launchMyUrl(
+            'https://play.google.com/store/apps/details?id=com.quranapp',
+          ),
         ),
       ],
     );
