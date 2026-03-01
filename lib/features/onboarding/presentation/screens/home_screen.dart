@@ -181,16 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- مكونات واجهة المستخدم المساعدة ---
 
-  Widget _drawerItem(String title, IconData icon, [VoidCallback? onTap]) =>
-      ListTile(
-        leading: Icon(icon, color: AppColors.primary),
-        title: Text(
-          title,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.w600),
-        ),
-        onTap: onTap,
-      );
-
   Widget _drawerTabItem(String label, int index) {
     bool active = drawerSubTab == index;
     return Expanded(
@@ -215,6 +205,155 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- Helper Widgets for the More (المزيد) Menu ---
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 8, right: 20, left: 20),
+      child: Text(
+        title,
+        style: GoogleFonts.cairo(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+          fontSize: 14,
+        ),
+        textAlign: TextAlign.right,
+      ),
+    );
+  }
+
+  Widget _buildMoreMenuItem({
+    required String title,
+    Widget? leadingIcon,
+    Widget? trailingWidget,
+    VoidCallback? onTap,
+    Color? textColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            if (leadingIcon != null) ...[
+              leadingIcon,
+              const SizedBox(width: 16),
+            ],
+            if (leadingIcon == null) const SizedBox(width: 40),
+
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.right,
+                style: GoogleFonts.cairo(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: textColor ?? Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            if (trailingWidget != null) ...[
+              const SizedBox(width: 16),
+              trailingWidget,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreMenuSwitch({
+    required String title,
+    required String subtitle,
+    required Widget leadingIcon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    String? rightSubtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          // Right Side: Icon
+          leadingIcon,
+          const SizedBox(width: 16),
+
+          // Middle: Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start, // start in RTL is right
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.cairo(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Left Side: Switch & Subtitle
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end, // end in RTL is left
+            children: [
+              SizedBox(
+                height: 30,
+                child: Switch(
+                  value: value,
+                  onChanged: onChanged,
+                  activeThumbColor: AppColors.primary,
+                ),
+              ),
+              if (rightSubtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  rightSubtitle,
+                  style: GoogleFonts.cairo(
+                    fontSize: 12,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF5A7B1E), // Greenish color matching design
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.cairo(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsList() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
@@ -231,41 +370,235 @@ class _HomeScreenState extends State<HomeScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-      Navigator.pop(context); // Close drawer after showing
     }
 
+    final Color iconColor = Theme.of(context).colorScheme.primary;
+
     return ListView(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.only(bottom: 20),
       children: [
-        _drawerItem('التفسير', Icons.auto_stories, showComingSoon),
-        _drawerItem('الأجزاء', Icons.menu_book, showComingSoon),
-        _drawerItem('الأحزاب', Icons.bookmark_border, showComingSoon),
-        _drawerItem('السجدات', Icons.pan_tool_alt_outlined, showComingSoon),
-        _drawerItem('الركوع', Icons.accessibility_new, showComingSoon),
-        const Divider(height: 30, indent: 20, endIndent: 20),
-        _drawerItem('الصفحة الرئيسية', Icons.home_outlined, () {
-          Navigator.pop(context);
-        }),
-        ListTile(
-          leading: const Icon(
-            Icons.dark_mode_outlined,
-            color: AppColors.primary,
-          ),
-          title: Text('تفعيل الوضع الليلي', style: GoogleFonts.cairo()),
-          trailing: Switch(
-            value: isDark,
-            activeThumbColor: AppColors.primary,
-            onChanged: (v) {
-              themeProvider.toggleTheme(v);
-            },
-          ),
+        // 1. دعم التطبيق
+        _buildSectionHeader('دعم التطبيق'),
+        _buildMoreMenuItem(
+          title: 'قم بدعم التطبيق',
+          trailingWidget: const Icon(Icons.favorite, color: Colors.red),
+          onTap: showComingSoon,
         ),
-        _drawerItem('مشاركة التطبيق', Icons.share_outlined, () {
-          Navigator.pop(context); // Close drawer before sharing
-          Share.share(
-            'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
-          );
-        }),
+        const Divider(height: 1),
+
+        // 2. الختمة الحالية
+        _buildSectionHeader('الختمة الحالية'),
+        _buildMoreMenuItem(
+          title: 'الأوراد السابقة',
+          trailingWidget: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBadge('6'),
+              const SizedBox(width: 12),
+              Icon(Icons.keyboard_arrow_left, size: 24, color: iconColor),
+            ],
+          ),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الأوراد القادمة',
+          trailingWidget: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBadge('23'),
+              const SizedBox(width: 12),
+              Icon(Icons.keyboard_arrow_left, size: 24, color: iconColor),
+            ],
+          ),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الفاصل',
+          trailingWidget: Icon(Icons.bookmark, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        const Divider(height: 1),
+
+        // 3. أقسام القرآن (From old settings)
+        _buildSectionHeader('أقسام القرآن'),
+        _buildMoreMenuItem(
+          title: 'التفسير',
+          leadingIcon: Icon(Icons.auto_stories, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الأجزاء',
+          leadingIcon: Icon(Icons.menu_book, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الأحزاب',
+          leadingIcon: Icon(Icons.bookmark_border, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'السجدات',
+          leadingIcon: Icon(Icons.pan_tool_alt_outlined, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الركوع',
+          leadingIcon: Icon(Icons.accessibility_new, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        const Divider(height: 1),
+
+        // 4. سنن قرآنية
+        _buildSectionHeader('سنن قرآنية'),
+        _buildMoreMenuItem(
+          title: 'سورة الكهف',
+          leadingIcon: Icon(Icons.book, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'سورة الملك',
+          leadingIcon: Icon(Icons.menu_book, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'سورة البقرة',
+          leadingIcon: Icon(Icons.auto_stories, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        const Divider(height: 1),
+
+        // 5. الإعدادات
+        _buildSectionHeader('الإعدادات'),
+        _buildMoreMenuSwitch(
+          title: 'تفعيل الوضع الليلي',
+          subtitle: 'تغيير مظهر التطبيق',
+          leadingIcon: Icon(Icons.dark_mode_outlined, color: iconColor),
+          value: isDark,
+          onChanged: (v) {
+            themeProvider.toggleTheme(v);
+          },
+        ),
+        _buildMoreMenuItem(
+          title: 'المنبه اليومي',
+          leadingIcon: Icon(Icons.notifications, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'بدء ختمة جديدة',
+          leadingIcon: Icon(Icons.add, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        const Divider(height: 1),
+
+        // 6. مواقيت الصلاة
+        _buildSectionHeader('مواقيت الصلاة'),
+        _buildMoreMenuItem(
+          title: 'إعدادات مواقيت الصلاة',
+          leadingIcon: Icon(Icons.mosque, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'اتجاه القبلة',
+          leadingIcon: Image.asset(
+            'assets/images/kaaba.png',
+            width: 24,
+            height: 24,
+            color: isDark ? Colors.white : null,
+            errorBuilder: (c, e, s) => Icon(Icons.explore, color: iconColor),
+          ),
+          onTap: showComingSoon,
+        ),
+        const Divider(height: 1),
+
+        // 7. منبهات الأذكار
+        _buildSectionHeader('منبهات الأذكار'),
+        _buildMoreMenuSwitch(
+          title: 'منبه أذكار الصباح',
+          subtitle: 'وقت منبه أذكار الصباح',
+          rightSubtitle: 'AM 07:00',
+          leadingIcon: Icon(Icons.wb_sunny, color: iconColor),
+          value: false,
+          onChanged: (val) => showComingSoon(),
+        ),
+        _buildMoreMenuSwitch(
+          title: 'منبه أذكار المساء',
+          subtitle: 'وقت منبه أذكار المساء',
+          rightSubtitle: 'PM 05:30',
+          leadingIcon: Icon(Icons.nightlight_round, color: iconColor),
+          value: false,
+          onChanged: (val) => showComingSoon(),
+        ),
+        const Divider(height: 1),
+
+        // 8. منبهات السنن
+        _buildSectionHeader('منبهات السنن'),
+        _buildMoreMenuSwitch(
+          title: 'منبه سورة الملك',
+          subtitle: 'وقت منبه سورة الملك',
+          rightSubtitle: 'PM 09:00',
+          leadingIcon: Icon(Icons.notifications, color: iconColor),
+          value: false,
+          onChanged: (val) => showComingSoon(),
+        ),
+        _buildMoreMenuSwitch(
+          title: 'منبه سورة البقرة',
+          subtitle: 'وقت منبه سورة البقرة',
+          rightSubtitle: 'PM 08:30',
+          leadingIcon: Icon(Icons.notifications, color: iconColor),
+          value: false,
+          onChanged: (val) => showComingSoon(),
+        ),
+        const Divider(height: 1),
+
+        // 9. تطبيق ختمة
+        _buildSectionHeader('تطبيق ختمة'),
+        _buildMoreMenuItem(
+          title: 'الصفحة الرئيسية',
+          leadingIcon: Icon(Icons.home_outlined, color: iconColor),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
+        _buildMoreMenuItem(
+          title: 'اللغة',
+          leadingIcon: Icon(Icons.settings, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'الإتصال بنا',
+          leadingIcon: Icon(Icons.info_outline, color: iconColor),
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'تابعنا على تويتر',
+          leadingIcon: const Icon(
+            Icons.flutter_dash,
+            color: Colors.lightBlue,
+          ), // Placeholder for Twitter
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'تابعنا على انستقرام',
+          leadingIcon: const Icon(
+            Icons.camera_alt,
+            color: Colors.purple,
+          ), // Placeholder for Instagram
+          onTap: showComingSoon,
+        ),
+        _buildMoreMenuItem(
+          title: 'انشر التطبيق',
+          leadingIcon: Icon(Icons.share, color: iconColor),
+          onTap: () {
+            Share.share(
+              'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
+            );
+          },
+        ),
+        _buildMoreMenuItem(
+          title: 'قيم تطبيق ختمة',
+          leadingIcon: Icon(Icons.thumb_up_alt_outlined, color: iconColor),
+          onTap: showComingSoon,
+        ),
       ],
     );
   }

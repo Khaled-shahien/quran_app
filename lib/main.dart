@@ -21,6 +21,7 @@ import 'features/duas/presentation/providers/azkar_provider.dart';
 import 'features/duas/data/repositories/duas_repository.dart';
 import 'features/duas/presentation/providers/duas_provider.dart';
 import 'features/onboarding/presentation/providers/favorites_provider.dart';
+import 'features/quran/presentation/providers/bookmark_provider.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized before any async operations
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
   late final AzkarProvider _azkarProvider;
   late final DuasRepository _duasRepository;
   late final DuasProvider _duasProvider;
+  late final BookmarkProvider _bookmarkProvider;
 
   MyApp({super.key, required this.prefs}) {
     // Initialize repositories once during construction (lazy initialization)
@@ -85,6 +87,8 @@ class MyApp extends StatelessWidget {
 
     _duasRepository = DuasRepositoryImpl();
     _duasProvider = DuasProvider(repository: _duasRepository)..loadDuas();
+
+    _bookmarkProvider = BookmarkProvider(prefs: prefs);
   }
 
   @override
@@ -113,6 +117,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ThemeProvider>.value(value: _themeProvider),
         ChangeNotifierProvider<AzkarProvider>.value(value: _azkarProvider),
         ChangeNotifierProvider<DuasProvider>.value(value: _duasProvider),
+        ChangeNotifierProvider<BookmarkProvider>.value(
+          value: _bookmarkProvider,
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

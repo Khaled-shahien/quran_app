@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
 import 'package:path/path.dart' as path;
 
-import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/surah_entity.dart';
+import '../providers/bookmark_provider.dart';
+import '../widgets/quran_settings_dialog.dart';
 
 class _SurahPageData {
   final List<String> verses;
@@ -43,7 +46,28 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _loadVerses();
+    _loadVerses().then((_) => _focusBookmarkedPage());
+  }
+
+  void _focusBookmarkedPage() {
+    final bookmarkProvider = Provider.of<BookmarkProvider>(
+      context,
+      listen: false,
+    );
+    if (!mounted) return;
+
+    // Auto jump if this is the bookmarked surah
+    if (bookmarkProvider.surahNumber == widget.surahNumber &&
+        bookmarkProvider.pageIndex != null &&
+        _surahPages.isNotEmpty) {
+      final int targetPage = bookmarkProvider.pageIndex!;
+      if (targetPage < _surahPages.length) {
+        setState(() {
+          _currentSurahPage = targetPage;
+        });
+        _pageController.jumpToPage(targetPage);
+      }
+    }
   }
 
   @override
@@ -129,7 +153,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         title: Column(
           children: [
             Text(
-              "سورة ${widget.surah.name}",
+              widget.surah.name, // widget.surah.name already contains "سورة"
               style: TextStyle(
                 fontSize: 18,
                 color: Theme.of(context).colorScheme.primary,
@@ -157,7 +181,12 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               Icons.settings,
               color: Theme.of(context).colorScheme.primary,
             ),
-            onPressed: () {},
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const QuranSettingsDialog(),
+              );
+            },
           ),
           IconButton(
             tooltip: 'حفظ العلامة',
@@ -165,7 +194,32 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               Icons.bookmark,
               color: Theme.of(context).colorScheme.primary,
             ),
-            onPressed: () {},
+            onPressed: () async {
+              final bookmarkProvider = Provider.of<BookmarkProvider>(
+                context,
+                listen: false,
+              );
+              await bookmarkProvider.saveBookmark(
+                surahNumber: widget.surahNumber,
+                surahName: widget.surah.name,
+                pageIndex: _currentSurahPage,
+              );
+
+              if (!context.mounted) return;
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'تم حفظ علامة القراءة بنجاح',
+                    style: TextStyle(fontFamily: 'Amiri', fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
           ),
         ],
         centerTitle: true,
@@ -181,9 +235,8 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               child: Text(
                 "بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.amiri(
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'Amiri',
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
@@ -197,8 +250,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Directionality(
-                textDirection:
-                    TextDirection.ltr, // Keep slider direction intuitive
+                textDirection: TextDirection.rtl, // Match reading direction
                 child: Slider(
                   value: _currentSurahPage.toDouble(),
                   min: 0,
@@ -258,7 +310,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       builder: (context, constraints) {
         return PageView.builder(
           controller: _pageController,
-          reverse: true, // Right to left swipe
+          reverse: false, // Right to left swipe (changed)
           itemCount: _surahPages.length,
           onPageChanged: (index) {
             setState(() {
@@ -282,12 +334,11 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                       child: RichText(
                         textAlign: TextAlign.justify,
                         text: TextSpan(
-                          style: TextStyle(
+                          style: GoogleFonts.amiri(
                             fontSize: 24,
                             color: textColor,
                             height: 1.8,
                             fontWeight: FontWeight.w500,
-                            fontFamily: 'Amiri',
                           ),
                           children: _buildVersesWithNumbers(pageData),
                         ),

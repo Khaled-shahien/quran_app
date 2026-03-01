@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:quran_app/features/quran/presentation/widgets/asma_item_card.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class AsmaAlHusnaScreen extends StatefulWidget {
   const AsmaAlHusnaScreen({super.key});

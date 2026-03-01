@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../providers/prayer_times_provider.dart';
 
 /// Prayer Times Screen

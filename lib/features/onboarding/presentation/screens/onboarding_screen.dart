@@ -27,6 +27,7 @@ class OnboardingScreen extends StatelessWidget {
                 'assets/images/بسم الله الرحمن الرحيم.png',
                 width: 350,
                 fit: BoxFit.contain,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
 
               const SizedBox(height: AppConstants.kPaddingLarge),
@@ -36,7 +37,7 @@ class OnboardingScreen extends StatelessWidget {
                 width: double.infinity,
                 height: screenSize.height * 0.38,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(
                     AppConstants.kBorderRadiusExtraLarge,
                   ),
