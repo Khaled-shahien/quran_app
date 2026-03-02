@@ -39,7 +39,7 @@ class _KhatmaLocationScreenState extends State<KhatmaLocationScreen> {
         ),
         centerTitle:
             false, // In RTL, this puts it to the left of the back button
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),

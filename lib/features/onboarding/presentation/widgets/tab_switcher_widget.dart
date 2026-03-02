@@ -24,8 +24,7 @@ class TabSwitcherWidget extends StatelessWidget {
       child: Row(
         children: [
           _tabButton(context, 'جميع التصنيفات', 0),
-          _tabButton(context, 'كل الوسائط', 1),
-          _tabButton(context, 'أوقات الصلاة', 2),
+          _tabButton(context, 'أوقات الصلاة', 1),
         ],
       ),
     );

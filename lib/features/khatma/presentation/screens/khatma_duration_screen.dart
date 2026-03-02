@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/placeholder_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/khatma_provider.dart';
+import '../../domain/models/khatma_model.dart';
 
 class KhatmaDurationScreen extends StatefulWidget {
   final String startMode;
@@ -69,7 +71,7 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
           ),
         ),
         centerTitle: false,
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -290,17 +292,36 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
 
               // Continue Button
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Save Khatma Plan here. For now navigate to a success / home page
-                  Navigator.pushAndRemoveUntil(
+                onPressed: () async {
+                  final provider = Provider.of<KhatmaProvider>(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const PlaceholderScreen(
-                        title: 'تم إنشاء الختمة بنجاح!',
-                      ),
-                    ),
-                    (route) => route.isFirst,
+                    listen: false,
                   );
+                  final newKhatma = KhatmaModel(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    startMode: widget.startMode,
+                    startJuz: widget.startJuz ?? 1,
+                    durationDays: _durationDays,
+                    amountType: _amountType,
+                    amountValue: _amountValue,
+                    startDate: DateTime.now(),
+                    currentJuz: widget.startJuz ?? 1,
+                  );
+
+                  await provider.startNewKhatma(newKhatma);
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'تم إنشاء الختمة بنجاح!',
+                          style: GoogleFonts.cairo(),
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

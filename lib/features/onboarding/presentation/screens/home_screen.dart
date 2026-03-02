@@ -17,7 +17,7 @@ import '../widgets/current_wird_widget.dart';
 import '../widgets/daily_verse_section_widget.dart';
 import '../widgets/tab_switcher_widget.dart';
 import '../widgets/category_grid_widget.dart';
-import '../widgets/media_tiles_widget.dart';
+import 'media_screen.dart';
 import '../widgets/prayer_times_widget.dart';
 import '../../../prayers/presentation/providers/prayer_times_performance_provider.dart';
 
@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int selectedTabIndex = 0; // 0: جميع التصنيفات, 1: كل الوسائط, 2: أوقات الصلاة
+  int selectedTabIndex = 0; // 0: جميع التصنيفات, 1: أوقات الصلاة
   int drawerSubTab = 0; // 0 للمزيد، 1 للمفضلة
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -412,6 +412,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const Divider(height: 1),
 
+        // 3. كل الوسائط
+        _buildSectionHeader('المكتبة'),
+        _buildMoreMenuItem(
+          title: 'كل الوسائط',
+          leadingIcon: Icon(Icons.video_library, color: iconColor),
+          onTap: () => navigateTo(const MediaScreen()),
+        ),
+        const Divider(height: 1),
+
         // 4. سنن قرآنية
         _buildSectionHeader('سنن قرآنية'),
         _buildMoreMenuItem(
@@ -711,8 +720,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDynamicContent() {
     if (selectedTabIndex == 0) {
       return const CategoryGridWidget();
-    } else if (selectedTabIndex == 1) {
-      return const MediaTilesWidget();
     } else {
       return const SliverToBoxAdapter(child: PrayerTimesWidget());
     }

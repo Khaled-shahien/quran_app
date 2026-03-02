@@ -23,6 +23,8 @@ import 'features/duas/presentation/providers/duas_provider.dart';
 import 'features/onboarding/presentation/providers/favorites_provider.dart';
 import 'features/quran/presentation/providers/bookmark_provider.dart';
 import 'core/providers/settings_provider.dart';
+import 'features/khatma/data/repositories/khatma_repository.dart';
+import 'features/khatma/presentation/providers/khatma_provider.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized before any async operations
@@ -53,6 +55,8 @@ class MyApp extends StatelessWidget {
   late final DuasProvider _duasProvider;
   late final BookmarkProvider _bookmarkProvider;
   late final SettingsProvider _settingsProvider;
+  late final KhatmaRepository _khatmaRepository;
+  late final KhatmaProvider _khatmaProvider;
 
   MyApp({super.key, required this.prefs}) {
     // Initialize repositories once during construction (lazy initialization)
@@ -92,6 +96,9 @@ class MyApp extends StatelessWidget {
 
     _bookmarkProvider = BookmarkProvider(prefs: prefs);
     _settingsProvider = SettingsProvider(prefs: prefs);
+
+    _khatmaRepository = KhatmaRepository(prefs: prefs);
+    _khatmaProvider = KhatmaProvider(repository: _khatmaRepository);
   }
 
   @override
@@ -105,6 +112,7 @@ class MyApp extends StatelessWidget {
         Provider<PrayerTimesRepository>.value(value: _prayerTimesRepository),
         Provider<SurahRepository>.value(value: _surahRepository),
         Provider<HadeathRepository>.value(value: _hadeathRepository),
+        Provider<KhatmaRepository>.value(value: _khatmaRepository),
 
         // Provide providers as values (pre-initialized)
         ChangeNotifierProvider<PrayerTimesProvider>.value(
@@ -126,6 +134,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<SettingsProvider>.value(
           value: _settingsProvider,
         ),
+        ChangeNotifierProvider<KhatmaProvider>.value(value: _khatmaProvider),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

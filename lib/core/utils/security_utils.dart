@@ -1,6 +1,7 @@
 import 'package:logger/logger.dart';
+import 'dart:convert';
 
-/// Enhanced Security and Error Handling Utilities
+/// Configuration for security settingsd Error Handling Utilities
 ///
 /// Provides comprehensive security features including:
 /// - Input validation and sanitization
@@ -46,7 +47,8 @@ class SecurityUtils {
       _logSecurityEvent(
         'InputSanitization',
         'Potentially unsafe input detected and sanitized',
-        {'original': input, 'sanitized': sanitized},
+        data: {'original': input, 'sanitized': sanitized},
+        level: Level.warning,
       );
     }
 
@@ -204,53 +206,100 @@ class SecurityUtils {
     Object? data,
     Level level = Level.info,
     bool maskSensitive = true,
+    Object? error,
+    StackTrace? stackTrace,
   }) {
+    if (!SecurityConfig.enableSecureLogging) return;
+
     // Filter sensitive data
     Object? filteredData = data;
     if (maskSensitive && data != null) {
       filteredData = _maskSensitiveData(data);
     }
 
-    switch (level) {
-      case Level.verbose:
-        _logger.v(message, error: filteredData);
-        break;
-      case Level.debug:
-        _logger.d(message, error: filteredData);
-        break;
-      case Level.info:
-        _logger.i(message, error: filteredData);
-        break;
-      case Level.warning:
-        _logger.w(message, error: filteredData);
-        break;
-      case Level.error:
-        _logger.e(message, error: filteredData);
-        break;
-      case Level.wtf:
-        _logger.wtf(message, error: filteredData);
-        break;
-      default:
-        _logger.i(message, error: filteredData);
-        break;
+    try {
+      switch (level) {
+        case Level.trace:
+          _logger.t(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        case Level.debug:
+          _logger.d(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        case Level.info:
+          _logger.i(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        case Level.warning:
+          _logger.w(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        case Level.error:
+          _logger.e(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        case Level.fatal:
+          _logger.f(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+        default:
+          _logger.i(
+            message,
+            error: error ?? filteredData,
+            stackTrace: stackTrace,
+          );
+          break;
+      }
+    } catch (e) {
+      // Fallback for logging errors within the logger itself
+      // ignore: avoid_print
+      print('Error writing to secure log: $e');
     }
   }
 
   /// Log security events
   static void _logSecurityEvent(
     String eventType,
-    String description,
-    Map<String, dynamic> details,
-  ) {
-    final event = {
+    String description, {
+    Map<String, dynamic>? data,
+    Level level = Level.warning, // Security events are often warnings or errors
+    bool maskSensitive = true,
+  }) {
+    if (!SecurityConfig.enableSecureLogging) return;
+
+    final eventDetails = {
       'timestamp': DateTime.now().toIso8601String(),
       'eventType': eventType,
       'description': description,
-      'details': details,
+      if (data != null) 'data': data,
       'sessionId': _generateSessionId(),
     };
 
-    _logger.w('SECURITY_EVENT: $eventType', error: event);
+    logSecure(
+      'Security Event: $eventType',
+      data: eventDetails,
+      level: level,
+      maskSensitive: maskSensitive,
+    );
   }
 
   /// Generate secure session ID
@@ -299,7 +348,7 @@ class SecurityUtils {
       _logSecurityEvent(
         'DangerousHttpResponse',
         'Server error response received',
-        {'statusCode': statusCode, 'headers': headers},
+        data: {'statusCode': statusCode, 'headers': headers},
       );
       return false;
     }
@@ -312,7 +361,7 @@ class SecurityUtils {
       _logSecurityEvent(
         'DangerousContentType',
         'Potentially dangerous content type detected',
-        {'contentType': contentType},
+        data: {'contentType': contentType},
       );
       return false;
     }
@@ -322,21 +371,20 @@ class SecurityUtils {
 
   /// Safe JSON parsing with error handling
   static Map<String, dynamic>? safeJsonParse(String jsonString) {
-    try {
-      // Basic JSON validation
-      if (jsonString.trim().isEmpty ||
-          !jsonString.startsWith('{') && !jsonString.startsWith('[')) {
-        throw const FormatException('Invalid JSON format');
-      }
+    if (jsonString.trim().isEmpty) return null;
 
-      // In a real implementation, you'd use dart:convert
-      // This is a simplified version for demonstration
-      return {'parsed': true, 'data': jsonString};
+    try {
+      final parsed = jsonDecode(jsonString);
+      if (parsed is Map<String, dynamic>) {
+        return parsed;
+      }
+      return {'data': parsed};
     } catch (e) {
-      _logSecurityEvent('JsonParseError', 'Failed to parse JSON data', {
-        'error': e.toString(),
-        'data': jsonString.substring(0, 50),
-      });
+      logSecure(
+        'Failed to parse JSON string',
+        level: Level.error,
+        data: {'error': e.toString()},
+      );
       return null;
     }
   }
@@ -348,7 +396,7 @@ class SecurityUtils {
       _logSecurityEvent(
         'InvalidApiResponse',
         'Missing required response fields',
-        {'response': response.keys.toList()},
+        data: {'response_keys': response.keys.toList()},
       );
       return false;
     }
@@ -356,9 +404,11 @@ class SecurityUtils {
     // Validate status codes
     final code = response['code'];
     if (code is! int || code < 100 || code > 599) {
-      _logSecurityEvent('InvalidApiResponse', 'Invalid response code', {
-        'code': code,
-      });
+      _logSecurityEvent(
+        'InvalidApiResponse',
+        'Invalid response code',
+        data: {'code': code},
+      );
       return false;
     }
 

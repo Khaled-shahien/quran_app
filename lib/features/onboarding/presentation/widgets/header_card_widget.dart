@@ -20,13 +20,11 @@ class HeaderCardWidget extends StatelessWidget {
           margin: const EdgeInsets.all(16),
           height: 160,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondary,
+            color: Theme.of(context).colorScheme.primary.withAlpha(20),
             borderRadius: BorderRadius.circular(25),
-            image: const DecorationImage(
-              image: NetworkImage(
-                'https://i.imgur.com/your_asset.png',
-              ), // صورة المصحف والسبحة
-              alignment: Alignment.centerLeft,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withAlpha(50),
+              width: 1,
             ),
           ),
           child: Padding(
