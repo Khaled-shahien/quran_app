@@ -609,8 +609,11 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'انشر التطبيق',
           leadingIcon: Icon(Icons.share, color: iconColor),
           onTap: () {
-            Share.share(
-              'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
+            SharePlus.instance.share(
+              ShareParams(
+                text:
+                    'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
+              ),
             );
           },
         ),

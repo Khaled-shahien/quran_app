@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/notification_service.dart';
@@ -26,26 +28,111 @@ import 'features/duas/presentation/providers/duas_provider.dart';
 import 'features/onboarding/presentation/providers/favorites_provider.dart';
 import 'features/quran/presentation/providers/bookmark_provider.dart';
 import 'core/providers/settings_provider.dart';
+import 'core/services/workmanager_service.dart';
 import 'features/khatma/data/repositories/khatma_repository.dart';
 import 'features/khatma/presentation/providers/khatma_provider.dart';
+import 'features/onboarding/presentation/screens/home_screen.dart';
+import 'features/prayers/presentation/screens/prayer_times_screen.dart';
+import 'features/quran/presentation/screens/quran_screen.dart';
+import 'features/duas/presentation/screens/azkar_screen.dart';
+import 'features/duas/presentation/screens/azkar_details_screen.dart';
+
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+void _handleNotificationNavigation(String route, Map<String, dynamic>? data) {
+  final navigator = appNavigatorKey.currentState;
+  if (navigator == null) return;
+
+  switch (route) {
+    case '/duas':
+      final String? dhikrType = data?['type']?.toString();
+      if (dhikrType == 'morning') {
+        navigator.push(
+          MaterialPageRoute(
+            builder: (context) =>
+                const AzkarDetailsScreen(categoryName: 'أذكار الصباح'),
+          ),
+        );
+      } else if (dhikrType == 'evening') {
+        navigator.push(
+          MaterialPageRoute(
+            builder: (context) =>
+                const AzkarDetailsScreen(categoryName: 'أذكار المساء'),
+          ),
+        );
+      } else {
+        navigator.push(
+          MaterialPageRoute(builder: (context) => const AzkarScreen()),
+        );
+      }
+      break;
+    case '/quran':
+      navigator.push(
+        MaterialPageRoute(builder: (context) => const QuranScreen()),
+      );
+      break;
+    case '/prayers':
+      navigator.push(
+        MaterialPageRoute(builder: (context) => const PrayerTimesScreen()),
+      );
+      break;
+    case '/':
+    default:
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+      break;
+  }
+}
 
 void main() async {
   // Ensure Flutter binding is initialized before any async operations
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize SharedPreferences asynchronously
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  try {
+    // Initialize Firebase Core FIRST (required before any Firebase services)
+    await Firebase.initializeApp();
+    debugPrint('✅ Firebase Core initialized successfully');
 
-  // Initialize notification service
-  final NotificationService notificationService = NotificationService();
-  await notificationService.initialize();
+    // Initialize SharedPreferences (fast operation)
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // Run the app with initialized dependencies
-  runApp(MyApp(prefs: prefs));
+    // Initialize local notifications (non-blocking with timeout)
+    final NotificationService notificationService = NotificationService();
+    await notificationService
+        .initialize()
+        .timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {
+            debugPrint(
+              '⚠️ Notification initialization timeout - continuing anyway',
+            );
+          },
+        )
+        .catchError((error) {
+          debugPrint('❌ Notification initialization error: $error');
+        });
+
+    // Initialize background task scheduler for boot/update alarm recovery.
+    final WorkManagerService workManagerService = WorkManagerService();
+    await workManagerService.initialize();
+    await workManagerService.registerBootRescheduleTask();
+
+    // Run app immediately
+    runApp(MyApp(prefs: prefs));
+  } catch (e) {
+    debugPrint('❌ Critical error in main: $e');
+    // Try to run app anyway with minimal initialization
+    SharedPreferences.getInstance().then((prefs) {
+      runApp(MyApp(prefs: prefs));
+    });
+  }
 }
 
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
+  final bool initializeNotifications;
 
   // Cache repositories to prevent recreation
   late final PrayerTimesRepository _prayerTimesRepository;
@@ -66,7 +153,7 @@ class MyApp extends StatelessWidget {
   late final KhatmaProvider _khatmaProvider;
   late final NotificationProvider _notificationProvider;
 
-  MyApp({super.key, required this.prefs}) {
+  MyApp({super.key, required this.prefs, this.initializeNotifications = true}) {
     // Initialize repositories once during construction (lazy initialization)
     _prayerTimesRepository = PrayerTimesRepositoryImpl(
       apiService: PrayerTimesApiService(),
@@ -108,8 +195,13 @@ class MyApp extends StatelessWidget {
     _khatmaRepository = KhatmaRepository(prefs: prefs);
     _khatmaProvider = KhatmaProvider(repository: _khatmaRepository);
 
-    // Initialize notification provider
+    // Initialize notification provider globally at app startup.
     _notificationProvider = NotificationProvider(prefs: prefs);
+    if (initializeNotifications) {
+      unawaited(_notificationProvider.initialize());
+    }
+
+    NotificationRouter.setNavigationCallback(_handleNotificationNavigation);
   }
 
   @override
@@ -153,6 +245,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
+            navigatorKey: appNavigatorKey,
             debugShowCheckedModeBanner: false,
             title: 'Quran App',
             theme: AppTheme.lightTheme,
@@ -161,12 +254,6 @@ class MyApp extends StatelessWidget {
             locale: const Locale('ar', 'SA'), // Set default locale to Arabic
             home: const OnboardingScreen(),
             builder: (context, child) {
-              // Set up notification router for navigation
-              NotificationRouter.setNavigationCallback((route, data) {
-                debugPrint('🧭 Navigation requested: $route');
-                // Navigation will be handled when app is fully initialized
-              });
-
               return Directionality(
                 textDirection: TextDirection.rtl, // Right-to-left for Arabic
                 child: child!,

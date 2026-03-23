@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import '../navigation/notification_router.dart';
 import 'notification_service.dart';
 
 /// Background message handler - MUST be a top-level function
@@ -9,11 +10,6 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Ensure Firebase is initialized
   await Firebase.initializeApp();
 
-  debugPrint('Handling background message: ${message.messageId}');
-  debugPrint('Title: ${message.notification?.title}');
-  debugPrint('Body: ${message.notification?.body}');
-  debugPrint('Data: ${message.data}');
-
   // Show notification even when app is in background
   final NotificationService notificationService = NotificationService();
   await notificationService.showNotification(
@@ -21,6 +17,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     title: message.notification?.title ?? 'Notification',
     body: message.notification?.body ?? '',
     payload: message.data['type'] ?? 'general',
+    payloadData: Map<String, dynamic>.from(message.data),
   );
 }
 
@@ -40,7 +37,7 @@ class FirebaseMessagingService {
   factory FirebaseMessagingService() => _instance;
   FirebaseMessagingService._internal();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
   bool _isInitialized = false;
 
   // Callbacks for notification interactions
@@ -121,13 +118,11 @@ class FirebaseMessagingService {
   Future<void> _setupMessageHandlers() async {
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Foreground message received: ${message.messageId}');
       _handleForegroundMessage(message);
     });
 
     // Handle notification taps when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('Notification tapped from background: ${message.messageId}');
       _handleNotificationTap(message);
     });
 
@@ -142,8 +137,6 @@ class FirebaseMessagingService {
 
   /// Handle foreground message
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('📱 Handling foreground message');
-
     // Show local notification for foreground message
     final NotificationService notificationService = NotificationService();
     notificationService.showNotification(
@@ -151,31 +144,26 @@ class FirebaseMessagingService {
       title: message.notification?.title ?? 'New Notification',
       body: message.notification?.body ?? '',
       payload: message.data['type'] ?? 'general',
+      payloadData: Map<String, dynamic>.from(message.data),
     );
   }
 
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('🔔 Notification tapped');
-    debugPrint('Type: ${message.data['type']}');
-    debugPrint('Data: ${message.data}');
-
     final String type = message.data['type'] ?? 'general';
+    final Map<String, dynamic> data = Map<String, dynamic>.from(message.data);
 
-    // TODO: Add navigation logic here based on notification type
-    // For now, just log the tap
-    debugPrint('Notification tapped - Type: $type');
+    NotificationRouter.handleNotification(type: type, data: data);
 
     // Call callback if provided
     if (onNotificationTap != null) {
-      onNotificationTap!(type, message.data);
+      onNotificationTap!(type, data);
     }
   }
 
   /// Update token in backend (placeholder)
   void _updateTokenInBackend(String token) {
-    // TODO: Send token to your backend server
-    // This allows you to send push notifications to this specific device
+    // Intentionally left as a hook for optional backend token registration.
     debugPrint('Token to be sent to backend: $token');
   }
 

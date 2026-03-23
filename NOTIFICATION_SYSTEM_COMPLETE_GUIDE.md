@@ -1,5 +1,7 @@
 # Complete Notification System Implementation Guide
 
+> Status note (March 23, 2026): This guide includes historical implementation details. For currently verified behavior and gaps, see `PROJECT_STATUS.md`.
+
 ## 📋 Overview
 
 This guide covers the complete implementation of a production-ready notification system for the Quran App, including:

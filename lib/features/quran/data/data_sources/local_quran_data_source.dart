@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import '../../../../core/errors/api_exception.dart';
@@ -70,7 +71,7 @@ class LocalQuranDataSource {
           allAyahs[surahNumber] = ayahs;
         } catch (e) {
           // Continue processing other Surahs even if one fails
-          print('Warning: Could not load verses for Surah $surahNumber: $e');
+          debugPrint('Warning: Could not load verses for Surah $surahNumber: $e');
         }
       }
 

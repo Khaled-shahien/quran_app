@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Navigation callback type
 typedef NavigationCallback =
     void Function(String route, Map<String, dynamic>? data);
@@ -20,8 +18,6 @@ class NotificationRouter {
     required String type,
     Map<String, dynamic>? data,
   }) {
-    debugPrint('🧭 NotificationRouter: Handling notification type: $type');
-
     switch (type) {
       case 'morning_adhkar':
         _navigateToDuas('morning', data);
@@ -47,7 +43,6 @@ class NotificationRouter {
 
   /// Navigate to Duas screen
   static void _navigateToDuas(String dhikrType, Map<String, dynamic>? data) {
-    debugPrint('📖 Navigating to Duas: $dhikrType');
     if (_onNavigate != null) {
       _onNavigate!('/duas', {'type': dhikrType, ...?data});
     }
@@ -55,7 +50,6 @@ class NotificationRouter {
 
   /// Navigate to specific Surah
   static void _navigateToSurah(int surahNumber, Map<String, dynamic>? data) {
-    debugPrint('📖 Navigating to Surah: $surahNumber');
     if (_onNavigate != null) {
       _onNavigate!('/quran', {'surahNumber': surahNumber, ...?data});
     }
@@ -63,7 +57,6 @@ class NotificationRouter {
 
   /// Navigate to Prayer Times
   static void _navigateToPrayerTimes(Map<String, dynamic>? data) {
-    debugPrint('🕌 Navigating to Prayer Times');
     if (_onNavigate != null) {
       _onNavigate!('/prayers', data);
     }
@@ -71,7 +64,6 @@ class NotificationRouter {
 
   /// Navigate to Home
   static void _navigateToHome(Map<String, dynamic>? data) {
-    debugPrint('🏠 Navigating to Home');
     if (_onNavigate != null) {
       _onNavigate!('/', data);
     }

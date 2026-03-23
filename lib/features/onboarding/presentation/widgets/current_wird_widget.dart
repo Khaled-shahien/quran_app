@@ -94,7 +94,7 @@ class CurrentWirdWidget extends StatelessWidget {
 
                         // Arabic Verse Text
                         Text(
-                          'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', // TODO: Fetch actual starting verse
+                          'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
                           style: GoogleFonts.amiri(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -191,7 +191,6 @@ class CurrentWirdWidget extends StatelessWidget {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // Navigation to exact Ayah/Juz
-                                  final juzToRead = activeKhatma.currentJuz;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(

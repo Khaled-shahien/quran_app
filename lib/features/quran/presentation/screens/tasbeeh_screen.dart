@@ -104,6 +104,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                                   phrase['count'] >= phrase['target'];
 
                               return _tasbeehRow(
+                                itemKey: phrase,
                                 index: index,
                                 title: phrase['text'],
                                 counter: phrase['count'].toString(),
@@ -371,6 +372,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
   }
 
   Widget _tasbeehRow({
+    required Object itemKey,
     required int index,
     required String title,
     required String counter,
@@ -378,7 +380,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
     required bool isSelected,
   }) {
     return Dismissible(
-      key: Key('tasbeeh_$index'),
+      key: ObjectKey(itemKey),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
         // Step 1: Capture the item and its index before removing it

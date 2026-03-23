@@ -29,22 +29,48 @@ class NotificationProvider extends ChangeNotifier {
     if (_isInitialized) return;
 
     try {
+      // Initialize local notifications first (fast)
       await _notificationService.initialize();
-      await _fcmService.initialize();
 
-      // Get FCM token
-      _fcmToken = await _fcmService.getToken();
-
-      // Check permission status
-      await _checkPermissionStatus();
+      // Initialize Firebase in background (non-blocking)
+      _initializeFirebaseInBackground();
 
       _isInitialized = true;
       _addLog('Notification services initialized');
       notifyListeners();
     } catch (e) {
       _addLog('Error initializing: $e');
-      rethrow;
+      // Don't rethrow - allow app to continue even if init fails
     }
+  }
+
+  /// Initialize Firebase asynchronously without blocking UI
+  void _initializeFirebaseInBackground() {
+    Future.microtask(() async {
+      try {
+        // Firebase Core is already initialized in main.dart
+        await _fcmService
+            .initialize()
+            .timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => debugPrint('⚠️ Firebase Messaging init timeout'),
+            )
+            .catchError((e) => debugPrint('❌ Firebase Messaging error: $e'));
+
+        // Get FCM token after initialization
+        _fcmToken = await _fcmService.getToken();
+        if (_fcmToken != null) {
+          _addLog('FCM Token obtained');
+        }
+
+        // Check permission status
+        await _checkPermissionStatus();
+
+        notifyListeners();
+      } catch (e) {
+        _addLog('Background Firebase Messaging init error: $e');
+      }
+    });
   }
 
   /// Check notification permissions
@@ -112,6 +138,35 @@ class NotificationProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _addLog('Error scheduling delayed notification: $e');
+      rethrow;
+    }
+  }
+
+  /// Schedule test notification after exactly 5 minutes (for testing)
+  Future<void> scheduleTestAlarmAfter5Minutes({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      final now = DateTime.now();
+      final scheduledTime = now.add(const Duration(minutes: 5));
+
+      // Use scheduleDailyNotification but ensure it's more than 2 minutes away
+      await _notificationService.scheduleDailyNotification(
+        id: id,
+        title: title,
+        body: body,
+        hour: scheduledTime.hour,
+        minute: scheduledTime.minute,
+      );
+
+      _addLog(
+        'Test alarm scheduled for ${scheduledTime.toString()} (in 5 minutes)',
+      );
+      notifyListeners();
+    } catch (e) {
+      _addLog('Error scheduling test alarm: $e');
       rethrow;
     }
   }

@@ -243,20 +243,4 @@ class SurahRepositoryImpl implements SurahRepository {
     }
   }
 
-  /// Get cached Surahs even if expired (fallback for network errors)
-  Future<List<SurahModel>?> _getExpiredCachedSurahs() async {
-    try {
-      final jsonString = _prefs.getString(_surahsCacheKey);
-      if (jsonString == null) return null;
-
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      final surahs = jsonList
-          .map((json) => SurahModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return surahs;
-    } catch (e) {
-      return null;
-    }
-  }
 }

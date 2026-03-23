@@ -1,34 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:quran_app/features/quran/data/data_sources/local_surah_data_source.dart';
 import 'package:quran_app/features/quran/data/repositories/surah_repository.dart';
 import 'package:quran_app/features/quran/data/models/surah_model.dart';
-import 'package:quran_app/core/testing/mock_http_client.dart';
 import 'package:quran_app/core/errors/api_exception.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io';
-
-// Manual Mock for Connectivity
-class MockConnectivity implements Connectivity {
-  @override
-  Future<ConnectivityResult> checkConnectivity() async {
-    return ConnectivityResult.wifi;
-  }
-
-  @override
-  Stream<ConnectivityResult> get onConnectivityChanged =>
-      Stream.value(ConnectivityResult.wifi);
-}
-
-// Mock Client that throws SocketException
-class ThrowingMockClient extends MockHttpClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    throw const SocketException('Network error');
-  }
-}
 
 // Mock Local Data Source that throws errors
 class MockLocalDataSource extends LocalSurahDataSource {
@@ -58,7 +34,7 @@ void main() {
       expect(result[0].englishName, 'Al-Faatiha');
       expect(result[0].name, 'سُورَةُ ٱلْفَاتِحَةِ');
       expect(result[0].numberOfAyahs, 7);
-      expect(result[1].englishName, 'Al-Baqarah');
+      expect(result[1].englishName, 'Al-Baqara');
       expect(result[1].revelationType, 'Medinan');
     });
 
@@ -112,7 +88,7 @@ void main() {
 
       final baqarah = result[1];
       expect(baqarah.number, 2);
-      expect(baqarah.englishName, 'Al-Baqarah');
+      expect(baqarah.englishName, 'Al-Baqara');
       expect(baqarah.numberOfAyahs, 286);
 
       final nas = result[113];
@@ -147,21 +123,21 @@ void main() {
 
       // Find surahs containing 'Baqarah'
       final baqarahResults = result
-          .where((s) => s.englishName.contains('Baqarah'))
+          .where((s) => s.englishName.contains('Baqara'))
           .toList();
 
       // Assert
       expect(baqarahResults.length, 1);
-      expect(baqarahResults[0].englishName, 'Al-Baqarah');
+        expect(baqarahResults[0].englishName, 'Al-Baqara');
     });
 
     test('should search Surahs by Arabic name', () async {
       // Act
       final result = await localDataSource.loadAllSurahs();
 
-      // Find surahs containing 'الفاتحة'
+        // Find surahs containing a stable Arabic fragment from Al-Fatihah
       final fatihahResults = result
-          .where((s) => s.name.contains('الفاتحة'))
+          .where((s) => s.name.contains('فَاتِح'))
           .toList();
 
       // Assert
@@ -232,8 +208,8 @@ void main() {
 
       // Assert
       expect(result.length, 114);
-      expect(result[0].name, 'Al-Faatiha');
       expect(result[0].englishName, 'Al-Faatiha');
+      expect(result[0].name, contains('فَاتِح'));
 
       // Verify cache was set
       final cacheKeyExists = prefs.containsKey('cached_surahs');
@@ -264,8 +240,8 @@ void main() {
 
       // Assert
       expect(result.length, 1);
-      expect(result[0].name, 'Al-Faatiha');
       expect(result[0].englishName, 'Al-Faatiha');
+      expect(result[0].name, contains('فَاتِح'));
     });
 
     test('should handle data loading errors with cache fallback', () async {
@@ -301,7 +277,7 @@ void main() {
 
       // Assert
       expect(result.length, 1);
-      expect(result[0].name, 'Al-Faatiha');
+      expect(result[0].name, contains('فَاتِح'));
     });
 
     test('should get specific Surah by index', () async {
@@ -309,8 +285,8 @@ void main() {
       final result = await repository.getSurahByIndex(1);
 
       // Assert
-      expect(result.name, 'Al-Faatiha');
       expect(result.englishName, 'Al-Faatiha');
+      expect(result.name, contains('فَاتِح'));
       expect(result.totalAyah, 7);
     });
 

@@ -2,6 +2,8 @@
 
 A beautiful, performant, and accessible Flutter application designed to provide a premium experience for reading the Holy Quran, viewing prayer times, and learning the Asma-ul-Husna (Names of Allah). Built completely with Clean Architecture and Feature-First principles.
 
+Current delivery/verification state is tracked in `PROJECT_STATUS.md`.
+
 ## 🌟 Features
 * **Interactive Quran Reader:** Read the Holy Quran with a traditional Mushaf feel. Smooth right-to-left horizontal pagination with auto-scaling verses.
 * **Prayer Times:** Accurate prayer time calculations fetched cleanly with local caching integration.

@@ -1,5 +1,7 @@
 # 🎉 Notification System Implementation - COMPLETE
 
+> Status note (March 23, 2026): This is a historical implementation log. For current validated status and remaining work, see `PROJECT_STATUS.md`.
+
 ## ✅ Implementation Summary
 
 **Status:** **PRODUCTION READY**  

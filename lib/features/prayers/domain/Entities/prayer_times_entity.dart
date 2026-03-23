@@ -82,8 +82,9 @@ class PrayerTimesEntity {
 
       if (hour == 0) {
         hour = 12;
-      } else if (hour > 12)
+      } else if (hour > 12) {
         hour -= 12;
+      }
 
       final String hourStr = hour.toString().padLeft(2, '0');
       final String minuteStr = minute.toString().padLeft(2, '0');

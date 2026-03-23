@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../navigation/notification_router.dart';
 
 /// Notification Service for managing alarms and notifications
 ///
@@ -46,44 +49,54 @@ class NotificationService {
   static const int _defaultBaqarahMinute = 30;
 
   bool _isInitialized = false;
+  bool _isPluginAvailable = true;
 
   /// Initialize the notification service
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Initialize timezone
-    tz.initializeTimeZones();
+    try {
+      // Initialize timezone
+      tz.initializeTimeZones();
 
-    // Android initialization settings
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+      // Android initialization settings
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS initialization settings
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
+      // iOS initialization settings
+      const DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings(
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          );
 
-    // Combined initialization settings
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+      // Combined initialization settings
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsIOS,
+          );
 
-    // Initialize the plugin
-    await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
+      // Initialize the plugin
+      await flutterLocalNotificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
 
-    // Request permissions
-    await _requestPermissions();
-
-    _isInitialized = true;
-    debugPrint('Notification Service initialized successfully');
+      // Request permissions
+      await _requestPermissions();
+      _isPluginAvailable = true;
+      debugPrint('Notification Service initialized successfully');
+    } catch (e) {
+      // Keep app and tests running even if plugin channels are unavailable.
+      _isPluginAvailable = false;
+      debugPrint(
+        'Notification Service unavailable on this platform/context: $e',
+      );
+    } finally {
+      _isInitialized = true;
+    }
   }
 
   /// Request notification permissions
@@ -119,8 +132,28 @@ class NotificationService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
-    // You can add navigation logic here based on the notification payload
+    final String payload = response.payload ?? '';
+    if (payload.isEmpty) {
+      NotificationRouter.handleNotification(type: 'general');
+      return;
+    }
+
+    try {
+      final dynamic decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        final String type = decoded['type']?.toString() ?? 'general';
+        final dynamic rawData = decoded['data'];
+        final Map<String, dynamic> data = rawData is Map
+            ? Map<String, dynamic>.from(rawData)
+            : <String, dynamic>{};
+        NotificationRouter.handleNotification(type: type, data: data);
+        return;
+      }
+    } catch (_) {
+      // Plain string payloads from scheduled notifications are treated as type.
+    }
+
+    NotificationRouter.handleNotification(type: payload);
   }
 
   /// Show a simple notification
@@ -129,8 +162,10 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    Map<String, dynamic>? payloadData,
   }) async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return;
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
@@ -154,12 +189,20 @@ class NotificationService {
       iOS: iosNotificationDetails,
     );
 
+    final String resolvedType = (payload == null || payload.isEmpty)
+        ? 'general'
+        : payload;
+    final String serializedPayload = jsonEncode({
+      'type': resolvedType,
+      'data': payloadData ?? <String, dynamic>{},
+    });
+
     await flutterLocalNotificationsPlugin.show(
       id,
       title,
       body,
       notificationDetails,
-      payload: payload,
+      payload: serializedPayload,
     );
   }
 
@@ -173,6 +216,7 @@ class NotificationService {
     String? payload,
   }) async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return;
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
@@ -248,6 +292,7 @@ class NotificationService {
   /// Cancel a scheduled notification
   Future<void> cancelNotification(int id) async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return;
     await flutterLocalNotificationsPlugin.cancel(id);
     debugPrint('Cancelled notification $id');
   }
@@ -255,6 +300,7 @@ class NotificationService {
   /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return;
     await flutterLocalNotificationsPlugin.cancelAll();
     debugPrint('Cancelled all notifications');
   }
@@ -454,6 +500,7 @@ class NotificationService {
     required String body,
   }) async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return;
 
     debugPrint('🧪 TEST NOTIFICATION: $title');
     debugPrint('Body: $body');
@@ -496,6 +543,7 @@ class NotificationService {
   /// Check pending notifications
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     if (!_isInitialized) await initialize();
+    if (!_isPluginAvailable) return [];
 
     final pending = await flutterLocalNotificationsPlugin
         .pendingNotificationRequests();

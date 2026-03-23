@@ -1,17 +1,25 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'notification_service.dart';
-import '../providers/settings_provider.dart';
+
+const String kRescheduleAlarmsTaskName = 'reschedule_alarms';
+const String kRescheduleAlarmsPeriodicUniqueName =
+  'reschedule_alarms_periodic_task';
+const String kRescheduleAlarmsOneOffUniqueName =
+  'reschedule_alarms_boot_task';
 
 /// Background task callback - MUST be a top-level function
 @pragma('vm:entry-point')
 void callbackDispatcher() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   Workmanager().executeTask((task, inputData) async {
     debugPrint('Background task executed: $task');
 
     try {
       switch (task) {
-        case 'reschedule_alarms':
+        case kRescheduleAlarmsTaskName:
           await _handleRescheduleAlarms();
           break;
         default:
@@ -33,32 +41,20 @@ Future<void> _handleRescheduleAlarms() async {
   try {
     final NotificationService notificationService = NotificationService();
     await notificationService.initialize();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Get settings from SharedPreferences
-    final SettingsProvider settingsProvider = SettingsProvider(
-      prefs: await _getSharedPreferences(),
-    );
-
-    // Reschedule all enabled alarms
+    // Reschedule only the alarms enabled in persisted settings.
     await notificationService.updateAllAlarms(
-      isMorningEnabled: settingsProvider.isMorningAlarmEnabled,
-      isEveningEnabled: settingsProvider.isEveningAlarmEnabled,
-      isMulkEnabled: settingsProvider.isMulkAlarmEnabled,
-      isBaqarahEnabled: settingsProvider.isBaqarahAlarmEnabled,
+      isMorningEnabled: prefs.getBool('morning_alarm_enabled') ?? false,
+      isEveningEnabled: prefs.getBool('evening_alarm_enabled') ?? false,
+      isMulkEnabled: prefs.getBool('mulk_alarm_enabled') ?? false,
+      isBaqarahEnabled: prefs.getBool('baqarah_alarm_enabled') ?? false,
     );
 
     debugPrint('✅ Alarms rescheduled successfully');
   } catch (e) {
     debugPrint('❌ Error rescheduling alarms: $e');
   }
-}
-
-/// Get SharedPreferences instance
-Future<dynamic> _getSharedPreferences() async {
-  // For WorkManager background task, we'll use a simpler approach
-  // Just reschedule all alarms without checking settings
-  // The SettingsProvider will be called from main app context
-  return null;
 }
 
 /// WorkManager Service for background tasks
@@ -80,13 +76,13 @@ class WorkManagerService {
     if (_isInitialized) return;
 
     try {
-      await _workmanager.initialize(
-        callbackDispatcher,
-        isInDebugMode: kDebugMode,
-      );
+      await _workmanager.initialize(callbackDispatcher);
 
       debugPrint('WorkManager initialized successfully');
       _isInitialized = true;
+
+      // Keep a periodic safety task registered across app runs/reboots.
+      await registerRescheduleTask();
     } catch (e) {
       debugPrint('Error initializing WorkManager: $e');
     }
@@ -95,12 +91,14 @@ class WorkManagerService {
   /// Register boot reschedule task
   Future<void> registerRescheduleTask() async {
     try {
-      // Register periodic task to reschedule alarms
+      // Register periodic task to reschedule alarms as a fallback safety net.
       await _workmanager.registerPeriodicTask(
-        'reschedule_alarms_task',
-        'reschedule_alarms',
-        frequency: const Duration(hours: 12), // Check every 12 hours
-        initialDelay: const Duration(seconds: 30), // Wait 30 seconds after boot
+        kRescheduleAlarmsPeriodicUniqueName,
+        kRescheduleAlarmsTaskName,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
+        frequency: const Duration(hours: 12),
+        initialDelay: const Duration(minutes: 10),
+        inputData: {'source': 'periodic'},
       );
 
       debugPrint('✅ Reschedule task registered');
@@ -109,10 +107,27 @@ class WorkManagerService {
     }
   }
 
+  /// Register immediate one-off reschedule task (used after boot/update).
+  Future<void> registerBootRescheduleTask() async {
+    try {
+      await _workmanager.registerOneOffTask(
+        kRescheduleAlarmsOneOffUniqueName,
+        kRescheduleAlarmsTaskName,
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        initialDelay: const Duration(seconds: 20),
+        inputData: {'source': 'boot_or_update'},
+      );
+      debugPrint('✅ Boot reschedule task registered');
+    } catch (e) {
+      debugPrint('❌ Error registering boot reschedule task: $e');
+    }
+  }
+
   /// Cancel reschedule task
   Future<void> cancelRescheduleTask() async {
     try {
-      await _workmanager.cancelByUniqueName('reschedule_alarms_task');
+      await _workmanager.cancelByUniqueName(kRescheduleAlarmsPeriodicUniqueName);
+      await _workmanager.cancelByUniqueName(kRescheduleAlarmsOneOffUniqueName);
       debugPrint('Reschedule task cancelled');
     } catch (e) {
       debugPrint('Error cancelling reschedule task: $e');

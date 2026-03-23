@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/api/api_error_handler.dart';
@@ -111,7 +112,7 @@ class AyahRepositoryImpl implements AyahRepository {
           allAyahs[surahNumber] = ayahs;
         } catch (e) {
           // Continue processing other Surahs even if one fails
-          print('Warning: Could not load ayahs for Surah $surahNumber: $e');
+          debugPrint('Warning: Could not load ayahs for Surah $surahNumber: $e');
         }
       }
 
@@ -136,7 +137,6 @@ class AyahRepositoryImpl implements AyahRepository {
       final lowerQuery = query.toLowerCase().trim();
 
       for (final entry in allAyahs.entries) {
-        final surahNumber = entry.key;
         final ayahs = entry.value;
 
         for (final ayah in ayahs) {

@@ -268,7 +268,7 @@ AlarmMenuItem(
 - **Android 13+**: Users must grant notification permission manually
 - **Exact Scheduling**: Uses `AndroidScheduleMode.exactAllowWhileIdle` for precise timing
 - **Doze Mode**: Notifications will work even in Doze mode
-- **Boot Persistence**: Alarms are NOT automatically rescheduled after device reboot (requires additional WorkManager implementation)
+- **Boot Persistence**: Alarms are rescheduled after reboot using WorkManager + BootReceiver-triggered background task
 
 ## Troubleshooting
 

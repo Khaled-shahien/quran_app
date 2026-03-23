@@ -47,19 +47,21 @@ class KhatmaProvider extends ChangeNotifier {
         final val = int.tryParse(valStr);
         if (val != null) {
           juzIncrement = val.toDouble();
-        } else if (_activeKhatma!.amountValue == 'جزء')
+        } else if (_activeKhatma!.amountValue == 'جزء') {
           juzIncrement = 1.0;
-        else if (_activeKhatma!.amountValue == 'جزءان')
+        } else if (_activeKhatma!.amountValue == 'جزءان') {
           juzIncrement = 2.0;
+        }
       } else if (_activeKhatma!.amountType == 'ربع') {
         final valStr = _activeKhatma!.amountValue.split(' ').first;
         final val = int.tryParse(valStr);
         if (val != null) {
           juzIncrement = val / 8.0; // 8 quarters in a Juz
-        } else if (_activeKhatma!.amountValue == 'ربع')
+        } else if (_activeKhatma!.amountValue == 'ربع') {
           juzIncrement = 1 / 8.0;
-        else if (_activeKhatma!.amountValue == 'ربعان')
+        } else if (_activeKhatma!.amountValue == 'ربعان') {
           juzIncrement = 2 / 8.0;
+        }
       }
 
       int nextJuz = _activeKhatma!.currentJuz + juzIncrement.ceil();

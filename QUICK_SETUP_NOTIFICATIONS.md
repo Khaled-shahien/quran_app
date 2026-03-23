@@ -1,5 +1,7 @@
 # 🚀 Quick Notification Setup Guide
 
+> Status note (March 23, 2026): This quick guide is historical. Check `PROJECT_STATUS.md` for the latest verified state and follow-up work.
+
 ## ✅ What's Already Implemented
 
 Your Quran App now has a **complete, production-ready notification system** with:

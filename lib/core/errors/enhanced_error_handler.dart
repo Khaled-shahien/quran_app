@@ -79,34 +79,34 @@ class EnhancedErrorHandler {
   }
 
   /// Categorize error types
-  static _ErrorCategory _categorizeError(Object error) {
+  static ErrorCategory _categorizeError(Object error) {
     if (error is TypeError || error is FormatException) {
-      return _ErrorCategory.dataValidation;
+      return ErrorCategory.dataValidation;
     } else if (error is NetworkException) {
-      return _ErrorCategory.network;
+      return ErrorCategory.network;
     } else if (error is ApiException) {
-      return _ErrorCategory.api;
+      return ErrorCategory.api;
     } else if (error is SecurityException) {
-      return _ErrorCategory.security;
+      return ErrorCategory.security;
     } else if (error is ValidationException) {
-      return _ErrorCategory.validation;
+      return ErrorCategory.validation;
     } else if (error is DataIntegrityException) {
-      return _ErrorCategory.dataIntegrity;
+      return ErrorCategory.dataIntegrity;
     } else if (error is StateError) {
-      return _ErrorCategory.state;
+      return ErrorCategory.state;
     } else if (error is RangeError) {
-      return _ErrorCategory.range;
+      return ErrorCategory.range;
     } else {
-      return _ErrorCategory.unknown;
+      return ErrorCategory.unknown;
     }
   }
 
   /// Generate user-friendly error messages
-  static String _generateUserMessage(Object error, _ErrorCategory category) {
+  static String _generateUserMessage(Object error, ErrorCategory category) {
     switch (category) {
-      case _ErrorCategory.network:
+      case ErrorCategory.network:
         return 'Unable to connect to the internet. Please check your connection.';
-      case _ErrorCategory.api:
+      case ErrorCategory.api:
         if (error is ApiException) {
           if (error.code == 404) {
             return 'The requested data was not found.';
@@ -115,74 +115,73 @@ class EnhancedErrorHandler {
           }
         }
         return 'An error occurred while fetching data. Please try again.';
-      case _ErrorCategory.dataValidation:
+      case ErrorCategory.dataValidation:
         return 'Invalid data format received. The application will attempt to recover.';
-      case _ErrorCategory.security:
+      case ErrorCategory.security:
         return 'Security validation failed. Please ensure your input is valid.';
-      case _ErrorCategory.validation:
+      case ErrorCategory.validation:
         if (error is ValidationException) {
           return 'Invalid ${error.field}: ${error.message}';
         }
         return 'Please check your input and try again.';
-      case _ErrorCategory.dataIntegrity:
+      case ErrorCategory.dataIntegrity:
         return 'Data integrity check failed. The application will attempt to recover.';
-      case _ErrorCategory.state:
+      case ErrorCategory.state:
         return 'Application state error. Please restart the application.';
-      case _ErrorCategory.range:
+      case ErrorCategory.range:
         return 'Value is outside the valid range.';
-      case _ErrorCategory.unknown:
-      default:
+      case ErrorCategory.unknown:
         return 'An unexpected error occurred. Please try again.';
     }
   }
 
   /// Suggest recovery options based on error type
-  static List<String> _suggestRecovery(Object error, _ErrorCategory category) {
+  static List<String> _suggestRecovery(Object error, ErrorCategory category) {
     final suggestions = <String>[];
 
     switch (category) {
-      case _ErrorCategory.network:
+      case ErrorCategory.network:
         suggestions.addAll([
           '• Check your internet connection',
           '• Try switching to mobile data or Wi-Fi',
           '• Restart your router if needed',
         ]);
         break;
-      case _ErrorCategory.api:
+      case ErrorCategory.api:
         suggestions.addAll([
           '• Try refreshing the data',
           '• Check if the service is available',
           '• Contact support if the problem persists',
         ]);
         break;
-      case _ErrorCategory.dataValidation:
+      case ErrorCategory.dataValidation:
         suggestions.addAll([
           '• The application will use cached data',
           '• Try refreshing to get updated information',
         ]);
         break;
-      case _ErrorCategory.security:
+      case ErrorCategory.security:
         suggestions.addAll([
           '• Review your input for special characters',
           '• Ensure data format is correct',
         ]);
         break;
-      case _ErrorCategory.validation:
+      case ErrorCategory.validation:
         suggestions.add('• Correct the highlighted field and try again');
         break;
-      case _ErrorCategory.dataIntegrity:
+      case ErrorCategory.dataIntegrity:
         suggestions.addAll([
           '• Data will be re-downloaded automatically',
           '• Try restarting the application',
         ]);
         break;
-      case _ErrorCategory.state:
+      case ErrorCategory.state:
         suggestions.add('• Restart the application to reset state');
         break;
-      case _ErrorCategory.range:
+      case ErrorCategory.range:
         suggestions.add('• Enter a value within the valid range');
         break;
-      case _ErrorCategory.unknown:
+      case ErrorCategory.unknown:
         suggestions.addAll([
           '• Try restarting the application',
           '• Check for application updates',
@@ -208,7 +207,7 @@ class EnhancedErrorHandler {
     }
 
     // Log security events for sensitive errors
-    if (errorInfo.category == _ErrorCategory.security) {
+    if (errorInfo.category == ErrorCategory.security) {
       SecurityUtils.logSecure(
         'Security error detected',
         data: errorInfo.technicalDetails,
@@ -236,7 +235,7 @@ class EnhancedErrorHandler {
   /// Error recovery strategies
   static Future<bool> attemptRecovery(
     Object error,
-    _ErrorCategory category, {
+    ErrorCategory category, {
     int maxRetries = 3,
   }) async {
     int attempts = 0;
@@ -246,7 +245,7 @@ class EnhancedErrorHandler {
 
       try {
         switch (category) {
-          case _ErrorCategory.network:
+          case ErrorCategory.network:
             // Wait and retry with exponential backoff
             await Future.delayed(Duration(milliseconds: 1000 * attempts));
             final connectivity = await _getCurrentConnectivity();
@@ -255,16 +254,21 @@ class EnhancedErrorHandler {
             }
             break;
 
-          case _ErrorCategory.api:
+          case ErrorCategory.api:
             // Retry with backoff
             await Future.delayed(Duration(milliseconds: 500 * attempts));
             return true; // Assume API recovery
 
-          case _ErrorCategory.dataValidation:
+          case ErrorCategory.dataValidation:
             // Data validation errors typically don't need retry
             return false;
 
-          default:
+          case ErrorCategory.security:
+          case ErrorCategory.validation:
+          case ErrorCategory.dataIntegrity:
+          case ErrorCategory.state:
+          case ErrorCategory.range:
+          case ErrorCategory.unknown:
             // For other errors, simple retry
             await Future.delayed(Duration(milliseconds: 200 * attempts));
             return true;
@@ -284,7 +288,7 @@ class EnhancedErrorHandler {
 /// Error information structure
 class _ErrorInfo {
   final Object originalError;
-  final _ErrorCategory category;
+  final ErrorCategory category;
   final String userMessage;
   final List<String> recoveryOptions;
   final Map<String, dynamic> technicalDetails;
@@ -301,7 +305,7 @@ class _ErrorInfo {
 }
 
 /// Error categories for better handling
-enum _ErrorCategory {
+enum ErrorCategory {
   network,
   api,
   dataValidation,
@@ -316,7 +320,7 @@ enum _ErrorCategory {
 /// Enhanced exception wrapper with recovery context
 class RecoverableException implements Exception {
   final String message;
-  final _ErrorCategory category;
+  final ErrorCategory category;
   final List<String> recoveryOptions;
   final Object? originalError;
   final String timestamp;
@@ -355,14 +359,14 @@ class ErrorReportingService {
 
       // Log the report
       if (kDebugMode) {
-        print('Error Report: $report');
+        debugPrint('Error Report: $report');
       }
 
       // Here you would send to your error reporting service
       // await _sendToErrorService(report);
     } catch (e) {
       // Don't let error reporting fail
-      print('Failed to report error: $e');
+      debugPrint('Failed to report error: $e');
     }
   }
 }

@@ -5,8 +5,6 @@ class NetworkException implements Exception {
   final String message;
   final NetworkErrorType type;
 
-  NetworkException._(this.message, this.type);
-
   /// Create a custom network exception
   NetworkException.custom(this.message, this.type);
 
