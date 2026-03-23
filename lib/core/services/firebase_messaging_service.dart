@@ -1,0 +1,238 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'notification_service.dart';
+
+/// Background message handler - MUST be a top-level function
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Ensure Firebase is initialized
+  await Firebase.initializeApp();
+
+  debugPrint('Handling background message: ${message.messageId}');
+  debugPrint('Title: ${message.notification?.title}');
+  debugPrint('Body: ${message.notification?.body}');
+  debugPrint('Data: ${message.data}');
+
+  // Show notification even when app is in background
+  final NotificationService notificationService = NotificationService();
+  await notificationService.showNotification(
+    id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+    title: message.notification?.title ?? 'Notification',
+    body: message.notification?.body ?? '',
+    payload: message.data['type'] ?? 'general',
+  );
+}
+
+/// Firebase Cloud Messaging Service
+///
+/// Handles:
+/// - FCM initialization
+/// - Permission requests
+/// - Foreground messages (onMessage)
+/// - Background messages (onBackgroundMessage)
+/// - Notification taps (onMessageOpenedApp)
+/// - Token management
+class FirebaseMessagingService {
+  static final FirebaseMessagingService _instance =
+      FirebaseMessagingService._internal();
+
+  factory FirebaseMessagingService() => _instance;
+  FirebaseMessagingService._internal();
+
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  bool _isInitialized = false;
+
+  // Callbacks for notification interactions
+  Function(String type, Map<String, dynamic> data)? onNotificationTap;
+
+  /// Initialize Firebase Messaging
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      // Initialize Firebase if not already done
+      await Firebase.initializeApp();
+
+      // Set up background message handler
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+      // Request permissions
+      await _requestPermissions();
+
+      // Set up message handlers
+      await _setupMessageHandlers();
+
+      // Get and log FCM token
+      final token = await _firebaseMessaging.getToken();
+      debugPrint('FCM Token: $token');
+
+      // Listen for token refresh
+      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+        debugPrint('FCM Token refreshed: $newToken');
+        _updateTokenInBackend(newToken);
+      });
+
+      _isInitialized = true;
+      debugPrint('Firebase Messaging Service initialized successfully');
+    } catch (e) {
+      debugPrint('Error initializing Firebase Messaging: $e');
+    }
+  }
+
+  /// Request notification permissions
+  Future<void> _requestPermissions() async {
+    try {
+      // iOS permissions
+      if (!kIsWeb) {
+        // Check current authorization status
+        NotificationSettings settings = await _firebaseMessaging
+            .requestPermission(
+              alert: true,
+              announcement: false,
+              badge: true,
+              carPlay: false,
+              criticalAlert: false,
+              provisional: false,
+              sound: true,
+            );
+
+        debugPrint(
+          'iOS Notification Settings granted: ${settings.authorizationStatus}',
+        );
+
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+          debugPrint('User granted notification permission');
+        } else if (settings.authorizationStatus ==
+            AuthorizationStatus.provisional) {
+          debugPrint('User granted provisional notification permission');
+        } else {
+          debugPrint('User declined notification permission');
+        }
+      }
+
+      // Android permissions are handled by flutter_local_notifications
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
+    }
+  }
+
+  /// Set up message handlers
+  Future<void> _setupMessageHandlers() async {
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('Foreground message received: ${message.messageId}');
+      _handleForegroundMessage(message);
+    });
+
+    // Handle notification taps when app is in background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('Notification tapped from background: ${message.messageId}');
+      _handleNotificationTap(message);
+    });
+
+    // Check if app was opened from a notification
+    final RemoteMessage? initialMessage = await _firebaseMessaging
+        .getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint('App opened from terminated state via notification');
+      _handleNotificationTap(initialMessage);
+    }
+  }
+
+  /// Handle foreground message
+  void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint('📱 Handling foreground message');
+
+    // Show local notification for foreground message
+    final NotificationService notificationService = NotificationService();
+    notificationService.showNotification(
+      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title: message.notification?.title ?? 'New Notification',
+      body: message.notification?.body ?? '',
+      payload: message.data['type'] ?? 'general',
+    );
+  }
+
+  /// Handle notification tap
+  void _handleNotificationTap(RemoteMessage message) {
+    debugPrint('🔔 Notification tapped');
+    debugPrint('Type: ${message.data['type']}');
+    debugPrint('Data: ${message.data}');
+
+    final String type = message.data['type'] ?? 'general';
+
+    // TODO: Add navigation logic here based on notification type
+    // For now, just log the tap
+    debugPrint('Notification tapped - Type: $type');
+
+    // Call callback if provided
+    if (onNotificationTap != null) {
+      onNotificationTap!(type, message.data);
+    }
+  }
+
+  /// Update token in backend (placeholder)
+  void _updateTokenInBackend(String token) {
+    // TODO: Send token to your backend server
+    // This allows you to send push notifications to this specific device
+    debugPrint('Token to be sent to backend: $token');
+  }
+
+  /// Get current FCM token
+  Future<String?> getToken() async {
+    try {
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      debugPrint('Error getting FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Refresh FCM token
+  Future<void> refreshToken() async {
+    try {
+      await _firebaseMessaging.deleteToken();
+      final newToken = await _firebaseMessaging.getToken();
+      debugPrint('Token refreshed: $newToken');
+      _updateTokenInBackend(newToken!);
+    } catch (e) {
+      debugPrint('Error refreshing token: $e');
+    }
+  }
+
+  /// Subscribe to topic
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _firebaseMessaging.subscribeToTopic(topic);
+      debugPrint('Subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('Error subscribing to topic: $e');
+    }
+  }
+
+  /// Unsubscribe from topic
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _firebaseMessaging.unsubscribeFromTopic(topic);
+      debugPrint('Unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('Error unsubscribing from topic: $e');
+    }
+  }
+
+  /// Get notification settings
+  Future<NotificationSettings> getNotificationSettings() async {
+    return await _firebaseMessaging.getNotificationSettings();
+  }
+
+  /// Delete token (for logout)
+  Future<void> deleteToken() async {
+    try {
+      await _firebaseMessaging.deleteToken();
+      debugPrint('Token deleted');
+    } catch (e) {
+      debugPrint('Error deleting token: $e');
+    }
+  }
+}

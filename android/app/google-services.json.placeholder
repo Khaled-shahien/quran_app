@@ -1,0 +1,19 @@
+# Placeholder for google-services.json
+# 
+# IMPORTANT: Replace this file with your actual google-services.json from Firebase Console
+# 
+# Steps to get this file:
+# 1. Go to https://console.firebase.google.com/
+# 2. Select your project (or create new one)
+# 3. Click "Add app" → Android
+# 4. Enter package name: com.example.quran_app
+# 5. Download google-services.json
+# 6. Place it in this directory (android/app/google-services.json)
+# 7. Delete this placeholder file
+#
+# The file should contain JSON configuration like:
+# {
+#   "project_info": { ... },
+#   "client": [ ... ],
+#   "configuration_version": "..."
+# }

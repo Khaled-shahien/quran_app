@@ -1,0 +1,14 @@
+# Placeholder for GoogleService-Info.plist
+# 
+# IMPORTANT: Replace this file with your actual GoogleService-Info.plist from Firebase Console
+# 
+# Steps to get this file:
+# 1. Go to https://console.firebase.google.com/
+# 2. Select your project (or create new one)
+# 3. Click "Add app" → iOS
+# 4. Enter Bundle ID (check in Xcode → Runner → Signing & Capabilities)
+# 5. Download GoogleService-Info.plist
+# 6. Place it in this directory (ios/Runner/GoogleService-Info.plist)
+# 7. Delete this placeholder file
+#
+# The file should be a valid Apple Property List XML

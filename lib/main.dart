@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/services/notification_service.dart';
+import 'core/navigation/notification_router.dart';
+import 'core/providers/notification_provider.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'features/prayers/presentation/providers/prayer_times_provider.dart';
 import 'features/prayers/presentation/providers/prayer_times_performance_provider.dart';
@@ -33,6 +36,10 @@ void main() async {
   // Initialize SharedPreferences asynchronously
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
+  // Initialize notification service
+  final NotificationService notificationService = NotificationService();
+  await notificationService.initialize();
+
   // Run the app with initialized dependencies
   runApp(MyApp(prefs: prefs));
 }
@@ -57,6 +64,7 @@ class MyApp extends StatelessWidget {
   late final SettingsProvider _settingsProvider;
   late final KhatmaRepository _khatmaRepository;
   late final KhatmaProvider _khatmaProvider;
+  late final NotificationProvider _notificationProvider;
 
   MyApp({super.key, required this.prefs}) {
     // Initialize repositories once during construction (lazy initialization)
@@ -99,6 +107,9 @@ class MyApp extends StatelessWidget {
 
     _khatmaRepository = KhatmaRepository(prefs: prefs);
     _khatmaProvider = KhatmaProvider(repository: _khatmaRepository);
+
+    // Initialize notification provider
+    _notificationProvider = NotificationProvider(prefs: prefs);
   }
 
   @override
@@ -135,6 +146,9 @@ class MyApp extends StatelessWidget {
           value: _settingsProvider,
         ),
         ChangeNotifierProvider<KhatmaProvider>.value(value: _khatmaProvider),
+        ChangeNotifierProvider<NotificationProvider>.value(
+          value: _notificationProvider,
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
@@ -147,6 +161,12 @@ class MyApp extends StatelessWidget {
             locale: const Locale('ar', 'SA'), // Set default locale to Arabic
             home: const OnboardingScreen(),
             builder: (context, child) {
+              // Set up notification router for navigation
+              NotificationRouter.setNavigationCallback((route, data) {
+                debugPrint('🧭 Navigation requested: $route');
+                // Navigation will be handled when app is fully initialized
+              });
+
               return Directionality(
                 textDirection: TextDirection.rtl, // Right-to-left for Arabic
                 child: child!,

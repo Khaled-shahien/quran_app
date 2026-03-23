@@ -261,7 +261,7 @@ class AppTheme {
         return IconThemeData(
           color: states.contains(WidgetState.selected)
               ? colorScheme.primary
-              : colorScheme.onSurface.withOpacity(0.60),
+              : colorScheme.onSurface.withValues(alpha: 0.60),
         );
       }),
     );
@@ -277,8 +277,8 @@ class AppTheme {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       elevation: 1,
-      modalBarrierColor: Colors.black.withOpacity(0.32),
-      dragHandleColor: colorScheme.onSurface.withOpacity(0.40),
+      modalBarrierColor: Colors.black.withValues(alpha: 0.32),
+      dragHandleColor: colorScheme.onSurface.withValues(alpha: 0.40),
       dragHandleSize: const Size(32, 4),
     );
   }
@@ -306,7 +306,7 @@ class AppTheme {
   ) {
     return InputDecorationTheme(
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       focusColor: colorScheme.primary,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -314,7 +314,7 @@ class AppTheme {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+        borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.5)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -328,7 +328,7 @@ class AppTheme {
         color: colorScheme.onSurfaceVariant,
       ),
       hintStyle: AppTypography.bodyMedium.copyWith(
-        color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
       ),
       errorStyle: AppTypography.bodySmall.copyWith(color: colorScheme.error),
     );
