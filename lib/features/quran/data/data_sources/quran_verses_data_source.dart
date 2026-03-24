@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
+
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
@@ -66,7 +67,12 @@ class QuranVersesDataSource {
           allVerses[surahNumber] = verses;
         } catch (e) {
           // Continue processing other Surahs even if one fails
-          debugPrint('Warning: Could not load verses for Surah $surahNumber: $e');
+          developer.log(
+            'Could not load verses for Surah $surahNumber',
+            name: 'quran_app.quran_data',
+            level: 900,
+            error: e,
+          );
         }
       }
 

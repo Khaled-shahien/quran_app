@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../providers/hadeath_provider.dart';
 import '../widgets/hadeath_card.dart';
-import 'hadeath_details_screen.dart';
 
 class HadeathScreen extends StatefulWidget {
   const HadeathScreen({super.key});
@@ -40,71 +40,70 @@ class _HadeathScreenState extends State<HadeathScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.primary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Consumer<HadeathProvider>(
-          builder: (context, provider, child) {
-            if (provider.isLoading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              );
-            }
-
-            if (provider.errorMessage != null) {
-              return Center(
-                child: Text(
-                  provider.errorMessage!,
-                  style: GoogleFonts.cairo(color: Colors.red, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            }
-
-            if (provider.ahadethList.isEmpty) {
-              return Center(
-                child: Text(
-                  'لا توجد أحاديث لعرضها',
-                  style: GoogleFonts.cairo(
-                    color: AppColors.secondaryText,
-                    fontSize: 18,
-                  ),
-                ),
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: provider.ahadethList.length,
-              itemBuilder: (context, index) {
-                final hadeath = provider.ahadethList[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: HadeathCard(
-                    title: hadeath.title.isEmpty
-                        ? 'الحديث ${index + 1}'
-                        : hadeath.title,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              HadeathDetailsScreen(hadeath: hadeath),
-                        ),
-                      );
-                    },
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Consumer<HadeathProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 );
-              },
-            );
-          },
+              }
+
+              if (provider.errorMessage != null) {
+                return Center(
+                  child: Text(
+                    provider.errorMessage!,
+                    style: GoogleFonts.cairo(color: Colors.red, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+
+              if (provider.ahadethList.isEmpty) {
+                return Center(
+                  child: Text(
+                    'لا توجد أحاديث لعرضها',
+                    style: GoogleFonts.cairo(
+                      color: AppColors.secondaryText,
+                      fontSize: 18,
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: provider.ahadethList.length,
+                itemBuilder: (context, index) {
+                  final hadeath = provider.ahadethList[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: HadeathCard(
+                      title: hadeath.title.isEmpty
+                          ? 'الحديث ${index + 1}'
+                          : hadeath.title,
+                      onTap: () {
+                        context.push('/hadeath/details/$index', extra: hadeath);
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

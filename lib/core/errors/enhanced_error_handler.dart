@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -105,7 +107,8 @@ class EnhancedErrorHandler {
   static String _generateUserMessage(Object error, ErrorCategory category) {
     switch (category) {
       case ErrorCategory.network:
-        return 'Unable to connect to the internet. Please check your connection.';
+        return 'Unable to connect to the internet. '
+            'Please check your connection.';
       case ErrorCategory.api:
         if (error is ApiException) {
           if (error.code == 404) {
@@ -116,7 +119,8 @@ class EnhancedErrorHandler {
         }
         return 'An error occurred while fetching data. Please try again.';
       case ErrorCategory.dataValidation:
-        return 'Invalid data format received. The application will attempt to recover.';
+        return 'Invalid data format received. '
+            'The application will attempt to recover.';
       case ErrorCategory.security:
         return 'Security validation failed. Please ensure your input is valid.';
       case ErrorCategory.validation:
@@ -125,7 +129,8 @@ class EnhancedErrorHandler {
         }
         return 'Please check your input and try again.';
       case ErrorCategory.dataIntegrity:
-        return 'Data integrity check failed. The application will attempt to recover.';
+        return 'Data integrity check failed. '
+            'The application will attempt to recover.';
       case ErrorCategory.state:
         return 'Application state error. Please restart the application.';
       case ErrorCategory.range:
@@ -359,14 +364,24 @@ class ErrorReportingService {
 
       // Log the report
       if (kDebugMode) {
-        debugPrint('Error Report: $report');
+        developer.log(
+          'Error Report',
+          name: 'quran_app.error_reporting',
+          level: 1000,
+          error: report,
+        );
       }
 
       // Here you would send to your error reporting service
       // await _sendToErrorService(report);
     } catch (e) {
       // Don't let error reporting fail
-      debugPrint('Failed to report error: $e');
+      developer.log(
+        'Failed to report error',
+        name: 'quran_app.error_reporting',
+        level: 1000,
+        error: e,
+      );
     }
   }
 }

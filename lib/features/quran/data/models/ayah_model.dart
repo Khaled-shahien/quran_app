@@ -1,15 +1,37 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'ayah_model.g.dart';
+
 /// Ayah Model
 ///
 /// Represents a single Ayah (verse) of the Quran with all its metadata
+@JsonSerializable()
 class AyahModel {
+  @JsonKey(defaultValue: 0)
   final int number;
+
+  @JsonKey(defaultValue: '')
   final String text;
+
+  @JsonKey(defaultValue: 0)
   final int numberInSurah;
+
+  @JsonKey(defaultValue: 0)
   final int juz;
+
+  @JsonKey(defaultValue: 0)
   final int manzil;
+
+  @JsonKey(defaultValue: 0)
   final int page;
+
+  @JsonKey(defaultValue: 0)
   final int ruku;
+
+  @JsonKey(defaultValue: 0)
   final int hizbQuarter;
+
+  @JsonKey(defaultValue: false, fromJson: _sajdaFromJson, toJson: _sajdaToJson)
   final bool sajda;
 
   AyahModel({
@@ -25,34 +47,23 @@ class AyahModel {
   });
 
   /// Creates an AyahModel from JSON
-  factory AyahModel.fromJson(Map<String, dynamic> json) {
-    return AyahModel(
-      number: json['number'] as int? ?? 0,
-      text: json['text'] as String? ?? '',
-      numberInSurah: json['numberInSurah'] as int? ?? 0,
-      juz: json['juz'] as int? ?? 0,
-      manzil: json['manzil'] as int? ?? 0,
-      page: json['page'] as int? ?? 0,
-      ruku: json['ruku'] as int? ?? 0,
-      hizbQuarter: json['hizbQuarter'] as int? ?? 0,
-      sajda: json['sajda'] as bool? ?? false,
-    );
-  }
+  factory AyahModel.fromJson(Map<String, dynamic> json) =>
+      _$AyahModelFromJson(json);
 
   /// Converts AyahModel to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'number': number,
-      'text': text,
-      'numberInSurah': numberInSurah,
-      'juz': juz,
-      'manzil': manzil,
-      'page': page,
-      'ruku': ruku,
-      'hizbQuarter': hizbQuarter,
-      'sajda': sajda,
-    };
+  Map<String, dynamic> toJson() => _$AyahModelToJson(this);
+
+  static bool _sajdaFromJson(Object? value) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is Map || value is List) {
+      return true;
+    }
+    return false;
   }
+
+  static Object _sajdaToJson(bool value) => value;
 
   @override
   String toString() {

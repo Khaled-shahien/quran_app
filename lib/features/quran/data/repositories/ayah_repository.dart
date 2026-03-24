@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
+
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/api/api_error_handler.dart';
@@ -112,7 +113,12 @@ class AyahRepositoryImpl implements AyahRepository {
           allAyahs[surahNumber] = ayahs;
         } catch (e) {
           // Continue processing other Surahs even if one fails
-          debugPrint('Warning: Could not load ayahs for Surah $surahNumber: $e');
+          developer.log(
+            'Could not load ayahs for Surah $surahNumber',
+            name: 'quran_app.quran_data',
+            level: 900,
+            error: e,
+          );
         }
       }
 

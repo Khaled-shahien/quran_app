@@ -1,29 +1,25 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'prayer_times_response.g.dart';
+
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class PrayerTimesResponse {
+  @JsonKey(fromJson: _parseIntOrZero)
   final int code;
+
+  @JsonKey(fromJson: _parseStringOrError)
   final String status;
   final Data? data;
 
   PrayerTimesResponse({required this.code, required this.status, this.data});
 
-  factory PrayerTimesResponse.fromJson(Map<String, dynamic> json) {
-    return PrayerTimesResponse(
-      code: _parseInt(json['code']) ?? 0,
-      status: _parseString(json['status']) ?? 'ERROR',
-      data: json['data'] != null
-          ? Data.fromJson(json['data'] as Map<String, dynamic>)
-          : null,
-    );
-  }
+  factory PrayerTimesResponse.fromJson(Map<String, dynamic> json) =>
+      _$PrayerTimesResponseFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'code': code,
-      'status': status,
-      if (data != null) 'data': data!.toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => _$PrayerTimesResponseToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class Data {
   final Timings? timings;
   final Date? date;
@@ -31,38 +27,38 @@ class Data {
 
   Data({this.timings, this.date, this.meta});
 
-  factory Data.fromJson(Map<String, dynamic> json) {
-    return Data(
-      timings: json['timings'] != null
-          ? Timings.fromJson(json['timings'] as Map<String, dynamic>)
-          : null,
-      date: json['date'] != null
-          ? Date.fromJson(json['date'] as Map<String, dynamic>)
-          : null,
-      meta: json['meta'] != null
-          ? Meta.fromJson(json['meta'] as Map<String, dynamic>)
-          : null,
-    );
-  }
+  factory Data.fromJson(Map<String, dynamic> json) => _$DataFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (timings != null) 'timings': timings!.toJson(),
-      if (date != null) 'date': date!.toJson(),
-      if (meta != null) 'meta': meta!.toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => _$DataToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false)
 class Timings {
+  @JsonKey(name: 'Fajr', fromJson: _parseString)
   final String? fajr;
+
+  @JsonKey(name: 'Sunrise', fromJson: _parseString)
   final String? sunrise;
+
+  @JsonKey(name: 'Dhuhr', fromJson: _parseString)
   final String? dhuhr;
+
+  @JsonKey(name: 'Asr', fromJson: _parseString)
   final String? asr;
+
+  @JsonKey(name: 'Sunset', fromJson: _parseString)
   final String? sunset;
+
+  @JsonKey(name: 'Maghrib', fromJson: _parseString)
   final String? maghrib;
+
+  @JsonKey(name: 'Isha', fromJson: _parseString)
   final String? isha;
+
+  @JsonKey(name: 'Imsak', fromJson: _parseString)
   final String? imsak;
+
+  @JsonKey(name: 'Midnight', fromJson: _parseString)
   final String? midnight;
 
   Timings({
@@ -77,74 +73,47 @@ class Timings {
     this.midnight,
   });
 
-  factory Timings.fromJson(Map<String, dynamic> json) {
-    return Timings(
-      fajr: _parseString(json['Fajr']),
-      sunrise: _parseString(json['Sunrise']),
-      dhuhr: _parseString(json['Dhuhr']),
-      asr: _parseString(json['Asr']),
-      sunset: _parseString(json['Sunset']),
-      maghrib: _parseString(json['Maghrib']),
-      isha: _parseString(json['Isha']),
-      imsak: _parseString(json['Imsak']),
-      midnight: _parseString(json['Midnight']),
-    );
-  }
+  factory Timings.fromJson(Map<String, dynamic> json) =>
+      _$TimingsFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (fajr != null) 'Fajr': fajr,
-      if (sunrise != null) 'Sunrise': sunrise,
-      if (dhuhr != null) 'Dhuhr': dhuhr,
-      if (asr != null) 'Asr': asr,
-      if (sunset != null) 'Sunset': sunset,
-      if (maghrib != null) 'Maghrib': maghrib,
-      if (isha != null) 'Isha': isha,
-      if (imsak != null) 'Imsak': imsak,
-      if (midnight != null) 'Midnight': midnight,
-    };
-  }
+  Map<String, dynamic> toJson() => _$TimingsToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class Date {
+  @JsonKey(fromJson: _parseString)
   final String? readable;
+
+  @JsonKey(fromJson: _parseString)
   final String? timestamp;
   final GregorianDate? gregorian;
   final HijriDate? hijri;
 
   Date({this.readable, this.timestamp, this.gregorian, this.hijri});
 
-  factory Date.fromJson(Map<String, dynamic> json) {
-    return Date(
-      readable: _parseString(json['readable']),
-      timestamp: _parseString(json['timestamp']),
-      gregorian: json['gregorian'] != null
-          ? GregorianDate.fromJson(json['gregorian'] as Map<String, dynamic>)
-          : null,
-      hijri: json['hijri'] != null
-          ? HijriDate.fromJson(json['hijri'] as Map<String, dynamic>)
-          : null,
-    );
-  }
+  factory Date.fromJson(Map<String, dynamic> json) => _$DateFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (readable != null) 'readable': readable,
-      if (timestamp != null) 'timestamp': timestamp,
-      if (gregorian != null) 'gregorian': gregorian!.toJson(),
-      if (hijri != null) 'hijri': hijri!.toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => _$DateToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class GregorianDate {
+  @JsonKey(fromJson: _parseString)
   final String? date;
+
+  @JsonKey(fromJson: _parseString)
   final String? format;
+
+  @JsonKey(fromJson: _parseString)
   final String? day;
   final Weekday? weekday;
   final Month? month;
+
+  @JsonKey(fromJson: _parseString)
   final String? year;
-  final bool? lunarSighting; // Added lunarSighting field from gregorian.date
+
+  @JsonKey(fromJson: _parseBool)
+  final bool? lunarSighting;
 
   GregorianDate({
     this.date,
@@ -156,43 +125,26 @@ class GregorianDate {
     this.lunarSighting,
   });
 
-  factory GregorianDate.fromJson(Map<String, dynamic> json) {
-    return GregorianDate(
-      date: _parseString(json['date']),
-      format: _parseString(json['format']),
-      day: _parseString(json['day']),
-      weekday: json['weekday'] != null
-          ? Weekday.fromJson(json['weekday'] as Map<String, dynamic>)
-          : null,
-      month: json['month'] != null
-          ? Month.fromJson(json['month'] as Map<String, dynamic>)
-          : null,
-      year: _parseString(json['year']),
-      lunarSighting: _parseBool(
-        json['lunarSighting'],
-      ), // Parse lunarSighting from gregorian.date
-    );
-  }
+  factory GregorianDate.fromJson(Map<String, dynamic> json) =>
+      _$GregorianDateFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (date != null) 'date': date,
-      if (format != null) 'format': format,
-      if (day != null) 'day': day,
-      if (weekday != null) 'weekday': weekday!.toJson(),
-      if (month != null) 'month': month!.toJson(),
-      if (year != null) 'year': year,
-      if (lunarSighting != null) 'lunarSighting': lunarSighting,
-    };
-  }
+  Map<String, dynamic> toJson() => _$GregorianDateToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class HijriDate {
+  @JsonKey(fromJson: _parseString)
   final String? date;
+
+  @JsonKey(fromJson: _parseString)
   final String? format;
+
+  @JsonKey(fromJson: _parseString)
   final String? day;
   final Weekday? weekday;
   final Month? month;
+
+  @JsonKey(fromJson: _parseString)
   final String? year;
 
   HijriDate({
@@ -204,70 +156,44 @@ class HijriDate {
     this.year,
   });
 
-  factory HijriDate.fromJson(Map<String, dynamic> json) {
-    return HijriDate(
-      date: _parseString(json['date']),
-      format: _parseString(json['format']),
-      day: _parseString(json['day']),
-      weekday: json['weekday'] != null
-          ? Weekday.fromJson(json['weekday'] as Map<String, dynamic>)
-          : null,
-      month: json['month'] != null
-          ? Month.fromJson(json['month'] as Map<String, dynamic>)
-          : null,
-      year: _parseString(json['year']),
-    );
-  }
+  factory HijriDate.fromJson(Map<String, dynamic> json) =>
+      _$HijriDateFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (date != null) 'date': date,
-      if (format != null) 'format': format,
-      if (day != null) 'day': day,
-      if (weekday != null) 'weekday': weekday!.toJson(),
-      if (month != null) 'month': month!.toJson(),
-      if (year != null) 'year': year,
-    };
-  }
+  Map<String, dynamic> toJson() => _$HijriDateToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false)
 class Weekday {
+  @JsonKey(fromJson: _parseString)
   final String? en;
+
+  @JsonKey(fromJson: _parseString)
   final String? ar;
 
   Weekday({this.en, this.ar});
 
-  factory Weekday.fromJson(Map<String, dynamic> json) {
-    return Weekday(en: _parseString(json['en']), ar: _parseString(json['ar']));
-  }
+  factory Weekday.fromJson(Map<String, dynamic> json) =>
+      _$WeekdayFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {if (en != null) 'en': en, if (ar != null) 'ar': ar};
-  }
+  Map<String, dynamic> toJson() => _$WeekdayToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false)
 class Month {
+  @JsonKey(fromJson: _parseInt)
   final int? number;
+
+  @JsonKey(fromJson: _parseString)
   final String? en;
+
+  @JsonKey(fromJson: _parseString)
   final String? ar;
 
   Month({this.number, this.en, this.ar});
 
-  factory Month.fromJson(Map<String, dynamic> json) {
-    return Month(
-      number: _parseInt(json['number']),
-      en: _parseString(json['en']),
-      ar: _parseString(json['ar']),
-    );
-  }
+  factory Month.fromJson(Map<String, dynamic> json) => _$MonthFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (number != null) 'number': number,
-      if (en != null) 'en': en,
-      if (ar != null) 'ar': ar,
-    };
-  }
+  Map<String, dynamic> toJson() => _$MonthToJson(this);
 }
 
 /// Safely parse a value to boolean
@@ -334,11 +260,19 @@ double? _parseDouble(dynamic value) {
   return null;
 }
 
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class Meta {
+  @JsonKey(fromJson: _parseString)
   final String? timezone;
+
+  @JsonKey(fromJson: _parseDouble)
   final double? latitude;
+
+  @JsonKey(fromJson: _parseDouble)
   final double? longitude;
-  final bool? lunarSighting; // Added lunarSighting field
+
+  @JsonKey(fromJson: _parseBool)
+  final bool? lunarSighting;
   final Method? method;
   final Params? params;
 
@@ -351,73 +285,44 @@ class Meta {
     this.params,
   });
 
-  factory Meta.fromJson(Map<String, dynamic> json) {
-    return Meta(
-      timezone: _parseString(json['timezone']),
-      latitude: _parseDouble(json['latitude']),
-      longitude: _parseDouble(json['longitude']),
-      lunarSighting: _parseBool(
-        json['lunarSighting'],
-      ), // Safe parsing for lunarSighting
-      method: json['method'] != null
-          ? Method.fromJson(json['method'] as Map<String, dynamic>)
-          : null,
-      params: json['params'] != null
-          ? Params.fromJson(json['params'] as Map<String, dynamic>)
-          : null,
-    );
-  }
+  factory Meta.fromJson(Map<String, dynamic> json) => _$MetaFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (timezone != null) 'timezone': timezone,
-      if (latitude != null) 'latitude': latitude,
-      if (longitude != null) 'longitude': longitude,
-      if (lunarSighting != null) 'lunarSighting': lunarSighting,
-      if (method != null) 'method': method!.toJson(),
-      if (params != null) 'params': params!.toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => _$MetaToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false)
 class Method {
+  @JsonKey(fromJson: _parseInt)
   final int? id;
+
+  @JsonKey(fromJson: _parseString)
   final String? name;
+
+  @JsonKey(fromJson: _parseString)
   final String? params;
 
   Method({this.id, this.name, this.params});
 
-  factory Method.fromJson(Map<String, dynamic> json) {
-    return Method(
-      id: _parseInt(json['id']),
-      name: _parseString(json['name']),
-      params: _parseString(json['params']),
-    );
-  }
+  factory Method.fromJson(Map<String, dynamic> json) => _$MethodFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (params != null) 'params': params,
-    };
-  }
+  Map<String, dynamic> toJson() => _$MethodToJson(this);
 }
 
+@JsonSerializable(includeIfNull: false)
 class Params {
+  @JsonKey(name: 'Fajr', fromJson: _parseDouble)
   final double? fajr;
+
+  @JsonKey(name: 'Isha', fromJson: _parseDouble)
   final double? isha;
 
   Params({this.fajr, this.isha});
 
-  factory Params.fromJson(Map<String, dynamic> json) {
-    return Params(
-      fajr: _parseDouble(json['Fajr']),
-      isha: _parseDouble(json['Isha']),
-    );
-  }
+  factory Params.fromJson(Map<String, dynamic> json) => _$ParamsFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {if (fajr != null) 'Fajr': fajr, if (isha != null) 'Isha': isha};
-  }
+  Map<String, dynamic> toJson() => _$ParamsToJson(this);
 }
+
+int _parseIntOrZero(dynamic value) => _parseInt(value) ?? 0;
+
+String _parseStringOrError(dynamic value) => _parseString(value) ?? 'ERROR';

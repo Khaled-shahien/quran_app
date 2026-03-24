@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/notification_service.dart';
-import '../services/firebase_messaging_service.dart';
+
+import '../services/notification_facades.dart';
 
 /// Notification Provider for state management
 ///
@@ -12,8 +13,8 @@ import '../services/firebase_messaging_service.dart';
 /// - Pending notifications list
 class NotificationProvider extends ChangeNotifier {
   final SharedPreferences prefs;
-  final NotificationService _notificationService = NotificationService();
-  final FirebaseMessagingService _fcmService = FirebaseMessagingService();
+  final LocalNotificationGateway _notificationGateway;
+  final MessagingGateway _messagingGateway;
 
   bool _isInitialized = false;
   final bool _isLoading = false;
@@ -22,7 +23,13 @@ class NotificationProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _pendingNotifications = [];
   final List<String> _debugLogs = [];
 
-  NotificationProvider({required this.prefs});
+  NotificationProvider({
+    required this.prefs,
+    LocalNotificationGateway? notificationGateway,
+    MessagingGateway? messagingGateway,
+  }) : _notificationGateway =
+           notificationGateway ?? NotificationServiceGateway(),
+       _messagingGateway = messagingGateway ?? FirebaseMessagingGateway();
 
   /// Initialize notification services
   Future<void> initialize() async {
@@ -30,7 +37,7 @@ class NotificationProvider extends ChangeNotifier {
 
     try {
       // Initialize local notifications first (fast)
-      await _notificationService.initialize(requestPermissions: false);
+      await _notificationGateway.initialize(requestPermissions: false);
 
       // Initialize Firebase in background (non-blocking)
       _initializeFirebaseInBackground();
@@ -52,7 +59,7 @@ class NotificationProvider extends ChangeNotifier {
         await _initializeFirebaseWithRetry();
 
         // Get FCM token after initialization
-        _fcmToken = await _fcmService.getToken();
+        _fcmToken = await _messagingGateway.getToken();
         if (_fcmToken != null) {
           _addLog('FCM Token obtained');
         }
@@ -72,7 +79,9 @@ class NotificationProvider extends ChangeNotifier {
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        await _fcmService.initialize().timeout(const Duration(seconds: 8));
+        await _messagingGateway.initialize().timeout(
+          const Duration(seconds: 8),
+        );
         return;
       } catch (e) {
         _addLog('Firebase init attempt $attempt/$maxAttempts failed: $e');
@@ -87,7 +96,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Check notification permissions
   Future<void> _checkPermissionStatus() async {
     try {
-      final settings = await _fcmService.getNotificationSettings();
+      final settings = await _messagingGateway.getNotificationSettings();
       _permissionStatus = settings.authorizationStatus.name;
       notifyListeners();
     } catch (e) {
@@ -99,7 +108,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Request notification permissions
   Future<void> requestPermissions() async {
     try {
-      await _notificationService.requestPermissions();
+      await _notificationGateway.requestPermissions();
       await _initializeFirebaseWithRetry();
       await _checkPermissionStatus();
       _addLog('Permissions requested');
@@ -115,7 +124,7 @@ class NotificationProvider extends ChangeNotifier {
     required String body,
   }) async {
     try {
-      await _notificationService.testNotification(
+      await _notificationGateway.testNotification(
         id: id,
         title: title,
         body: body,
@@ -139,7 +148,7 @@ class NotificationProvider extends ChangeNotifier {
         const Duration(minutes: 1),
       );
 
-      await _notificationService.scheduleOneTimeNotification(
+      await _notificationGateway.scheduleOneTimeNotification(
         id: id,
         title: title,
         body: body,
@@ -166,7 +175,7 @@ class NotificationProvider extends ChangeNotifier {
         const Duration(minutes: 5),
       );
 
-      await _notificationService.scheduleOneTimeNotification(
+      await _notificationGateway.scheduleOneTimeNotification(
         id: id,
         title: title,
         body: body,
@@ -187,7 +196,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Cancel specific notification
   Future<void> cancelNotification(int id) async {
     try {
-      await _notificationService.cancelNotification(id);
+      await _notificationGateway.cancelNotification(id);
       _addLog('Notification cancelled: $id');
       notifyListeners();
     } catch (e) {
@@ -198,7 +207,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
     try {
-      await _notificationService.cancelAllNotifications();
+      await _notificationGateway.cancelAllNotifications();
       _addLog('All notifications cancelled');
       notifyListeners();
     } catch (e) {
@@ -209,8 +218,9 @@ class NotificationProvider extends ChangeNotifier {
   /// Get pending notifications
   Future<List<Map<String, dynamic>>> getPendingNotifications() async {
     try {
-      final pending = await _notificationService.getPendingNotifications();
+      final pending = await _notificationGateway.getPendingNotifications();
       _pendingNotifications = pending
+          .whereType<PendingNotificationRequest>()
           .map(
             (p) => {
               'id': p.id,
@@ -233,8 +243,8 @@ class NotificationProvider extends ChangeNotifier {
   /// Refresh FCM token
   Future<void> refreshFCMToken() async {
     try {
-      await _fcmService.refreshToken();
-      _fcmToken = await _fcmService.getToken();
+      await _messagingGateway.refreshToken();
+      _fcmToken = await _messagingGateway.getToken();
       _addLog('FCM token refreshed: $_fcmToken');
       notifyListeners();
     } catch (e) {
@@ -253,7 +263,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Reschedule all alarms
   Future<void> rescheduleAllAlarms() async {
     try {
-      await _notificationService.updateAllAlarms(
+      await _notificationGateway.updateAllAlarms(
         isMorningEnabled: prefs.getBool('morning_alarm_enabled') ?? true,
         isEveningEnabled: prefs.getBool('evening_alarm_enabled') ?? true,
         isMulkEnabled: prefs.getBool('mulk_alarm_enabled') ?? true,

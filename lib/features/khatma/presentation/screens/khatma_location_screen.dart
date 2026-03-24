@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import 'khatma_duration_screen.dart';
 
 class KhatmaLocationScreen extends StatefulWidget {
   const KhatmaLocationScreen({super.key});
@@ -51,7 +51,8 @@ class _KhatmaLocationScreenState extends State<KhatmaLocationScreen> {
             children: [
               // Title text
               Text(
-                'الرجاء تحديد المكان أو الجزء الذي تريد\nأن تبدء منه الختمة',
+                'الرجاء تحديد المكان أو الجزء '
+                'الذي تريد\nأن تبدء منه الختمة',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.cairo(
                   fontSize: 22,
@@ -186,14 +187,13 @@ class _KhatmaLocationScreenState extends State<KhatmaLocationScreen> {
               // Continue Button
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => KhatmaDurationScreen(
-                        startMode: _selectedStartMode,
-                        startJuz: _selectedJuz,
-                      ),
-                    ),
+                  final String encodedStartMode = Uri.encodeComponent(
+                    _selectedStartMode,
+                  );
+                  context.push(
+                    '/khatma/duration?'
+                    'startMode=$encodedStartMode&'
+                    'startJuz=$_selectedJuz',
                   );
                 },
                 style: ElevatedButton.styleFrom(

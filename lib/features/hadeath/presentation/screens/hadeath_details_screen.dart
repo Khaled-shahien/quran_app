@@ -16,7 +16,10 @@ class HadeathDetailsScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           tooltip: 'رجوع',
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.primary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -32,54 +35,61 @@ class HadeathDetailsScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Column(
-          children: [
-            // شريط البسملة الداخلي ليتماشى مع تصميم السور لو أحببنا
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              width: double.infinity,
-              child: Text(
-                "بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Amiri',
-                  color: Theme.of(context).colorScheme.primary,
-                  fontSize: 16,
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Column(
+            children: [
+              // شريط البسملة الداخلي ليتماشى
+              // مع تصميم السور لو أحببنا
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
                 ),
-              ),
-            ),
-
-            // محتوى الحديث
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 16.0,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                width: double.infinity,
                 child: Text(
-                  hadeath.content.join(
-                    ' ',
-                  ), // Join lines with spaces as it's continuous text
-                  textAlign: TextAlign.justify,
+                  "بِسْمِ اللَّهِ "
+                  "الرَّحْمَِٰ الرَّحِيمِ",
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 24,
-                    color: Theme.of(context).colorScheme.primary,
-                    height: 1.8,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'Amiri',
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // محتوى الحديث
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 16.0,
+                  ),
+                  child: Text(
+                    hadeath.content.join(
+                      ' ',
+                    ), // Join lines with spaces as it's continuous text
+                    textAlign: TextAlign.justify,
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: Theme.of(context).colorScheme.primary,
+                      height: 1.8,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Amiri',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

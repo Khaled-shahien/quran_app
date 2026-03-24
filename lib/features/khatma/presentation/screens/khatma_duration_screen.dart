@@ -21,34 +21,57 @@ class KhatmaDurationScreen extends StatefulWidget {
 }
 
 class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
+  KhatmaGoalType _goalType = KhatmaGoalType.byDuration;
+  KhatmaTrackingUnit _trackingUnit = KhatmaTrackingUnit.page;
   int _durationDays = 30;
-  String _amountType = 'جزء'; // جزء, حزب, ربع
-  String _amountValue = '1 جزء'; // Options depend on the type
+  double _dailyTarget = 20;
+  int _reminderHour = 8;
+  int _reminderMinute = 0;
 
-  final List<String> _amountTypes = ['جزء', 'ربع'];
-
-  // Mock values based on the screenshots / User request
-  final List<String> _juzValues = List.generate(10, (i) => '${i + 1} أجزاء')
-    ..replaceRange(0, 2, ['جزء', 'جزءان']);
-  final List<String> _rubValues = [
-    'ربع',
-    'ربعان',
-    '3 أرباع',
-    '4 أرباع',
-    '5 أرباع',
-    '6 أرباع',
-    '7 أرباع',
-  ];
-
-  List<String> get _currentAmountValues {
-    if (_amountType == 'جزء') return _juzValues;
-    return _rubValues;
+  int get _startUnitIndex {
+    final int startJuz = (widget.startJuz ?? 1).clamp(1, 30);
+    switch (_trackingUnit) {
+      case KhatmaTrackingUnit.page:
+        return (((startJuz - 1) * 20) + 1).clamp(1, 604);
+      case KhatmaTrackingUnit.hizb:
+        return (((startJuz - 1) * 2) + 1).clamp(1, 60);
+      case KhatmaTrackingUnit.juz:
+        return startJuz;
+    }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _amountValue = _currentAmountValues.first;
+  int get _totalUnits {
+    switch (_trackingUnit) {
+      case KhatmaTrackingUnit.page:
+        return 604;
+      case KhatmaTrackingUnit.hizb:
+        return 60;
+      case KhatmaTrackingUnit.juz:
+        return 30;
+    }
+  }
+
+  int get _remainingUnits => _totalUnits - _startUnitIndex + 1;
+
+  String get _unitLabel {
+    switch (_trackingUnit) {
+      case KhatmaTrackingUnit.page:
+        return 'صفحة';
+      case KhatmaTrackingUnit.hizb:
+        return 'حزب';
+      case KhatmaTrackingUnit.juz:
+        return 'جزء';
+    }
+  }
+
+  double get _computedDailyTargetForDuration =>
+      (_remainingUnits / _durationDays).clamp(1, 2000);
+
+  String _formatDouble(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 
   @override
@@ -83,138 +106,78 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
             children: [
               // Title text
               Text(
-                'الرجاء تحديد المدة التي تريد أن تختم\nفيها أو كمية الورد اليومي الذي تود\nقراءته',
+                'حدد نوع الخطة ووحدة المتابعة '
+                'ووقت التذكير اليومي',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.cairo(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: textColor,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 30),
 
-              // Duration Row
               Directionality(
                 textDirection: TextDirection.rtl,
                 child: Row(
                   children: [
-                    Text(
-                      'مدة الختمة:',
-                      style: GoogleFonts.cairo(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                    Expanded(
+                      child: _buildPlanTypeCard(
+                        title: 'حسب المدة',
+                        subtitle:
+                            'توزيع تلقائي '
+                            'حتى تاريخ الإتمام',
+                        active: _goalType == KhatmaGoalType.byDuration,
+                        onTap: () {
+                          setState(() {
+                            _goalType = KhatmaGoalType.byDuration;
+                          });
+                        },
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Centered Number Field
+                    const SizedBox(width: 10),
                     Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '$_durationDays يوماً',
-                          style: GoogleFonts.cairo(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Plus / Minus Buttons
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          border: Border.all(color: AppColors.primary),
-                          borderRadius: BorderRadius.circular(20), // Pill shape
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _durationDays++;
-                                });
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(
-                                  Icons.add,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 30,
-                              color: AppColors.primary,
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                if (_durationDays > 1) {
-                                  setState(() {
-                                    _durationDays--;
-                                  });
-                                }
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(
-                                  Icons.remove,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildPlanTypeCard(
+                        title: 'حسب الورد اليومي',
+                        subtitle: 'تحدد مقدار القراءة كل يوم',
+                        active: _goalType == KhatmaGoalType.byDailyAmount,
+                        onTap: () {
+                          setState(() {
+                            _goalType = KhatmaGoalType.byDailyAmount;
+                          });
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Amount Row
               Directionality(
                 textDirection: TextDirection.rtl,
                 child: Row(
                   children: [
                     Text(
-                      'كمية\nالورد:',
+                      'وحدة التتبع:',
                       style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
-                    const SizedBox(width: 16),
-
-                    // Amount Type Dropdown (جزء, حزب, ربع)
+                    const SizedBox(width: 12),
                     Expanded(
-                      flex: 1,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: cardColor,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _amountType,
+                          child: DropdownButton<KhatmaTrackingUnit>(
+                            value: _trackingUnit,
                             icon: Icon(
                               Icons.arrow_drop_down,
                               color: isDarkMode ? Colors.white54 : Colors.grey,
@@ -225,58 +188,31 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                             isExpanded: true,
-                            items: _amountTypes.map((type) {
-                              return DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              );
-                            }).toList(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: KhatmaTrackingUnit.page,
+                                child: Text('صفحة (604)'),
+                              ),
+                              DropdownMenuItem(
+                                value: KhatmaTrackingUnit.hizb,
+                                child: Text('حزب (60)'),
+                              ),
+                              DropdownMenuItem(
+                                value: KhatmaTrackingUnit.juz,
+                                child: Text('جزء (30)'),
+                              ),
+                            ],
                             onChanged: (val) {
                               if (val != null) {
                                 setState(() {
-                                  _amountType = val;
-                                  _amountValue = _currentAmountValues.first;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Amount Value Dropdown
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _amountValue,
-                            icon: Icon(
-                              Icons.arrow_drop_down,
-                              color: isDarkMode ? Colors.white54 : Colors.grey,
-                            ),
-                            style: GoogleFonts.cairo(
-                              fontSize: 14,
-                              color: dropdownTextColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            isExpanded: true,
-                            items: _currentAmountValues.map((val) {
-                              return DropdownMenuItem(
-                                value: val,
-                                child: Text(val),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() {
-                                  _amountValue = val;
+                                  _trackingUnit = val;
+                                  if (_goalType ==
+                                      KhatmaGoalType.byDailyAmount) {
+                                    _dailyTarget = _dailyTarget.clamp(
+                                      1,
+                                      _remainingUnits.toDouble(),
+                                    );
+                                  }
                                 });
                               }
                             },
@@ -285,6 +221,40 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              if (_goalType == KhatmaGoalType.byDuration)
+                _buildDurationSection(cardColor, textColor)
+              else
+                _buildDailyTargetSection(cardColor, textColor),
+
+              const SizedBox(height: 18),
+
+              _buildReminderSection(cardColor, textColor),
+
+              const SizedBox(height: 12),
+
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _goalType == KhatmaGoalType.byDuration
+                      ? 'وردك المقترح: '
+                            '${_formatDouble(_computedDailyTargetForDuration)} '
+                            '$_unitLabel يومياً'
+                      : 'المدة المتوقعة للإتمام: '
+                            '${(_remainingUnits / _dailyTarget).ceil()} يوماً',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
 
@@ -297,15 +267,23 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
                     context,
                     listen: false,
                   );
+
+                  final double target = _goalType == KhatmaGoalType.byDuration
+                      ? _computedDailyTargetForDuration
+                      : _dailyTarget;
+
                   final newKhatma = KhatmaModel(
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     startMode: widget.startMode,
                     startJuz: widget.startJuz ?? 1,
-                    durationDays: _durationDays,
-                    amountType: _amountType,
-                    amountValue: _amountValue,
                     startDate: DateTime.now(),
-                    currentJuz: widget.startJuz ?? 1,
+                    trackingUnit: _trackingUnit,
+                    goalType: _goalType,
+                    plannedDurationDays: _durationDays,
+                    dailyTargetUnits: target,
+                    completedUnits: 0,
+                    reminderHour: _reminderHour,
+                    reminderMinute: _reminderMinute,
                   );
 
                   await provider.startNewKhatma(newKhatma);
@@ -342,6 +320,280 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlanTypeCard({
+    required String title,
+    required String subtitle,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: active
+                ? AppColors.primary
+                : AppColors.primary.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.cairo(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+              textAlign: TextAlign.right,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: GoogleFonts.cairo(fontSize: 12, color: AppColors.primary),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDurationSection(Color cardColor, Color textColor) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Row(
+        children: [
+          Text(
+            'مدة الختمة:',
+            style: GoogleFonts.cairo(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$_durationDays يوماً',
+                style: GoogleFonts.cairo(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                border: Border.all(color: AppColors.primary),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _durationDays++),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.add,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  Container(width: 1, height: 30, color: AppColors.primary),
+                  GestureDetector(
+                    onTap: () {
+                      if (_durationDays > 1) {
+                        setState(() => _durationDays--);
+                      }
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.remove,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyTargetSection(Color cardColor, Color textColor) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Row(
+        children: [
+          Text(
+            'الورد اليومي:',
+            style: GoogleFonts.cairo(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${_formatDouble(_dailyTarget)} $_unitLabel',
+                style: GoogleFonts.cairo(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor,
+                border: Border.all(color: AppColors.primary),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _dailyTarget = (_dailyTarget + 0.5).clamp(
+                          1,
+                          _remainingUnits.toDouble(),
+                        );
+                      });
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.add,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  Container(width: 1, height: 30, color: AppColors.primary),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _dailyTarget = (_dailyTarget - 0.5).clamp(
+                          1,
+                          _remainingUnits.toDouble(),
+                        );
+                      });
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.remove,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderSection(Color cardColor, Color textColor) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Row(
+        children: [
+          Text(
+            'وقت التذكير:',
+            style: GoogleFonts.cairo(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: InkWell(
+              onTap: () async {
+                final TimeOfDay? picked = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay(
+                    hour: _reminderHour,
+                    minute: _reminderMinute,
+                  ),
+                );
+                if (picked != null) {
+                  setState(() {
+                    _reminderHour = picked.hour;
+                    _reminderMinute = picked.minute;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_reminderHour.toString().padLeft(2, '0')}:'
+                  '${_reminderMinute.toString().padLeft(2, '0')}',
+                  style: GoogleFonts.cairo(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

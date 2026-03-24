@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
@@ -17,7 +19,10 @@ void callbackDispatcher() {
   WidgetsFlutterBinding.ensureInitialized();
 
   Workmanager().executeTask((task, inputData) async {
-    debugPrint('Background task executed: $task');
+    developer.log(
+      'Background task executed: $task',
+      name: 'quran_app.workmanager',
+    );
 
     try {
       switch (task) {
@@ -25,12 +30,21 @@ void callbackDispatcher() {
           await _handleRescheduleAlarms(inputData: inputData);
           break;
         default:
-          debugPrint('Unknown task: $task');
+          developer.log(
+            'Unknown task: $task',
+            name: 'quran_app.workmanager',
+            level: 900,
+          );
       }
 
       return Future.value(true);
     } catch (e) {
-      debugPrint('Error in background task: $e');
+      developer.log(
+        'Error in background task',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
       return Future.value(false);
     }
   });
@@ -38,7 +52,10 @@ void callbackDispatcher() {
 
 /// Handle alarm rescheduling
 Future<void> _handleRescheduleAlarms({Map<String, dynamic>? inputData}) async {
-  debugPrint('Rescheduling alarms after boot/update');
+  developer.log(
+    'Rescheduling alarms after boot/update',
+    name: 'quran_app.workmanager',
+  );
 
   try {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -47,7 +64,10 @@ Future<void> _handleRescheduleAlarms({Map<String, dynamic>? inputData}) async {
 
     // WorkManager can enqueue multiple near-identical startup jobs.
     if (nowMs - lastRunMs < _kBackgroundRescheduleThrottleMs) {
-      debugPrint('⏭️ Skipping duplicate background reschedule execution');
+      developer.log(
+        'Skipping duplicate background reschedule execution',
+        name: 'quran_app.workmanager',
+      );
       return;
     }
 
@@ -64,9 +84,17 @@ Future<void> _handleRescheduleAlarms({Map<String, dynamic>? inputData}) async {
       isBaqarahEnabled: prefs.getBool('baqarah_alarm_enabled') ?? false,
     );
 
-    debugPrint('✅ Alarms rescheduled successfully');
+    developer.log(
+      'Alarms rescheduled successfully',
+      name: 'quran_app.workmanager',
+    );
   } catch (e) {
-    debugPrint('❌ Error rescheduling alarms: $e');
+    developer.log(
+      'Error rescheduling alarms',
+      name: 'quran_app.workmanager',
+      level: 1000,
+      error: e,
+    );
   }
 }
 
@@ -91,13 +119,21 @@ class WorkManagerService {
     try {
       await _workmanager.initialize(callbackDispatcher);
 
-      debugPrint('WorkManager initialized successfully');
+      developer.log(
+        'WorkManager initialized successfully',
+        name: 'quran_app.workmanager',
+      );
       _isInitialized = true;
 
       // Keep a periodic safety task registered across app runs/reboots.
       await registerRescheduleTask();
     } catch (e) {
-      debugPrint('Error initializing WorkManager: $e');
+      developer.log(
+        'Error initializing WorkManager',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -122,9 +158,17 @@ class WorkManagerService {
         inputData: {'source': 'periodic'},
       );
 
-      debugPrint('✅ Reschedule task registered');
+      developer.log(
+        'Reschedule task registered',
+        name: 'quran_app.workmanager',
+      );
     } catch (e) {
-      debugPrint('❌ Error registering reschedule task: $e');
+      developer.log(
+        'Error registering reschedule task',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -148,9 +192,17 @@ class WorkManagerService {
         backoffPolicyDelay: const Duration(minutes: 5),
         inputData: {'source': source},
       );
-      debugPrint('✅ Boot reschedule task registered');
+      developer.log(
+        'Boot reschedule task registered',
+        name: 'quran_app.workmanager',
+      );
     } catch (e) {
-      debugPrint('❌ Error registering boot reschedule task: $e');
+      developer.log(
+        'Error registering boot reschedule task',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -167,9 +219,17 @@ class WorkManagerService {
         constraints: Constraints(networkType: NetworkType.notRequired),
         inputData: {'source': source},
       );
-      debugPrint('✅ Immediate reschedule task registered');
+      developer.log(
+        'Immediate reschedule task registered',
+        name: 'quran_app.workmanager',
+      );
     } catch (e) {
-      debugPrint('❌ Error registering immediate reschedule task: $e');
+      developer.log(
+        'Error registering immediate reschedule task',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -180,9 +240,14 @@ class WorkManagerService {
         kRescheduleAlarmsPeriodicUniqueName,
       );
       await _workmanager.cancelByUniqueName(kRescheduleAlarmsOneOffUniqueName);
-      debugPrint('Reschedule task cancelled');
+      developer.log('Reschedule task cancelled', name: 'quran_app.workmanager');
     } catch (e) {
-      debugPrint('Error cancelling reschedule task: $e');
+      developer.log(
+        'Error cancelling reschedule task',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -190,9 +255,17 @@ class WorkManagerService {
   Future<void> cancelAllTasks() async {
     try {
       await _workmanager.cancelAll();
-      debugPrint('All WorkManager tasks cancelled');
+      developer.log(
+        'All WorkManager tasks cancelled',
+        name: 'quran_app.workmanager',
+      );
     } catch (e) {
-      debugPrint('Error cancelling all tasks: $e');
+      developer.log(
+        'Error cancelling all tasks',
+        name: 'quran_app.workmanager',
+        level: 1000,
+        error: e,
+      );
     }
   }
 

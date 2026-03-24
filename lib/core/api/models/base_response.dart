@@ -1,7 +1,12 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'base_response.g.dart';
+
 /// Base API Response Model
 ///
 /// Generic response wrapper that can be used for all API responses.
 /// Contains common fields like status, message, and data.
+@JsonSerializable(genericArgumentFactories: true, includeIfNull: false)
 class BaseResponse<T> {
   final bool status;
   final String? message;
@@ -14,26 +19,14 @@ class BaseResponse<T> {
   factory BaseResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic> json) fromJsonT,
-  ) {
-    return BaseResponse<T>(
-      status: json['status'] as bool? ?? false,
-      message: json['message'] as String?,
-      data: json['data'] != null
-          ? fromJsonT(json['data'] as Map<String, dynamic>)
-          : null,
-      code: json['code'] as int?,
-    );
-  }
+  ) => _$BaseResponseFromJson(
+    json,
+    (Object? value) => fromJsonT(value as Map<String, dynamic>),
+  );
 
   /// Converts BaseResponse to JSON
-  Map<String, dynamic> toJson(Map<String, dynamic> Function(T value) toJsonT) {
-    return {
-      'status': status,
-      if (message != null) 'message': message,
-      if (data != null) 'data': toJsonT(data as T),
-      if (code != null) 'code': code,
-    };
-  }
+  Map<String, dynamic> toJson(Map<String, dynamic> Function(T value) toJsonT) =>
+      _$BaseResponseToJson(this, (T value) => toJsonT(value));
 
   /// Creates a success response
   factory BaseResponse.success({T? data, String? message, int? code}) {

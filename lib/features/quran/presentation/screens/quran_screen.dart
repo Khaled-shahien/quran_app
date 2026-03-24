@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/repositories/surah_repository.dart';
 import '../../domain/entities/surah_entity.dart';
-import 'surah_details_screen.dart';
 
 /// Quran Screen
 ///
@@ -97,9 +97,11 @@ class _QuranScreenState extends State<_QuranScreenContent> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: _buildBody(theme, accentColor, cardBackground),
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: _buildBody(theme, accentColor, cardBackground),
+        ),
       ),
     );
   }
@@ -172,13 +174,9 @@ class _QuranScreenState extends State<_QuranScreenContent> {
   }
 
   void _onSurahTap(BuildContext context, SurahEntity surah, int number) {
-    // Navigate to the Surah details screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            SurahDetailsScreen(surah: surah, surahNumber: number),
-      ),
+    context.push(
+      '/quran/surah/$number',
+      extra: <String, dynamic>{'surah': surah},
     );
   }
 }

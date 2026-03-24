@@ -1,8 +1,13 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import 'ayah_model.dart';
+
+part 'surah_model.g.dart';
 
 /// Surah Model
 ///
 /// Represents a single Surah (chapter) of the Quran with all its metadata
+@JsonSerializable(explicitToJson: true)
 class SurahModel {
   final int number;
   final String name;
@@ -10,6 +15,8 @@ class SurahModel {
   final String englishNameTranslation;
   final String revelationType;
   final int numberOfAyahs;
+
+  @JsonKey(defaultValue: <AyahModel>[])
   final List<AyahModel> ayahs;
 
   SurahModel({
@@ -23,34 +30,11 @@ class SurahModel {
   });
 
   /// Creates a SurahModel from JSON
-  factory SurahModel.fromJson(Map<String, dynamic> json) {
-    return SurahModel(
-      number: json['number'] as int,
-      name: json['name'] as String,
-      englishName: json['englishName'] as String,
-      englishNameTranslation: json['englishNameTranslation'] as String,
-      revelationType: json['revelationType'] as String,
-      numberOfAyahs: json['numberOfAyahs'] as int,
-      ayahs:
-          (json['ayahs'] as List?)
-              ?.map((item) => AyahModel.fromJson(item))
-              .toList() ??
-          [],
-    );
-  }
+  factory SurahModel.fromJson(Map<String, dynamic> json) =>
+      _$SurahModelFromJson(json);
 
   /// Converts SurahModel to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'number': number,
-      'name': name,
-      'englishName': englishName,
-      'englishNameTranslation': englishNameTranslation,
-      'revelationType': revelationType,
-      'numberOfAyahs': numberOfAyahs,
-      'ayahs': ayahs.map((ayah) => ayah.toJson()).toList(),
-    };
-  }
+  Map<String, dynamic> toJson() => _$SurahModelToJson(this);
 
   /// Get revelation type in Arabic
   String get revelationTypeArabic {

@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../quran/presentation/screens/tasbeeh_screen.dart';
-import '../../../quran/presentation/screens/asma_al_husna_screen.dart';
-import '../../../quran/presentation/screens/quran_screen.dart';
-import '../../../hadeath/presentation/screens/hadeath_screen.dart';
-import '../../../duas/presentation/screens/azkar_screen.dart';
-import '../../../duas/presentation/screens/duas_screen.dart';
 
 class CategoryGridWidget extends StatelessWidget {
   const CategoryGridWidget({super.key});
@@ -26,57 +21,37 @@ class CategoryGridWidget extends StatelessWidget {
             context,
             'الأدعية',
             'assets/images/الادعيه.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const DuasScreen()),
-            ),
+            onTap: () => context.push('/duas/all'),
           ),
           _catCard(
             context,
             'التسبيح',
             'assets/images/التسبيح_الالكتروني.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TasbeehScreen()),
-            ),
+            onTap: () => context.push('/tasbeeh'),
           ),
           _catCard(
             context,
             'الأسماء',
             'assets/images/اسماء_الله_الحسني.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AsmaAlHusnaScreen(),
-              ),
-            ),
+            onTap: () => context.push('/asma'),
           ),
           _catCard(
             context,
             'القرآن',
             'assets/images/القران.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QuranScreen()),
-            ),
+            onTap: () => context.push('/quran'),
           ),
           _catCard(
             context,
             'الأذكار',
             'assets/images/الاذكار.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AzkarScreen()),
-            ),
+            onTap: () => context.push('/duas'),
           ),
           _catCard(
             context,
             'الأحاديث',
             'assets/images/الاحاديث.png',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HadeathScreen()),
-            ),
+            onTap: () => context.push('/hadeath'),
           ),
         ]),
       ),

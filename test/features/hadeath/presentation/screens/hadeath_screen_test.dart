@@ -1,0 +1,116 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import 'package:quran_app/features/hadeath/domain/entities/hadeath_entity.dart';
+import 'package:quran_app/features/hadeath/domain/repositories/hadeath_repository.dart';
+import 'package:quran_app/features/hadeath/presentation/providers/hadeath_provider.dart';
+import 'package:quran_app/features/hadeath/presentation/screens/hadeath_screen.dart';
+
+class FakeHadeathRepository implements HadeathRepository {
+  FakeHadeathRepository({this.onGetAll});
+
+  final Future<List<HadeathEntity>> Function()? onGetAll;
+
+  @override
+  Future<List<HadeathEntity>> getAllAhadeth() async {
+    if (onGetAll != null) {
+      return onGetAll!();
+    }
+    return <HadeathEntity>[];
+  }
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  Widget buildScreen(HadeathRepository repository) {
+    final provider = HadeathProvider(repository: repository);
+
+    return ChangeNotifierProvider<HadeathProvider>.value(
+      value: provider,
+      child: MaterialApp(
+        theme: ThemeData(
+          colorScheme: const ColorScheme.light(
+            primary: Colors.teal,
+            secondary: Color(0xFFF4FAF6),
+          ),
+        ),
+        home: const HadeathScreen(),
+      ),
+    );
+  }
+
+  testWidgets('shows loader then renders ahadeth list', (tester) async {
+    final completer = Completer<List<HadeathEntity>>();
+    final repo = FakeHadeathRepository(onGetAll: () => completer.future);
+
+    await tester.pumpWidget(buildScreen(repo));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    completer.complete(const <HadeathEntity>[
+      HadeathEntity(title: 'حديث عن الصدق', content: <String>['نص الحديث']),
+    ]);
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('حديث عن الصدق'), findsOneWidget);
+  });
+
+  testWidgets('shows error message when loading ahadeth fails', (tester) async {
+    final repo = FakeHadeathRepository(
+      onGetAll: () async {
+        throw Exception('network');
+      },
+    );
+
+    await tester.pumpWidget(buildScreen(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('حدث خطأ أثناء تحميل الأحاديث'), findsOneWidget);
+  });
+
+  testWidgets('shows empty state when no ahadeth are available', (
+    tester,
+  ) async {
+    final repo = FakeHadeathRepository(onGetAll: () async => <HadeathEntity>[]);
+
+    await tester.pumpWidget(buildScreen(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('لا توجد أحاديث لعرضها'), findsOneWidget);
+  });
+
+  testWidgets('uses fallback title and navigates to details on tap', (
+    tester,
+  ) async {
+    final repo = FakeHadeathRepository(
+      onGetAll: () async {
+        return const <HadeathEntity>[
+          HadeathEntity(title: '', content: <String>['سطر أول', 'سطر ثان']),
+        ];
+      },
+    );
+
+    await tester.pumpWidget(buildScreen(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('الحديث 1'), findsOneWidget);
+
+    await tester.tap(find.text('الحديث 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ'), findsOneWidget);
+    expect(find.text('سطر أول سطر ثان'), findsOneWidget);
+  });
+}

@@ -1,5 +1,7 @@
-import 'package:logger/logger.dart';
 import 'dart:convert';
+import 'dart:developer' as developer;
+
+import 'package:logger/logger.dart';
 
 /// Configuration for security settingsd Error Handling Utilities
 ///
@@ -271,8 +273,12 @@ class SecurityUtils {
       }
     } catch (e) {
       // Fallback for logging errors within the logger itself
-      // ignore: avoid_print
-      print('Error writing to secure log: $e');
+      developer.log(
+        'Error writing to secure log',
+        name: 'security_utils',
+        level: 1000,
+        error: e,
+      );
     }
   }
 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:quran_app/core/theme/app_colors.dart';
-import 'package:quran_app/features/prayers/presentation/providers/prayer_times_performance_provider.dart';
+import 'package:quran_app/features/prayers/presentation/providers/'
+    'prayer_times_performance_provider.dart';
 
 /// Performance-optimized Prayer Times Widget
 ///
@@ -48,7 +49,11 @@ class _PrayerTimesHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary, size: 20),
+        Icon(
+          Icons.access_time,
+          color: Theme.of(context).colorScheme.primary,
+          size: 20,
+        ),
         const SizedBox(width: 8),
         Text(
           'أوقات الصلاة',
@@ -135,7 +140,9 @@ class _LoadingIndicator extends StatelessWidget {
       child: Column(
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 16),
           const Text('جاري تحميل أوقات الصلاة...'),
@@ -254,7 +261,9 @@ class _PrayerTimeTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(

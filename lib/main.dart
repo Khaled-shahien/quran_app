@@ -1,18 +1,21 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/navigation/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/navigation/notification_router.dart';
 import 'core/providers/notification_provider.dart';
-import 'features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'features/prayers/presentation/providers/prayer_times_provider.dart';
-import 'features/prayers/presentation/providers/prayer_times_performance_provider.dart';
+import 'features/prayers/presentation/providers/'
+    'prayer_times_performance_provider.dart';
 import 'features/prayers/data/data_sources/prayer_times_api_service.dart';
 import 'features/prayers/data/repositories/prayer_times_repository_impl.dart';
 import 'features/prayers/domain/repositories/prayer_times_repository.dart';
@@ -34,57 +37,31 @@ import 'core/services/workmanager_service.dart';
 import 'core/services/firebase_messaging_service.dart';
 import 'features/khatma/data/repositories/khatma_repository.dart';
 import 'features/khatma/presentation/providers/khatma_provider.dart';
-import 'features/onboarding/presentation/screens/home_screen.dart';
-import 'features/prayers/presentation/screens/prayer_times_screen.dart';
-import 'features/quran/presentation/screens/quran_screen.dart';
-import 'features/duas/presentation/screens/azkar_screen.dart';
-import 'features/duas/presentation/screens/azkar_details_screen.dart';
-
-final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 void _handleNotificationNavigation(String route, Map<String, dynamic>? data) {
-  final navigator = appNavigatorKey.currentState;
-  if (navigator == null) return;
+  final context = appNavigatorKey.currentContext;
+  if (context == null) return;
 
   switch (route) {
     case '/duas':
       final String? dhikrType = data?['type']?.toString();
       if (dhikrType == 'morning') {
-        navigator.push(
-          MaterialPageRoute(
-            builder: (context) =>
-                const AzkarDetailsScreen(categoryName: 'أذكار الصباح'),
-          ),
-        );
+        context.go('/duas/morning');
       } else if (dhikrType == 'evening') {
-        navigator.push(
-          MaterialPageRoute(
-            builder: (context) =>
-                const AzkarDetailsScreen(categoryName: 'أذكار المساء'),
-          ),
-        );
+        context.go('/duas/evening');
       } else {
-        navigator.push(
-          MaterialPageRoute(builder: (context) => const AzkarScreen()),
-        );
+        context.go('/duas');
       }
       break;
     case '/quran':
-      navigator.push(
-        MaterialPageRoute(builder: (context) => const QuranScreen()),
-      );
+      context.go('/quran');
       break;
     case '/prayers':
-      navigator.push(
-        MaterialPageRoute(builder: (context) => const PrayerTimesScreen()),
-      );
+      context.go('/prayers');
       break;
     case '/':
     default:
-      navigator.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false,
-      );
+      context.go('/home');
       break;
   }
 }
@@ -100,11 +77,14 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
-    debugPrint('✅ Firebase Core initialized successfully');
+    developer.log(
+      'Firebase Core initialized successfully',
+      name: 'quran_app.main',
+    );
 
     // Register FCM background handler as early as possible.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    debugPrint('✅ FCM background handler registered');
+    developer.log('FCM background handler registered', name: 'quran_app.main');
 
     // Initialize SharedPreferences (fast operation)
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -113,7 +93,12 @@ void main() async {
     runApp(MyApp(prefs: prefs));
     unawaited(_initializeBackgroundServices());
   } catch (e) {
-    debugPrint('❌ Critical error in main: $e');
+    developer.log(
+      'Critical error in main',
+      name: 'quran_app.main',
+      level: 1000,
+      error: e,
+    );
     // Try to run app anyway with minimal initialization
     SharedPreferences.getInstance().then((prefs) {
       runApp(MyApp(prefs: prefs));
@@ -133,13 +118,20 @@ Future<void> _initializeBackgroundServices() async {
         .timeout(
           const Duration(seconds: 2),
           onTimeout: () {
-            debugPrint(
-              '⚠️ Notification initialization timeout - continuing anyway',
+            developer.log(
+              'Notification initialization timeout - continuing anyway',
+              name: 'quran_app.main',
+              level: 900,
             );
           },
         )
         .catchError((error) {
-          debugPrint('❌ Notification initialization error: $error');
+          developer.log(
+            'Notification initialization error',
+            name: 'quran_app.main',
+            level: 1000,
+            error: error,
+          );
         });
 
     // Initialize background task scheduler for boot/update alarm recovery.
@@ -147,7 +139,12 @@ Future<void> _initializeBackgroundServices() async {
     await workManagerService.initialize();
     await workManagerService.registerBootRescheduleTask();
   } catch (e) {
-    debugPrint('❌ Background services initialization error: $e');
+    developer.log(
+      'Background services initialization error',
+      name: 'quran_app.main',
+      level: 1000,
+      error: e,
+    );
   }
 }
 
@@ -265,15 +262,14 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
-          return MaterialApp(
-            navigatorKey: appNavigatorKey,
+          return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'Quran App',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             locale: const Locale('ar', 'SA'), // Set default locale to Arabic
-            home: const OnboardingScreen(),
+            routerConfig: appRouter,
             builder: (context, child) {
               return Directionality(
                 textDirection: TextDirection.rtl, // Right-to-left for Arabic

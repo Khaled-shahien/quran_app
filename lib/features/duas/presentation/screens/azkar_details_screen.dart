@@ -31,10 +31,11 @@ class AzkarDetailsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Consumer<AzkarProvider>(
-          builder: (context, provider, child) {
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Consumer<AzkarProvider>(
+            builder: (context, provider, child) {
             if (provider.isLoading) {
               return Center(
                 child: CircularProgressIndicator(
@@ -75,6 +76,7 @@ class AzkarDetailsScreen extends StatelessWidget {
               },
             );
           },
+        ),
         ),
       ),
     );

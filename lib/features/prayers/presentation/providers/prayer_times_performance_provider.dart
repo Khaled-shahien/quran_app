@@ -3,6 +3,8 @@ import 'package:quran_app/features/prayers/domain/Entities/prayer_times_entity.d
 import 'package:quran_app/features/prayers/domain/repositories/prayer_times_repository.dart';
 import 'package:quran_app/core/utils/value_notifier_mixin.dart';
 
+import 'prayer_times_provider.dart';
+
 /// High-performance Prayer Times Provider
 ///
 /// Uses granular state management and selective notifications
@@ -10,14 +12,18 @@ import 'package:quran_app/core/utils/value_notifier_mixin.dart';
 class PrayerTimesPerformanceProvider extends ChangeNotifier
     with SelectiveNotifyMixin {
   final PrayerTimesRepository _repository;
+  final PrayerTimesClock _clock;
 
   // Use separate ValueNotifiers for granular updates
   final _prayerTimesNotifier = ValueNotifier<PrayerTimesEntity?>(null);
   final _isLoadingNotifier = PerformanceValueNotifier<bool>(false);
   final _errorMessageNotifier = ValueNotifier<String?>(null);
 
-  PrayerTimesPerformanceProvider({required PrayerTimesRepository repository})
-    : _repository = repository;
+  PrayerTimesPerformanceProvider({
+    required PrayerTimesRepository repository,
+    PrayerTimesClock? clock,
+  }) : _repository = repository,
+       _clock = clock ?? SystemPrayerTimesClock();
 
   // Getters with direct notifier access for better performance
   PrayerTimesEntity? get prayerTimes => _prayerTimesNotifier.value;
@@ -68,7 +74,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
   Future<void> refresh() async {
     if (_prayerTimesNotifier.value != null) {
       await fetchPrayerTimes(
-        DateTime.now(),
+        _clock.now(),
         _prayerTimesNotifier.value!.latitude ?? 0.0,
         _prayerTimesNotifier.value!.longitude ?? 0.0,
         calculationMethod: _prayerTimesNotifier.value!.calculationMethod ?? 5,
@@ -109,7 +115,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
   DateTime _parseTime(String timeStr) {
     try {
       final parts = timeStr.split(':');
-      final now = DateTime.now();
+      final now = _clock.now();
       return DateTime(
         now.year,
         now.month,
@@ -118,7 +124,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
         int.parse(parts[1]),
       );
     } catch (e) {
-      return DateTime.now(); // fallback
+      return _clock.now(); // fallback
     }
   }
 
@@ -160,7 +166,7 @@ class PrayerTimesPerformanceProvider extends ChangeNotifier
       'Isha': 'العشاء',
     };
 
-    final now = DateTime.now();
+    final now = _clock.now();
 
     // Sort prayers chronologically
     final prayers = [

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,8 +11,11 @@ import 'notification_service.dart';
 /// Background message handler - MUST be a top-level function
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint(
-    '[FCM][BG] messageId=${message.messageId} data=${message.data} hasNotification=${message.notification != null}',
+  developer.log(
+    '[FCM][BG] messageId=${message.messageId} '
+    'data=${message.data} '
+    'hasNotification=${message.notification != null}',
+    name: 'quran_app.fcm',
   );
 
   // Ensure Firebase is initialized
@@ -62,7 +66,10 @@ class FirebaseMessagingService {
 
     for (int attempt = 1; attempt <= _maxInitAttempts; attempt++) {
       try {
-        debugPrint('[FCM] Initialization attempt $attempt started');
+        developer.log(
+          '[FCM] Initialization attempt $attempt started',
+          name: 'quran_app.fcm',
+        );
 
         // Initialize Firebase if not already done
         if (Firebase.apps.isEmpty) {
@@ -75,7 +82,10 @@ class FirebaseMessagingService {
         FirebaseMessaging.onBackgroundMessage(
           firebaseMessagingBackgroundHandler,
         );
-        debugPrint('[FCM] Background message handler registered');
+        developer.log(
+          '[FCM] Background message handler registered',
+          name: 'quran_app.fcm',
+        );
 
         await _firebaseMessaging.setForegroundNotificationPresentationOptions(
           alert: true,
@@ -93,20 +103,30 @@ class FirebaseMessagingService {
         final token = await _firebaseMessaging.getToken().timeout(
           const Duration(seconds: 6),
         );
-        debugPrint('[FCM] Token generated: $token');
+        developer.log('[FCM] Token generated: $token', name: 'quran_app.fcm');
 
         // Listen for token refresh
         _firebaseMessaging.onTokenRefresh.listen((newToken) {
-          debugPrint('[FCM] Token refreshed: $newToken');
+          developer.log(
+            '[FCM] Token refreshed: $newToken',
+            name: 'quran_app.fcm',
+          );
           _updateTokenInBackend(newToken);
         });
 
         _isInitialized = true;
-        debugPrint('[FCM] Firebase Messaging Service initialized successfully');
+        developer.log(
+          '[FCM] Firebase Messaging Service initialized successfully',
+          name: 'quran_app.fcm',
+        );
         return;
       } catch (e) {
-        debugPrint(
-          '[FCM] Initialization failed (attempt $attempt/$_maxInitAttempts): $e',
+        developer.log(
+          '[FCM] Initialization failed '
+          '(attempt $attempt/$_maxInitAttempts): $e',
+          name: 'quran_app.fcm',
+          level: 1000,
+          error: e,
         );
 
         if (attempt == _maxInitAttempts) {
@@ -137,23 +157,39 @@ class FirebaseMessagingService {
               sound: true,
             );
 
-        debugPrint(
+        developer.log(
           'iOS Notification Settings granted: ${settings.authorizationStatus}',
+          name: 'quran_app.fcm',
         );
 
         if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-          debugPrint('User granted notification permission');
+          developer.log(
+            'User granted notification permission',
+            name: 'quran_app.fcm',
+          );
         } else if (settings.authorizationStatus ==
             AuthorizationStatus.provisional) {
-          debugPrint('User granted provisional notification permission');
+          developer.log(
+            'User granted provisional notification permission',
+            name: 'quran_app.fcm',
+          );
         } else {
-          debugPrint('User declined notification permission');
+          developer.log(
+            'User declined notification permission',
+            name: 'quran_app.fcm',
+            level: 900,
+          );
         }
       }
 
       // Android permissions are handled by flutter_local_notifications
     } catch (e) {
-      debugPrint('Error requesting permissions: $e');
+      developer.log(
+        'Error requesting permissions',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -161,16 +197,21 @@ class FirebaseMessagingService {
   Future<void> _setupMessageHandlers() async {
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint(
-        '[FCM][FG] messageId=${message.messageId} title=${message.notification?.title} body=${message.notification?.body} data=${message.data}',
+      developer.log(
+        '[FCM][FG] messageId=${message.messageId} '
+        'title=${message.notification?.title} '
+        'body=${message.notification?.body} '
+        'data=${message.data}',
+        name: 'quran_app.fcm',
       );
       _handleForegroundMessage(message);
     });
 
     // Handle notification taps when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint(
+      developer.log(
         '[FCM][OPENED_APP] messageId=${message.messageId} data=${message.data}',
+        name: 'quran_app.fcm',
       );
       _handleNotificationTap(message);
     });
@@ -179,12 +220,17 @@ class FirebaseMessagingService {
     final RemoteMessage? initialMessage = await _firebaseMessaging
         .getInitialMessage();
     if (initialMessage != null) {
-      debugPrint(
-        '[FCM][INITIAL] App opened from terminated state: ${initialMessage.messageId}',
+      developer.log(
+        '[FCM][INITIAL] App opened from terminated state: '
+        '${initialMessage.messageId}',
+        name: 'quran_app.fcm',
       );
       _handleNotificationTap(initialMessage);
     } else {
-      debugPrint('[FCM][INITIAL] No initial notification payload');
+      developer.log(
+        '[FCM][INITIAL] No initial notification payload',
+        name: 'quran_app.fcm',
+      );
     }
   }
 
@@ -199,7 +245,10 @@ class FirebaseMessagingService {
       payload: message.data['type'] ?? 'general',
       payloadData: Map<String, dynamic>.from(message.data),
     );
-    debugPrint('[FCM][FG] Local notification trigger requested');
+    developer.log(
+      '[FCM][FG] Local notification trigger requested',
+      name: 'quran_app.fcm',
+    );
   }
 
   /// Handle notification tap
@@ -207,7 +256,10 @@ class FirebaseMessagingService {
     final String type = message.data['type'] ?? 'general';
     final Map<String, dynamic> data = Map<String, dynamic>.from(message.data);
 
-    debugPrint('[FCM][NAV] Routing notification type=$type data=$data');
+    developer.log(
+      '[FCM][NAV] Routing notification type=$type data=$data',
+      name: 'quran_app.fcm',
+    );
 
     NotificationRouter.handleNotification(type: type, data: data);
 
@@ -220,7 +272,7 @@ class FirebaseMessagingService {
   /// Update token in backend (placeholder)
   void _updateTokenInBackend(String token) {
     // Intentionally left as a hook for optional backend token registration.
-    debugPrint('Token to be sent to backend: $token');
+    developer.log('Token to be sent to backend: $token', name: 'quran_app.fcm');
   }
 
   /// Get current FCM token
@@ -228,7 +280,12 @@ class FirebaseMessagingService {
     try {
       return await _firebaseMessaging.getToken();
     } catch (e) {
-      debugPrint('Error getting FCM token: $e');
+      developer.log(
+        'Error getting FCM token',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
       return null;
     }
   }
@@ -238,10 +295,15 @@ class FirebaseMessagingService {
     try {
       await _firebaseMessaging.deleteToken();
       final newToken = await _firebaseMessaging.getToken();
-      debugPrint('Token refreshed: $newToken');
+      developer.log('Token refreshed: $newToken', name: 'quran_app.fcm');
       _updateTokenInBackend(newToken!);
     } catch (e) {
-      debugPrint('Error refreshing token: $e');
+      developer.log(
+        'Error refreshing token',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -249,9 +311,14 @@ class FirebaseMessagingService {
   Future<void> subscribeToTopic(String topic) async {
     try {
       await _firebaseMessaging.subscribeToTopic(topic);
-      debugPrint('Subscribed to topic: $topic');
+      developer.log('Subscribed to topic: $topic', name: 'quran_app.fcm');
     } catch (e) {
-      debugPrint('Error subscribing to topic: $e');
+      developer.log(
+        'Error subscribing to topic',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -259,9 +326,14 @@ class FirebaseMessagingService {
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await _firebaseMessaging.unsubscribeFromTopic(topic);
-      debugPrint('Unsubscribed from topic: $topic');
+      developer.log('Unsubscribed from topic: $topic', name: 'quran_app.fcm');
     } catch (e) {
-      debugPrint('Error unsubscribing from topic: $e');
+      developer.log(
+        'Error unsubscribing from topic',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
     }
   }
 
@@ -274,9 +346,14 @@ class FirebaseMessagingService {
   Future<void> deleteToken() async {
     try {
       await _firebaseMessaging.deleteToken();
-      debugPrint('Token deleted');
+      developer.log('Token deleted', name: 'quran_app.fcm');
     } catch (e) {
-      debugPrint('Error deleting token: $e');
+      developer.log(
+        'Error deleting token',
+        name: 'quran_app.fcm',
+        level: 1000,
+        error: e,
+      );
     }
   }
 }

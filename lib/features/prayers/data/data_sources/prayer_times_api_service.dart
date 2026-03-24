@@ -7,7 +7,8 @@ import '../models/prayer_times_response.dart';
 /// Prayer Times API Service
 ///
 /// Handles all Prayer Times-related API operations for the application.
-/// This service fetches prayer times from the AlAdhan API based on location and date.
+/// This service fetches prayer times from the AlAdhan API
+/// based on location and date.
 class PrayerTimesApiService extends BaseApiService {
   static const String _baseUrl = 'https://api.aladhan.com/v1';
   static const String _timingsEndpoint = '/timings';
@@ -18,7 +19,8 @@ class PrayerTimesApiService extends BaseApiService {
   /// - date: The date to get prayer times for (formatted as DD-MM-YYYY)
   /// - [latitude]: User's latitude
   /// - [longitude]: User's longitude
-  /// - [calculationMethod]: Calculation method (default 3 for Muslim World League)
+  /// - [calculationMethod]: Calculation method
+  ///   (default 3 for Muslim World League)
   ///
   /// Returns: Future<PrayerTimesResponse>
   /// Throws: NetworkException, ApiException
@@ -31,7 +33,9 @@ class PrayerTimesApiService extends BaseApiService {
     try {
       // Format the date as DD-MM-YYYY
       final formattedDate =
-          '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}';
+          '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-'
+          '${date.year}';
 
       // Build query parameters
       final queryParams = {
@@ -49,7 +53,8 @@ class PrayerTimesApiService extends BaseApiService {
         url: '$url?${_buildQueryString(queryParams)}',
       );
 
-      // Make the API call with the base URL override since we're using a different API
+      // Make the API call with a base URL override.
+      // This endpoint lives on a different host.
       final uri = Uri.parse(url).replace(queryParameters: queryParams);
       final response = await get(
         uri.toString(),

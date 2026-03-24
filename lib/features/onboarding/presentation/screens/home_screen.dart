@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -6,20 +7,19 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/providers/settings_provider.dart';
-import '../../../../core/widgets/placeholder_screen.dart';
-import '../../../khatma/presentation/screens/khatma_location_screen.dart';
+import '../../../khatma/presentation/providers/khatma_provider.dart';
 import '../../../quran/domain/entities/surah_entity.dart';
-import '../../../quran/presentation/screens/surah_details_screen.dart';
-import '../../../prayers/presentation/screens/prayer_times_screen.dart';
+import '../../../quran/domain/repositories/surah_repository.dart';
+import '../../../quran/presentation/providers/bookmark_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/header_card_widget.dart';
 import '../widgets/current_wird_widget.dart';
 import '../widgets/daily_verse_section_widget.dart';
 import '../widgets/tab_switcher_widget.dart';
 import '../widgets/category_grid_widget.dart';
-import 'media_screen.dart';
 import '../widgets/prayer_times_widget.dart';
-import '../../../prayers/presentation/providers/prayer_times_performance_provider.dart';
+import '../../../prayers/presentation/providers/'
+    'prayer_times_performance_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int selectedTabIndex = 0; // 0: جميع التصنيفات, 1: أوقات الصلاة
+  int selectedTabIndex = 0; // 0: جميع التصنيفات
   int drawerSubTab = 0; // 0 للمزيد، 1 للمفضلة
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -50,33 +50,34 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer:
-          _buildNavigationDrawer(), // القائمة الجانبية (يمين لأن التطبيق عربي)
+      endDrawer: _buildNavigationDrawer(),
       appBar: _buildAppBar(),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            const SliverToBoxAdapter(child: HeaderCardWidget()),
-            const SliverToBoxAdapter(child: CurrentWirdWidget()),
-            const SliverToBoxAdapter(child: DailyVerseSectionWidget()),
-            SliverToBoxAdapter(
-              child: TabSwitcherWidget(
-                onTabChanged: (index) {
-                  setState(() {
-                    selectedTabIndex = index;
-                  });
-                },
-                selectedIndex: selectedTabIndex,
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              const SliverToBoxAdapter(child: HeaderCardWidget()),
+              const SliverToBoxAdapter(child: CurrentWirdWidget()),
+              const SliverToBoxAdapter(child: DailyVerseSectionWidget()),
+              SliverToBoxAdapter(
+                child: TabSwitcherWidget(
+                  onTabChanged: (index) {
+                    setState(() {
+                      selectedTabIndex = index;
+                    });
+                  },
+                  selectedIndex: selectedTabIndex,
+                ),
               ),
-            ),
 
-            // المحتوى المتغير
-            _buildDynamicContent(),
+              // المحتوى المتغير
+              _buildDynamicContent(),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 50)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 50)),
+            ],
+          ),
         ),
       ),
     );
@@ -113,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- 2. القائمة الجانبية المطورة (Navigation Drawer) ---
+  // --- 2. القائمة الجانبية المطورة ---
   Widget _buildNavigationDrawer() {
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.85,
@@ -158,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // مفتاح التبديل بين الإعدادات والمفضلة
+            // مفتاح التبديل.
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
@@ -176,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // محتوى القائمة المتغير (إعدادات أو مفضلة)
+            // محتوى القائمة المتغير.
             Expanded(
               child: drawerSubTab == 0
                   ? _buildSettingsList()
@@ -345,6 +346,192 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showFeatureMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.cairo(),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showKhatmaWirdSheet({required bool showCompleted}) {
+    final khatmaProvider = Provider.of<KhatmaProvider>(context, listen: false);
+    final activeKhatma = khatmaProvider.activeKhatma;
+
+    if (activeKhatma == null) {
+      _showFeatureMessage('لا توجد ختمة نشطة حالياً');
+      return;
+    }
+
+    final int duration = activeKhatma.durationDays;
+    final int completed = activeKhatma.completedDays.clamp(0, duration);
+    final int remaining = (duration - completed).clamp(0, duration);
+    final int count = showCompleted ? completed : remaining;
+    final String title;
+    if (showCompleted) {
+      title = 'الأوراد السابقة';
+    } else {
+      title = 'الأوراد القادمة';
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  showCompleted
+                      ? 'عدد الأوراد المكتملة: $completed'
+                      : 'عدد الأوراد المتبقية: $remaining',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.cairo(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (count == 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      showCompleted
+                          ? 'لم يتم إكمال أي ورد بعد.'
+                          : 'لا توجد أوراد قادمة. '
+                                'تم إنجاز الختمة بالكامل.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: count,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final int wirdDay = showCompleted
+                            ? index + 1
+                            : completed + index + 1;
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'ورد اليوم $wirdDay',
+                            style: GoogleFonts.cairo(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                          subtitle: Text(
+                            showCompleted ? 'مكتمل' : 'قادم',
+                            style: GoogleFonts.cairo(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.65),
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                          leading: Icon(
+                            showCompleted
+                                ? Icons.check_circle_outline
+                                : Icons.schedule,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openSavedBookmark() async {
+    final bookmarkProvider = Provider.of<BookmarkProvider>(
+      context,
+      listen: false,
+    );
+
+    if (!bookmarkProvider.hasBookmark) {
+      _showFeatureMessage('لا يوجد فاصل محفوظ حالياً');
+      context.push('/quran');
+      return;
+    }
+
+    final int? surahNumber = bookmarkProvider.surahNumber;
+    if (surahNumber == null) {
+      _showFeatureMessage('تعذر فتح الفاصل المحفوظ');
+      return;
+    }
+
+    try {
+      final SurahRepository surahRepository = Provider.of<SurahRepository>(
+        context,
+        listen: false,
+      );
+      final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
+
+      final SurahEntity? targetSurah = surahs
+          .where((surah) => surah.number == surahNumber)
+          .cast<SurahEntity?>()
+          .firstWhere((surah) => surah != null, orElse: () => null);
+
+      if (!mounted) return;
+
+      if (targetSurah == null) {
+        _showFeatureMessage(
+          'تعذر إيجاد السورة المرتبطة '
+          'بالفاصل',
+        );
+        context.push('/quran');
+        return;
+      }
+
+      context.push(
+        '/quran/surah/$surahNumber',
+        extra: <String, dynamic>{'surah': targetSurah},
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showFeatureMessage('حدث خطأ أثناء فتح الفاصل');
+    }
+  }
+
   Widget _buildSettingsList() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
@@ -354,7 +541,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'هذه الميزة ستتوفر قريباً إن شاء الله',
+            'هذه الميزة ستتوفر '
+            'قريباً إن شاء الله',
             style: GoogleFonts.cairo(),
             textAlign: TextAlign.center,
           ),
@@ -362,10 +550,6 @@ class _HomeScreenState extends State<HomeScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-    }
-
-    void navigateTo(Widget screen) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
     }
 
     Future<void> launchMyUrl(String url) async {
@@ -396,19 +580,17 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'الأوراد السابقة',
           leadingIcon: Icon(Icons.history, color: iconColor),
-          onTap: () =>
-              navigateTo(const PlaceholderScreen(title: 'الأوراد السابقة')),
+          onTap: () => _showKhatmaWirdSheet(showCompleted: true),
         ),
         _buildMoreMenuItem(
           title: 'الأوراد القادمة',
           leadingIcon: Icon(Icons.next_plan_outlined, color: iconColor),
-          onTap: () =>
-              navigateTo(const PlaceholderScreen(title: 'الأوراد القادمة')),
+          onTap: () => _showKhatmaWirdSheet(showCompleted: false),
         ),
         _buildMoreMenuItem(
           title: 'الفاصل',
           leadingIcon: Icon(Icons.bookmark_border, color: iconColor),
-          onTap: () => navigateTo(const PlaceholderScreen(title: 'الفاصل')),
+          onTap: _openSavedBookmark,
         ),
         const Divider(height: 1),
 
@@ -417,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'كل الوسائط',
           leadingIcon: Icon(Icons.video_library, color: iconColor),
-          onTap: () => navigateTo(const MediaScreen()),
+          onTap: () => context.push('/media'),
         ),
         const Divider(height: 1),
 
@@ -427,10 +609,10 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'سورة الكهف',
           leadingIcon: Icon(Icons.book, color: iconColor),
           onTap: () {
-            navigateTo(
-              SurahDetailsScreen(
-                surahNumber: 18,
-                surah: SurahEntity(
+            context.push(
+              '/quran/surah/18',
+              extra: <String, dynamic>{
+                'surah': SurahEntity(
                   number: 18,
                   name: 'سورة الكهف',
                   englishName: 'Al-Kahf',
@@ -438,7 +620,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   revelationType: 'Meccan',
                   totalAyah: 110,
                 ),
-              ),
+              },
             );
           },
         ),
@@ -446,10 +628,10 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'سورة الملك',
           leadingIcon: Icon(Icons.menu_book, color: iconColor),
           onTap: () {
-            navigateTo(
-              SurahDetailsScreen(
-                surahNumber: 67,
-                surah: SurahEntity(
+            context.push(
+              '/quran/surah/67',
+              extra: <String, dynamic>{
+                'surah': SurahEntity(
                   number: 67,
                   name: 'سورة الملك',
                   englishName: 'Al-Mulk',
@@ -457,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   revelationType: 'Meccan',
                   totalAyah: 30,
                 ),
-              ),
+              },
             );
           },
         ),
@@ -465,10 +647,10 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'سورة البقرة',
           leadingIcon: Icon(Icons.auto_stories, color: iconColor),
           onTap: () {
-            navigateTo(
-              SurahDetailsScreen(
-                surahNumber: 2,
-                surah: SurahEntity(
+            context.push(
+              '/quran/surah/2',
+              extra: <String, dynamic>{
+                'surah': SurahEntity(
                   number: 2,
                   name: 'سورة البقرة',
                   englishName: 'Al-Baqarah',
@@ -476,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   revelationType: 'Medinan',
                   totalAyah: 286,
                 ),
-              ),
+              },
             );
           },
         ),
@@ -496,13 +678,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'المنبه اليومي',
           leadingIcon: Icon(Icons.notifications, color: iconColor),
-          onTap: () =>
-              navigateTo(const PlaceholderScreen(title: 'المنبه اليومي')),
+          onTap: () => context.push('/settings/notification-test'),
         ),
         _buildMoreMenuItem(
           title: 'بدء ختمة جديدة',
           leadingIcon: Icon(Icons.add, color: iconColor),
-          onTap: () => navigateTo(const KhatmaLocationScreen()),
+          onTap: () => context.push('/khatma/location'),
         ),
         const Divider(height: 1),
 
@@ -511,7 +692,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'إعدادات مواقيت الصلاة',
           leadingIcon: Icon(Icons.mosque, color: iconColor),
-          onTap: () => navigateTo(const PrayerTimesScreen()),
+          onTap: () => context.push('/prayers'),
         ),
         _buildMoreMenuItem(
           title: 'اتجاه القبلة',
@@ -522,8 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isDark ? Colors.white : null,
             errorBuilder: (c, e, s) => Icon(Icons.explore, color: iconColor),
           ),
-          onTap: () =>
-              navigateTo(const PlaceholderScreen(title: 'اتجاه القبلة')),
+          onTap: () => launchMyUrl('https://qiblafinder.withgoogle.com/'),
         ),
         const Divider(height: 1),
 
@@ -579,14 +759,36 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildMoreMenuItem(
           title: 'اللغة',
           leadingIcon: Icon(Icons.settings, color: iconColor),
-          onTap: () =>
-              navigateTo(const PlaceholderScreen(title: 'إعدادات اللغة')),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(
+                'إعدادات اللغة',
+                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.right,
+              ),
+              content: Text(
+                'اللغة الحالية للتطبيق هي العربية. '
+                'سيتم دعم لغات إضافية '
+                'لاحقاً بإذن الله.',
+                style: GoogleFonts.cairo(),
+                textAlign: TextAlign.right,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text('حسناً', style: GoogleFonts.cairo()),
+                ),
+              ],
+            ),
+          ),
         ),
         _buildMoreMenuItem(
           title: 'الإتصال بنا',
           leadingIcon: Icon(Icons.info_outline, color: iconColor),
           onTap: () => launchMyUrl(
-            'mailto:contact@quranapp.com?subject=تطبيق ختمة - تواصل',
+            'mailto:contact@quranapp.com'
+            '?subject=تطبيق ختمة - تواصل',
           ),
         ),
         _buildMoreMenuItem(
@@ -612,7 +814,9 @@ class _HomeScreenState extends State<HomeScreen> {
             SharePlus.instance.share(
               ShareParams(
                 text:
-                    'تطبيق القرآن الكريم - تطبيق إسلامي شامل. حمل الآن! \n(رابط التطبيق قريباً)',
+                    'تطبيق القرآن الكريم - '
+                    'تطبيق إسلامي شامل. '
+                    'حمل الآن! \n(رابط التطبيق قريباً)',
               ),
             );
           },

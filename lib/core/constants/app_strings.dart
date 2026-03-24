@@ -1,18 +1,29 @@
 abstract class AppStrings {
   // App Names
   static const String appName = 'تطبيق القرآن';
-  static const String appSubtitle = 'التطبيق الشامل للقرآن الكريم';
+  static const String appSubtitle =
+      'التطبيق الشامل '
+      'للقرآن الكريم';
 
   // Onboarding Screen
   static const String onboardingTitle = 'تطبيق العبادات';
   static const String onboardingDescription =
-      'تعلم الدين الاسلامي عن طريق تصنيفات وملفات وشروحات ومحاضرات..الخ , يوفر أوقات الصلاة وخطب والقرآن الكريم كامل مع توفير تفسير وقراءة بالصوت ,, اكتشف المزيد بنفسك';
+      'تعلم الدين الاسلامي عن طريق '
+      'تصنيفات وملفات وشروحات '
+      'ومحاضرات..الخ , يوفر أوقات '
+      'الصلاة وخطب والقرآن الكريم '
+      'كامل مع توفير تفسير وقراءة '
+      'بالصوت ,, اكتشف المزيد بنفسك';
   static const String getStartedButton = 'ابدأ الآن';
-  static const String basmalah = 'بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ';
+  static const String basmalah =
+      'بِسْمِ اللهِ '
+      'الرَّحْمٰنِ الرَّحِيْمِ';
 
   // Home Screen
   static const String homeScreenTitle = 'الصفحة الرئيسية';
-  static const String welcomeMessage = 'مرحباً بك في تطبيق القرآن الكريم!';
+  static const String welcomeMessage =
+      'مرحباً بك في '
+      'تطبيق القرآن الكريم!';
 
   // Common Strings
   static const String ok = 'حسناً';
@@ -29,8 +40,12 @@ abstract class AppStrings {
 
   // Error Messages
   static const String errorTitle = 'خطأ';
-  static const String errorMessage = 'حدث خطأ ما، يرجى المحاولة لاحقاً';
-  static const String noInternet = 'لا يوجد اتصال بالإنترنت';
+  static const String errorMessage =
+      'حدث خطأ ما، '
+      'يرجى المحاولة لاحقاً';
+  static const String noInternet =
+      'لا يوجد اتصال '
+      'بالإنترنت';
   static const String tryAgain = 'حاول مجدداً';
 
   // Loading States

@@ -17,17 +17,23 @@ class _DailyVerseSectionWidgetState extends State<DailyVerseSectionWidget> {
   final List<Map<String, String>> _dailyVerses = [
     {
       'surah': 'سورة الفاتحة',
-      'arabic': 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
+      'arabic':
+          'الْحَمْدُ لِلَّهِ '
+          'رَبِّ الْعَالَمِينَ',
       'english': 'All praise and thanks be to the Lord of the worlds.',
     },
     {
       'surah': 'سورة البقرة',
-      'arabic': 'لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا',
+      'arabic':
+          'لَا يُكَلِّفُ اللَّهُ '
+          'نَفْسًا إِلَّا وُسْعَهَا',
       'english': 'Allah does not burden a soul beyond that it can bear.',
     },
     {
       'surah': 'سورة غافر',
-      'arabic': 'وَقَالَ رَبُّكُمُ ادْعُونِي أَسْتَجِبْ لَكُمْ',
+      'arabic':
+          'وَقَالَ رَبُّكُمُ '
+          'ادْعُونِي أَسْتَجِبْ لَكُمْ',
       'english': 'And your Lord says, "Call upon Me; I will respond to you."',
     },
     {
@@ -37,13 +43,17 @@ class _DailyVerseSectionWidgetState extends State<DailyVerseSectionWidget> {
     },
     {
       'surah': 'سورة الرعد',
-      'arabic': 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنِّ الْقُلُوبُ',
+      'arabic':
+          'أَلَا بِذِكْرِ اللَّهِ '
+          'تَطْمَئِنِّ الْقُلُوبُ',
       'english':
           'Unquestionably, by the remembrance of Allah hearts are assured.',
     },
     {
       'surah': 'سورة طه',
-      'arabic': 'قَالَ لَا تَخَافَا ۖ إِنَّنِي مَعَكُمَا أَسْمَعُ وَأَرَىٰ',
+      'arabic':
+          'قَالَ لَا تَخَافَا ۖ '
+          'إِنَّنِي مَعَكُمَا أَسْمَعُ وَأَرَىٰ',
       'english':
           'He said, "Fear not. Indeed, I am with you both; I hear and I see."',
     },

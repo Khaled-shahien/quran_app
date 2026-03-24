@@ -23,11 +23,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         context,
         listen: false,
       );
-      prayerProvider.fetchPrayerTimes(
-        DateTime.now(),
-        30.0444, // Latitude for Cairo
-        31.2357, // Longitude for Cairo
-      );
+      prayerProvider.fetchTodayForCurrentLocation();
     });
   }
 
@@ -47,51 +43,56 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Consumer<PrayerTimesProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: Consumer<PrayerTimesProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (provider.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading prayer times',
-                    style: GoogleFonts.cairo(fontSize: 16, color: Colors.red),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.errorMessage ?? 'Unknown error',
-                    style: GoogleFonts.cairo(fontSize: 14, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      provider.fetchPrayerTimes(
-                        DateTime.now(),
-                        30.0444, // Default coordinates (Cairo)
-                        31.2357,
-                      );
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (provider.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading prayer times',
+                      style: GoogleFonts.cairo(fontSize: 16, color: Colors.red),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      provider.errorMessage ?? 'Unknown error',
+                      style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        provider.fetchTodayForCurrentLocation();
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          if (provider.hasData) {
-            return _buildPrayerTimesContent(provider);
-          }
+            if (provider.hasData) {
+              return _buildPrayerTimesContent(provider);
+            }
 
-          return const Center(child: Text('No data available'));
-        },
+            return const Center(child: Text('No data available'));
+          },
+        ),
       ),
     );
   }

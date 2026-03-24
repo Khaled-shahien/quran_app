@@ -200,7 +200,9 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                         100000,
                       ),
                       title: 'اختبار مؤجل',
-                      body: 'سيظهر هذا الإشعار خلال دقيقة',
+                      body:
+                          'سيظهر هذا الإشعار '
+                          'خلال دقيقة',
                     );
                     _showSuccess('تم جدولة الإشعار بعد دقيقة');
                   } catch (e) {
@@ -320,7 +322,8 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
                 'لإرسال إشعار دفع:\n'
                 '1. اذهب إلى Firebase Console\n'
                 '2. Cloud Messaging → New notification\n'
-                '3. استخدم الرمز أعلاه للإرسال لهذا الجهاز',
+                '3. استخدم الرمز أعلاه '
+                'للإرسال لهذا الجهاز',
                 style: TextStyle(fontSize: 13),
               ),
             ),

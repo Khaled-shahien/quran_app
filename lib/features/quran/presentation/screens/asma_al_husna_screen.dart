@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:quran_app/features/quran/presentation/widgets/asma_item_card.dart';
+import 'package:quran_app/features/quran/presentation/widgets/'
+    'asma_item_card.dart';
 
 class AsmaAlHusnaScreen extends StatefulWidget {
   const AsmaAlHusnaScreen({super.key});
@@ -310,25 +311,27 @@ class _AsmaAlHusnaScreenState extends State<AsmaAlHusnaScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-              childAspectRatio: 0.8,
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16.0,
+                mainAxisSpacing: 16.0,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: _names.length,
+              itemBuilder: (context, index) {
+                return AsmaItemCard(
+                  number: _names[index]['number']!,
+                  arabicName: _names[index]['name']!,
+                  meaning: _names[index]['meaning']!,
+                );
+              },
             ),
-            itemCount: _names.length,
-            itemBuilder: (context, index) {
-              return AsmaItemCard(
-                number: _names[index]['number']!,
-                arabicName: _names[index]['name']!,
-                meaning: _names[index]['meaning']!,
-              );
-            },
           ),
         ),
       ),

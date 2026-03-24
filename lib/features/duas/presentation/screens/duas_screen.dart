@@ -29,9 +29,10 @@ class DuasScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Consumer<DuasProvider>(
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Consumer<DuasProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {
               return Center(
@@ -74,8 +75,7 @@ class DuasScreen extends StatelessWidget {
               },
             );
           },
-        ),
-      ),
+        ),        ),      ),
     );
   }
 }

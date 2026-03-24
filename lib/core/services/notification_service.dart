@@ -1,14 +1,16 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+
 import '../navigation/notification_router.dart';
 
-/// Notification Service for managing alarms and notifications
+/// Notification Service for managing alarms and notifications.
 ///
 /// This service handles:
 /// - Morning Adhkar alarm (7:00 AM)
@@ -74,35 +76,25 @@ class NotificationService {
   bool _isPluginAvailable = true;
   String? _lastAppliedAlarmStateSignature;
 
-  /// Initialize the notification service
+  /// Initialize the notification service.
   Future<void> initialize({bool requestPermissions = false}) async {
     if (_isInitialized) return;
 
     try {
-      // Initialize timezone
       tzdata.initializeTimeZones();
       await _configureLocalTimezone();
 
-      // Android initialization settings
-      const AndroidInitializationSettings initializationSettingsAndroid =
+      const AndroidInitializationSettings androidInit =
           AndroidInitializationSettings('@mipmap/ic_launcher');
+      const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-      // iOS initialization settings
-      const DarwinInitializationSettings initializationSettingsIOS =
-          DarwinInitializationSettings(
-            requestAlertPermission: true,
-            requestBadgePermission: true,
-            requestSoundPermission: true,
-          );
-
-      // Combined initialization settings
       const InitializationSettings initializationSettings =
-          InitializationSettings(
-            android: initializationSettingsAndroid,
-            iOS: initializationSettingsIOS,
-          );
+          InitializationSettings(android: androidInit, iOS: iosInit);
 
-      // Initialize the plugin
       await flutterLocalNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
@@ -115,12 +107,17 @@ class NotificationService {
       }
 
       _isPluginAvailable = true;
-      debugPrint('Notification Service initialized successfully');
+      developer.log(
+        'Notification Service initialized successfully',
+        name: 'quran_app.notifications',
+      );
     } catch (e) {
-      // Keep app and tests running even if plugin channels are unavailable.
       _isPluginAvailable = false;
-      debugPrint(
+      developer.log(
         'Notification Service unavailable on this platform/context: $e',
+        name: 'quran_app.notifications',
+        level: 1000,
+        error: e,
       );
     } finally {
       _isInitialized = true;
@@ -131,11 +128,19 @@ class NotificationService {
     try {
       final String timezoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timezoneName));
-      debugPrint('Notification timezone configured: $timezoneName');
+      developer.log(
+        'Notification timezone configured: $timezoneName',
+        name: 'quran_app.notifications',
+      );
     } catch (e) {
-      // Fallback to UTC so scheduling remains deterministic even if timezone lookup fails.
+      // Fallback to UTC to keep scheduling deterministic.
       tz.setLocalLocation(tz.UTC);
-      debugPrint('Failed to resolve local timezone, falling back to UTC: $e');
+      developer.log(
+        'Failed to resolve local timezone, falling back to UTC',
+        name: 'quran_app.notifications',
+        level: 900,
+        error: e,
+      );
     }
   }
 
@@ -177,19 +182,19 @@ class NotificationService {
       ),
     );
 
-    debugPrint('Android notification channels ensured');
+    developer.log(
+      'Android notification channels ensured',
+      name: 'quran_app.notifications',
+    );
   }
 
   /// Request runtime notification permissions.
-  ///
-  /// Call this from a foreground/UI context after app startup.
   Future<void> requestPermissions() async {
     if (!_isInitialized) {
       await initialize(requestPermissions: false);
     }
     if (!_isPluginAvailable || kIsWeb) return;
 
-    // Android 13+ runtime notification permission.
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
@@ -200,20 +205,28 @@ class NotificationService {
         defaultTargetPlatform == TargetPlatform.android) {
       final bool? granted = await androidImplementation
           .requestNotificationsPermission();
-      debugPrint('Android notification permission granted: $granted');
+      developer.log(
+        'Android notification permission granted: $granted',
+        name: 'quran_app.notifications',
+      );
 
       try {
         final bool? exactAlarmPermission = await androidImplementation
             .requestExactAlarmsPermission();
-        debugPrint(
+        developer.log(
           'Android exact alarm permission granted: $exactAlarmPermission',
+          name: 'quran_app.notifications',
         );
       } catch (e) {
-        debugPrint('Exact alarm permission request unavailable: $e');
+        developer.log(
+          'Exact alarm permission request unavailable',
+          name: 'quran_app.notifications',
+          level: 900,
+          error: e,
+        );
       }
     }
 
-    // iOS/macOS permissions.
     final IOSFlutterLocalNotificationsPlugin? iosImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
@@ -231,7 +244,7 @@ class NotificationService {
     }
   }
 
-  /// Handle notification tap
+  /// Handle notification tap.
   void _onNotificationTapped(NotificationResponse response) {
     final String payload = response.payload ?? '';
     if (payload.isEmpty) {
@@ -251,13 +264,13 @@ class NotificationService {
         return;
       }
     } catch (_) {
-      // Plain string payloads from scheduled notifications are treated as type.
+      // Plain string payloads are treated as a notification type.
     }
 
     NotificationRouter.handleNotification(type: payload);
   }
 
-  /// Show a simple notification
+  /// Show a simple notification.
   Future<void> showNotification({
     required int id,
     required String title,
@@ -307,7 +320,7 @@ class NotificationService {
     );
   }
 
-  /// Schedule a daily notification at a specific time
+  /// Schedule a daily notification at a specific time.
   Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -330,22 +343,30 @@ class NotificationService {
       minute,
     );
 
-    // Add 2-minute buffer to prevent immediate triggering
-    final twoMinutesFromNow = now.add(const Duration(minutes: 2));
+    final tz.TZDateTime twoMinutesFromNow = now.add(const Duration(minutes: 2));
 
-    // If the time is in the past or within 2 minutes, schedule for tomorrow
     if (scheduledDate.isBefore(twoMinutesFromNow)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    debugPrint(
-      'Scheduling notification $id for ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} '
-      'at ${scheduledDate.toString()}',
+    final String formattedTime = _formatTimeHHmm(hour, minute);
+    final String triggerTime = _formatTimeHHmm(
+      scheduledDate.hour,
+      scheduledDate.minute,
     );
-    debugPrint('Current time: ${now.toString()}');
-    debugPrint('Two minutes from now: ${twoMinutesFromNow.toString()}');
-    debugPrint(
-      'Will appear today: ${!scheduledDate.isAfter(now.add(const Duration(days: 1)))}',
+
+    developer.log(
+      'Scheduling notification $id for $formattedTime at $scheduledDate',
+      name: 'quran_app.notifications',
+    );
+    developer.log('Current time: $now', name: 'quran_app.notifications');
+    developer.log(
+      'Two minutes from now: $twoMinutesFromNow',
+      name: 'quran_app.notifications',
+    );
+    developer.log(
+      'Will trigger at: $triggerTime',
+      name: 'quran_app.notifications',
     );
 
     const AndroidNotificationDetails androidNotificationDetails =
@@ -353,10 +374,13 @@ class NotificationService {
           _alarmsChannelId,
           _alarmsChannelName,
           channelDescription: _alarmsChannelDescription,
-          importance: Importance.high,
+          importance: Importance.max,
           priority: Priority.high,
           icon: '@drawable/ic_notification',
-          category: AndroidNotificationCategory.reminder,
+          playSound: true,
+          enableVibration: true,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
         );
 
     const DarwinNotificationDetails iosNotificationDetails =
@@ -364,6 +388,7 @@ class NotificationService {
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
+          interruptionLevel: InterruptionLevel.timeSensitive,
         );
 
     const NotificationDetails notificationDetails = NotificationDetails(
@@ -388,14 +413,13 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      // Daily reminders should repeat at the same clock time.
-      matchDateTimeComponents: DateTimeComponents.time,
       payload: serializedPayload,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    debugPrint('✅ Notification $id scheduled for ${scheduledDate.toString()}');
-    debugPrint(
-      '📅 Will trigger at: ${scheduledDate.day}/${scheduledDate.month} ${scheduledDate.hour}:${scheduledDate.minute.toString().padLeft(2, '0')}',
+    developer.log(
+      'Daily notification $id scheduled for $formattedTime',
+      name: 'quran_app.notifications',
     );
   }
 
@@ -413,6 +437,7 @@ class NotificationService {
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduleAtLocal = tz.TZDateTime.from(scheduledAt, tz.local);
+
     if (scheduleAtLocal.isBefore(now.add(const Duration(seconds: 5)))) {
       scheduleAtLocal = now.add(const Duration(seconds: 5));
     }
@@ -461,23 +486,40 @@ class NotificationService {
       payload: serializedPayload,
     );
 
-    debugPrint('✅ One-time notification $id scheduled for $scheduleAtLocal');
+    developer.log(
+      'One-time notification $id scheduled for $scheduleAtLocal',
+      name: 'quran_app.notifications',
+    );
   }
 
-  /// Cancel a scheduled notification
+  String _formatTimeHHmm(int hour, int minute) {
+    final String h = hour.toString().padLeft(2, '0');
+    final String m = minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  /// Cancel a scheduled notification.
   Future<void> cancelNotification(int id) async {
     if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
+
     await flutterLocalNotificationsPlugin.cancel(id);
-    debugPrint('Cancelled notification $id');
+    developer.log(
+      'Cancelled notification $id',
+      name: 'quran_app.notifications',
+    );
   }
 
-  /// Cancel all notifications
+  /// Cancel all notifications.
   Future<void> cancelAllNotifications() async {
     if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
+
     await flutterLocalNotificationsPlugin.cancelAll();
-    debugPrint('Cancelled all notifications');
+    developer.log(
+      'Cancelled all notifications',
+      name: 'quran_app.notifications',
+    );
   }
 
   /// Cancel and reschedule only app-managed reminder notifications.
@@ -489,106 +531,124 @@ class NotificationService {
 
   // ==================== MORNING ADHKAR ALARM ====================
 
-  /// Schedule morning adhkar alarm
+  /// Schedule morning adhkar alarm.
   Future<void> scheduleMorningAdhkarAlarm({int? hour, int? minute}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final h = hour ?? prefs.getInt(_morningAlarmHourKey) ?? _defaultMorningHour;
-    final m =
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int h =
+        hour ?? prefs.getInt(_morningAlarmHourKey) ?? _defaultMorningHour;
+    final int m =
         minute ?? prefs.getInt(_morningAlarmMinuteKey) ?? _defaultMorningMinute;
 
     await scheduleDailyNotification(
       id: _morningAdhkarNotificationId,
       title: '⏰ تذكير أذكار الصباح',
       body:
-          'حان وقت أذكار الصباح. اللهم ما أصبح بك من نعمة أو بأحد من خلقك فمنك وحدك لا شريك لك، فلك الحمد ولك الشكر',
+          'حان وقت أذكار الصباح. '
+          'اللهم ما أصبح بك من نعمة '
+          'أو بأحد من خلقك '
+          'فمنك وحدك لا شريك لك، '
+          'فلك الحمد ولك الشكر',
       hour: h,
       minute: m,
       payload: 'morning_adhkar',
     );
   }
 
-  /// Cancel morning adhkar alarm
+  /// Cancel morning adhkar alarm.
   Future<void> cancelMorningAdhkarAlarm() async {
     await cancelNotification(_morningAdhkarNotificationId);
   }
 
   // ==================== EVENING ADHKAR ALARM ====================
 
-  /// Schedule evening adhkar alarm
+  /// Schedule evening adhkar alarm.
   Future<void> scheduleEveningAdhkarAlarm({int? hour, int? minute}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final h = hour ?? prefs.getInt(_eveningAlarmHourKey) ?? _defaultEveningHour;
-    final m =
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int h =
+        hour ?? prefs.getInt(_eveningAlarmHourKey) ?? _defaultEveningHour;
+    final int m =
         minute ?? prefs.getInt(_eveningAlarmMinuteKey) ?? _defaultEveningMinute;
 
     await scheduleDailyNotification(
       id: _eveningAdhkarNotificationId,
       title: '⏰ تذكير أذكار المساء',
       body:
-          'حان وقت أذكار المساء. أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له',
+          'حان وقت أذكار المساء. '
+          'أمسينا وأمسى الملك لله، والحمد لله، '
+          'لا إله إلا الله وحده لا شريك له',
       hour: h,
       minute: m,
       payload: 'evening_adhkar',
     );
   }
 
-  /// Cancel evening adhkar alarm
+  /// Cancel evening adhkar alarm.
   Future<void> cancelEveningAdhkarAlarm() async {
     await cancelNotification(_eveningAdhkarNotificationId);
   }
 
   // ==================== SURAH AL-MULK ALARM ====================
 
-  /// Schedule Surah Al-Mulk alarm
+  /// Schedule Surah Al-Mulk alarm.
   Future<void> scheduleMulkAlarm({int? hour, int? minute}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final h = hour ?? prefs.getInt(_mulkAlarmHourKey) ?? _defaultMulkHour;
-    final m = minute ?? prefs.getInt(_mulkAlarmMinuteKey) ?? _defaultMulkMinute;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int h = hour ?? prefs.getInt(_mulkAlarmHourKey) ?? _defaultMulkHour;
+    final int m =
+        minute ?? prefs.getInt(_mulkAlarmMinuteKey) ?? _defaultMulkMinute;
 
     await scheduleDailyNotification(
       id: _mulkNotificationId,
       title: '⏰ تذكير سورة الملك',
       body:
-          'حان وقت قراءة سورة الملك. قال صلى الله عليه وسلم: "إن سورة من القرآن ثلاثون آية شفعت لرجل حتى غفر له: تبارك الذي بيده الملك"',
+          'حان وقت قراءة سورة الملك. '
+          'قال صلى الله عليه وسلم: '
+          '"إن سورة من القرآن '
+          'ثلاثون آية شفعت لرجل '
+          'حتى غفر له: تبارك الذي بيده الملك"',
       hour: h,
       minute: m,
       payload: 'mulk_surah',
     );
   }
 
-  /// Cancel Surah Al-Mulk alarm
+  /// Cancel Surah Al-Mulk alarm.
   Future<void> cancelMulkAlarm() async {
     await cancelNotification(_mulkNotificationId);
   }
 
   // ==================== SURAH AL-BAQARAH ALARM ====================
 
-  /// Schedule Surah Al-Baqarah alarm
+  /// Schedule Surah Al-Baqarah alarm.
   Future<void> scheduleBaqarahAlarm({int? hour, int? minute}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final h = hour ?? prefs.getInt(_baqarahAlarmHourKey) ?? _defaultBaqarahHour;
-    final m =
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int h =
+        hour ?? prefs.getInt(_baqarahAlarmHourKey) ?? _defaultBaqarahHour;
+    final int m =
         minute ?? prefs.getInt(_baqarahAlarmMinuteKey) ?? _defaultBaqarahMinute;
 
     await scheduleDailyNotification(
       id: _baqarahNotificationId,
       title: '⏰ تذكير سورة البقرة',
       body:
-          'حان وقت قراءة سورة البقرة. قال صلى الله عليه وسلم: "اقرأوا سورة البقرة، فإن أخذها بركة وتركها حسرة ولا تستطيعها البطلة"',
+          'حان وقت قراءة سورة البقرة. '
+          'قال صلى الله عليه وسلم: '
+          '"اقرأوا سورة البقرة، '
+          'فإن أخذها بركة وتركها حسرة '
+          'ولا تستطيعها البطلة"',
       hour: h,
       minute: m,
       payload: 'baqarah_surah',
     );
   }
 
-  /// Cancel Surah Al-Baqarah alarm
+  /// Cancel Surah Al-Baqarah alarm.
   Future<void> cancelBaqarahAlarm() async {
     await cancelNotification(_baqarahNotificationId);
   }
 
   // ==================== UPDATE ALL ALARMS ====================
 
-  /// Update all active alarms based on settings
+  /// Update all active alarms based on settings.
   Future<void> updateAllAlarms({
     required bool isMorningEnabled,
     required bool isEveningEnabled,
@@ -596,17 +656,21 @@ class NotificationService {
     required bool isBaqarahEnabled,
   }) async {
     final String newSignature =
-        '${isMorningEnabled ? 1 : 0}-${isEveningEnabled ? 1 : 0}-${isMulkEnabled ? 1 : 0}-${isBaqarahEnabled ? 1 : 0}';
+        '${isMorningEnabled ? 1 : 0}-'
+        '${isEveningEnabled ? 1 : 0}-'
+        '${isMulkEnabled ? 1 : 0}-'
+        '${isBaqarahEnabled ? 1 : 0}';
 
     if (_lastAppliedAlarmStateSignature == newSignature) {
-      debugPrint('Skipping alarm update: state unchanged');
+      developer.log(
+        'Skipping alarm update: state unchanged',
+        name: 'quran_app.notifications',
+      );
       return;
     }
 
-    // Cancel only reminder notifications managed by this service.
     await _cancelManagedReminderNotifications();
 
-    // Reschedule enabled alarms
     if (isMorningEnabled) {
       await scheduleMorningAdhkarAlarm();
     }
@@ -622,8 +686,11 @@ class NotificationService {
 
     _lastAppliedAlarmStateSignature = newSignature;
 
-    debugPrint(
-      'Updated all alarms. Morning: $isMorningEnabled, Evening: $isEveningEnabled, Mulk: $isMulkEnabled, Baqarah: $isBaqarahEnabled',
+    developer.log(
+      'Updated all alarms. Morning: $isMorningEnabled, '
+      'Evening: $isEveningEnabled, '
+      'Mulk: $isMulkEnabled, Baqarah: $isBaqarahEnabled',
+      name: 'quran_app.notifications',
     );
   }
 
@@ -660,17 +727,21 @@ class NotificationService {
         }
         break;
       default:
-        debugPrint('Unknown alarm type for reschedule: $type');
+        developer.log(
+          'Unknown alarm type for reschedule: $type',
+          name: 'quran_app.notifications',
+          level: 900,
+        );
     }
   }
 
-  /// Save alarm time to preferences
+  /// Save alarm time to preferences.
   Future<void> saveAlarmTime({
     required String type,
     required int hour,
     required int minute,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     switch (type) {
       case 'morning':
@@ -691,12 +762,15 @@ class NotificationService {
         break;
     }
 
-    debugPrint('Saved $type alarm time: $hour:$minute');
+    developer.log(
+      'Saved $type alarm time: ${_formatTimeHHmm(hour, minute)}',
+      name: 'quran_app.notifications',
+    );
   }
 
-  /// Get saved alarm time
+  /// Get saved alarm time.
   Future<Map<String, int>> getAlarmTime(String type) async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     int hour = 0;
     int minute = 0;
 
@@ -719,10 +793,10 @@ class NotificationService {
         break;
     }
 
-    return {'hour': hour, 'minute': minute};
+    return <String, int>{'hour': hour, 'minute': minute};
   }
 
-  /// Test notification - shows immediate notification to verify system works
+  /// Test notification - shows immediate notification to verify system works.
   Future<void> testNotification({
     required int id,
     required String title,
@@ -731,8 +805,8 @@ class NotificationService {
     if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
-    debugPrint('🧪 TEST NOTIFICATION: $title');
-    debugPrint('Body: $body');
+    developer.log('TEST NOTIFICATION: $title', name: 'quran_app.notifications');
+    developer.log('Body: $body', name: 'quran_app.notifications');
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
@@ -766,20 +840,31 @@ class NotificationService {
       payload: 'test',
     );
 
-    debugPrint('✅ Test notification shown successfully');
+    developer.log(
+      'Test notification shown successfully',
+      name: 'quran_app.notifications',
+    );
   }
 
-  /// Check pending notifications
+  /// Check pending notifications.
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     if (!_isInitialized) await initialize(requestPermissions: false);
-    if (!_isPluginAvailable) return [];
+    if (!_isPluginAvailable) return <PendingNotificationRequest>[];
 
-    final pending = await flutterLocalNotificationsPlugin
-        .pendingNotificationRequests();
-    debugPrint('📋 Pending notifications: ${pending.length}');
-    for (var notification in pending) {
-      debugPrint('  - ID: ${notification.id}, Title: ${notification.title}');
+    final List<PendingNotificationRequest> pending =
+        await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+
+    developer.log(
+      'Pending notifications: ${pending.length}',
+      name: 'quran_app.notifications',
+    );
+    for (final PendingNotificationRequest notification in pending) {
+      developer.log(
+        'ID: ${notification.id}, Title: ${notification.title}',
+        name: 'quran_app.notifications',
+      );
     }
+
     return pending;
   }
 }

@@ -44,9 +44,10 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
         ),
         centerTitle: true,
       ),
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Padding(
+      body: SafeArea(
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
           padding: const EdgeInsets.all(AppConstants.kPaddingLarge),
           child: Column(
             children: [
@@ -265,6 +266,7 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

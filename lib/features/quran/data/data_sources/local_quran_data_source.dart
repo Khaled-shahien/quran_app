@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
+
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import '../../../../core/errors/api_exception.dart';
@@ -71,7 +72,12 @@ class LocalQuranDataSource {
           allAyahs[surahNumber] = ayahs;
         } catch (e) {
           // Continue processing other Surahs even if one fails
-          debugPrint('Warning: Could not load verses for Surah $surahNumber: $e');
+          developer.log(
+            'Could not load verses for Surah $surahNumber',
+            name: 'quran_app.quran_data',
+            level: 900,
+            error: e,
+          );
         }
       }
 
@@ -100,7 +106,8 @@ class LocalQuranDataSource {
       if (trimmedLine.isEmpty) continue;
 
       // Create an Ayah model for each line
-      // We'll assign default values for metadata that's not available in the text files
+      // We'll assign default values for metadata
+      // that's not available in the text files.
       final ayah = AyahModel(
         number: i + 1, // Sequential numbering based on line position
         text: trimmedLine,
@@ -120,11 +127,13 @@ class LocalQuranDataSource {
   }
 
   // Helper methods to estimate metadata based on Surah and Ayah numbers
-  // These are approximate values, as the actual metadata is not available in the text files
+  // These are approximate values because
+  // actual metadata is not available in the text files.
 
   /// Estimates Juz number for a given Surah and Ayah
   int _getJuzForAyah(int surahNumber, int ayahNumber) {
-    // This is a simplified estimation - in a real app, you'd use actual Juz boundaries
+    // Simplified estimation; in a real app,
+    // use actual Juz boundaries.
     if (surahNumber <= 2) return 1;
     if (surahNumber <= 4) return 2;
     if (surahNumber <= 6) return 3;
@@ -155,7 +164,8 @@ class LocalQuranDataSource {
 
   /// Estimates Page number for a given Surah and Ayah
   int _getPageForAyah(int surahNumber, int ayahNumber) {
-    // Simplified calculation - in reality, this would depend on actual Quran page divisions
+    // Simplified calculation; in reality this depends
+    // on actual Quran page divisions.
     if (surahNumber <= 2) return 1;
     if (surahNumber <= 4) return 2;
     if (surahNumber <= 7) return 3;
