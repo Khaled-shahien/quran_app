@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/notification_service.dart';
@@ -29,6 +31,7 @@ import 'features/onboarding/presentation/providers/favorites_provider.dart';
 import 'features/quran/presentation/providers/bookmark_provider.dart';
 import 'core/providers/settings_provider.dart';
 import 'core/services/workmanager_service.dart';
+import 'core/services/firebase_messaging_service.dart';
 import 'features/khatma/data/repositories/khatma_repository.dart';
 import 'features/khatma/presentation/providers/khatma_provider.dart';
 import 'features/onboarding/presentation/screens/home_screen.dart';
@@ -92,16 +95,41 @@ void main() async {
 
   try {
     // Initialize Firebase Core FIRST (required before any Firebase services)
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
     debugPrint('✅ Firebase Core initialized successfully');
+
+    // Register FCM background handler as early as possible.
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    debugPrint('✅ FCM background handler registered');
 
     // Initialize SharedPreferences (fast operation)
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Initialize local notifications (non-blocking with timeout)
+    // Run app immediately, then finish non-critical setup in background.
+    runApp(MyApp(prefs: prefs));
+    unawaited(_initializeBackgroundServices());
+  } catch (e) {
+    debugPrint('❌ Critical error in main: $e');
+    // Try to run app anyway with minimal initialization
+    SharedPreferences.getInstance().then((prefs) {
+      runApp(MyApp(prefs: prefs));
+    });
+  }
+}
+
+Future<void> _initializeBackgroundServices() async {
+  try {
+    final FirebaseMessagingService firebaseMessagingService =
+        FirebaseMessagingService();
+    await firebaseMessagingService.initialize();
+
     final NotificationService notificationService = NotificationService();
     await notificationService
-        .initialize()
+        .initialize(requestPermissions: false)
         .timeout(
           const Duration(seconds: 2),
           onTimeout: () {
@@ -118,15 +146,8 @@ void main() async {
     final WorkManagerService workManagerService = WorkManagerService();
     await workManagerService.initialize();
     await workManagerService.registerBootRescheduleTask();
-
-    // Run app immediately
-    runApp(MyApp(prefs: prefs));
   } catch (e) {
-    debugPrint('❌ Critical error in main: $e');
-    // Try to run app anyway with minimal initialization
-    SharedPreferences.getInstance().then((prefs) {
-      runApp(MyApp(prefs: prefs));
-    });
+    debugPrint('❌ Background services initialization error: $e');
   }
 }
 

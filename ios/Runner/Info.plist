@@ -76,6 +76,6 @@
 	
 	<!-- Firebase Cloud Messaging Configuration -->
 	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
+	<true/>
 </dict>
 </plist>

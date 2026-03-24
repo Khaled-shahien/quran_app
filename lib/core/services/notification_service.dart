@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../navigation/notification_router.dart';
 
@@ -27,6 +28,27 @@ class NotificationService {
   static const int _eveningAdhkarNotificationId = 1002;
   static const int _mulkNotificationId = 1003;
   static const int _baqarahNotificationId = 1004;
+  static const List<int> _managedNotificationIds = <int>[
+    _morningAdhkarNotificationId,
+    _eveningAdhkarNotificationId,
+    _mulkNotificationId,
+    _baqarahNotificationId,
+  ];
+
+  static const String _defaultChannelId = 'quran_app_channel';
+  static const String _defaultChannelName = 'Quran App Notifications';
+  static const String _defaultChannelDescription =
+      'Notifications for Quran App reminders';
+
+  static const String _alarmsChannelId = 'quran_alarms_channel';
+  static const String _alarmsChannelName = 'Quran App Alarms';
+  static const String _alarmsChannelDescription =
+      'Daily alarms for adhkar and surah reminders';
+
+  static const String _testChannelId = 'test_channel';
+  static const String _testChannelName = 'Test Notifications';
+  static const String _testChannelDescription =
+      'For testing notification system';
 
   // Alarm time keys
   static const String _morningAlarmHourKey = 'morning_alarm_hour';
@@ -50,14 +72,16 @@ class NotificationService {
 
   bool _isInitialized = false;
   bool _isPluginAvailable = true;
+  String? _lastAppliedAlarmStateSignature;
 
   /// Initialize the notification service
-  Future<void> initialize() async {
+  Future<void> initialize({bool requestPermissions = false}) async {
     if (_isInitialized) return;
 
     try {
       // Initialize timezone
-      tz.initializeTimeZones();
+      tzdata.initializeTimeZones();
+      await _configureLocalTimezone();
 
       // Android initialization settings
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -84,8 +108,12 @@ class NotificationService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      // Request permissions
-      await _requestPermissions();
+      await _createAndroidNotificationChannels();
+
+      if (requestPermissions) {
+        await this.requestPermissions();
+      }
+
       _isPluginAvailable = true;
       debugPrint('Notification Service initialized successfully');
     } catch (e) {
@@ -99,29 +127,102 @@ class NotificationService {
     }
   }
 
-  /// Request notification permissions
-  Future<void> _requestPermissions() async {
-    // Android 13+ requires explicit permission request
+  Future<void> _configureLocalTimezone() async {
+    try {
+      final String timezoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezoneName));
+      debugPrint('Notification timezone configured: $timezoneName');
+    } catch (e) {
+      // Fallback to UTC so scheduling remains deterministic even if timezone lookup fails.
+      tz.setLocalLocation(tz.UTC);
+      debugPrint('Failed to resolve local timezone, falling back to UTC: $e');
+    }
+  }
+
+  Future<void> _createAndroidNotificationChannels() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin
             >();
 
-    if (androidImplementation != null) {
+    if (androidImplementation == null) {
+      return;
+    }
+
+    await androidImplementation.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _defaultChannelId,
+        _defaultChannelName,
+        description: _defaultChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+
+    await androidImplementation.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _alarmsChannelId,
+        _alarmsChannelName,
+        description: _alarmsChannelDescription,
+        importance: Importance.max,
+      ),
+    );
+
+    await androidImplementation.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _testChannelId,
+        _testChannelName,
+        description: _testChannelDescription,
+        importance: Importance.max,
+      ),
+    );
+
+    debugPrint('Android notification channels ensured');
+  }
+
+  /// Request runtime notification permissions.
+  ///
+  /// Call this from a foreground/UI context after app startup.
+  Future<void> requestPermissions() async {
+    if (!_isInitialized) {
+      await initialize(requestPermissions: false);
+    }
+    if (!_isPluginAvailable || kIsWeb) return;
+
+    // Android 13+ runtime notification permission.
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    if (androidImplementation != null &&
+        defaultTargetPlatform == TargetPlatform.android) {
       final bool? granted = await androidImplementation
           .requestNotificationsPermission();
       debugPrint('Android notification permission granted: $granted');
+
+      try {
+        final bool? exactAlarmPermission = await androidImplementation
+            .requestExactAlarmsPermission();
+        debugPrint(
+          'Android exact alarm permission granted: $exactAlarmPermission',
+        );
+      } catch (e) {
+        debugPrint('Exact alarm permission request unavailable: $e');
+      }
     }
 
-    // iOS permissions
+    // iOS/macOS permissions.
     final IOSFlutterLocalNotificationsPlugin? iosImplementation =
         flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin
             >();
 
-    if (iosImplementation != null) {
+    if (iosImplementation != null &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS)) {
       await iosImplementation.requestPermissions(
         alert: true,
         badge: true,
@@ -169,12 +270,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'quran_app_channel',
-          'Quran App Notifications',
-          channelDescription: 'Notifications for Quran App reminders',
+          _defaultChannelId,
+          _defaultChannelName,
+          channelDescription: _defaultChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
         );
 
     const DarwinNotificationDetails iosNotificationDetails =
@@ -214,8 +315,9 @@ class NotificationService {
     required int hour,
     required int minute,
     String? payload,
+    Map<String, dynamic>? payloadData,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
@@ -248,12 +350,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'quran_alarms_channel',
-          'Quran App Alarms',
-          channelDescription: 'Daily alarms for adhkar and surah reminders',
+          _alarmsChannelId,
+          _alarmsChannelName,
+          channelDescription: _alarmsChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
           category: AndroidNotificationCategory.reminder,
         );
 
@@ -269,6 +371,14 @@ class NotificationService {
       iOS: iosNotificationDetails,
     );
 
+    final String resolvedType = (payload == null || payload.isEmpty)
+        ? 'general'
+        : payload;
+    final String serializedPayload = jsonEncode({
+      'type': resolvedType,
+      'data': payloadData ?? <String, dynamic>{},
+    });
+
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -278,9 +388,9 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      // Use dateAndTime for exact one-time scheduling instead of recurring daily
-      matchDateTimeComponents: DateTimeComponents.dateAndTime,
-      payload: payload,
+      // Daily reminders should repeat at the same clock time.
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: serializedPayload,
     );
 
     debugPrint('✅ Notification $id scheduled for ${scheduledDate.toString()}');
@@ -289,9 +399,74 @@ class NotificationService {
     );
   }
 
+  /// Schedule a one-time notification at a fixed DateTime.
+  Future<void> scheduleOneTimeNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledAt,
+    String? payload,
+    Map<String, dynamic>? payloadData,
+  }) async {
+    if (!_isInitialized) await initialize(requestPermissions: false);
+    if (!_isPluginAvailable) return;
+
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduleAtLocal = tz.TZDateTime.from(scheduledAt, tz.local);
+    if (scheduleAtLocal.isBefore(now.add(const Duration(seconds: 5)))) {
+      scheduleAtLocal = now.add(const Duration(seconds: 5));
+    }
+
+    const AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+          _testChannelId,
+          _testChannelName,
+          channelDescription: _testChannelDescription,
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@drawable/ic_notification',
+          playSound: true,
+          enableVibration: true,
+        );
+
+    const DarwinNotificationDetails iosNotificationDetails =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+      iOS: iosNotificationDetails,
+    );
+
+    final String resolvedType = (payload == null || payload.isEmpty)
+        ? 'general'
+        : payload;
+    final String serializedPayload = jsonEncode({
+      'type': resolvedType,
+      'data': payloadData ?? <String, dynamic>{},
+    });
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduleAtLocal,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: serializedPayload,
+    );
+
+    debugPrint('✅ One-time notification $id scheduled for $scheduleAtLocal');
+  }
+
   /// Cancel a scheduled notification
   Future<void> cancelNotification(int id) async {
-    if (!_isInitialized) await initialize();
+    if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
     await flutterLocalNotificationsPlugin.cancel(id);
     debugPrint('Cancelled notification $id');
@@ -299,10 +474,17 @@ class NotificationService {
 
   /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
-    if (!_isInitialized) await initialize();
+    if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
     await flutterLocalNotificationsPlugin.cancelAll();
     debugPrint('Cancelled all notifications');
+  }
+
+  /// Cancel and reschedule only app-managed reminder notifications.
+  Future<void> _cancelManagedReminderNotifications() async {
+    for (final int id in _managedNotificationIds) {
+      await cancelNotification(id);
+    }
   }
 
   // ==================== MORNING ADHKAR ALARM ====================
@@ -413,8 +595,16 @@ class NotificationService {
     required bool isMulkEnabled,
     required bool isBaqarahEnabled,
   }) async {
-    // Cancel all first
-    await cancelAllNotifications();
+    final String newSignature =
+        '${isMorningEnabled ? 1 : 0}-${isEveningEnabled ? 1 : 0}-${isMulkEnabled ? 1 : 0}-${isBaqarahEnabled ? 1 : 0}';
+
+    if (_lastAppliedAlarmStateSignature == newSignature) {
+      debugPrint('Skipping alarm update: state unchanged');
+      return;
+    }
+
+    // Cancel only reminder notifications managed by this service.
+    await _cancelManagedReminderNotifications();
 
     // Reschedule enabled alarms
     if (isMorningEnabled) {
@@ -430,9 +620,48 @@ class NotificationService {
       await scheduleBaqarahAlarm();
     }
 
+    _lastAppliedAlarmStateSignature = newSignature;
+
     debugPrint(
       'Updated all alarms. Morning: $isMorningEnabled, Evening: $isEveningEnabled, Mulk: $isMulkEnabled, Baqarah: $isBaqarahEnabled',
     );
+  }
+
+  /// Reschedule one alarm type without touching other notifications.
+  Future<void> rescheduleSingleAlarm({
+    required String type,
+    required bool enabled,
+    int? hour,
+    int? minute,
+  }) async {
+    switch (type) {
+      case 'morning':
+        await cancelNotification(_morningAdhkarNotificationId);
+        if (enabled) {
+          await scheduleMorningAdhkarAlarm(hour: hour, minute: minute);
+        }
+        break;
+      case 'evening':
+        await cancelNotification(_eveningAdhkarNotificationId);
+        if (enabled) {
+          await scheduleEveningAdhkarAlarm(hour: hour, minute: minute);
+        }
+        break;
+      case 'mulk':
+        await cancelNotification(_mulkNotificationId);
+        if (enabled) {
+          await scheduleMulkAlarm(hour: hour, minute: minute);
+        }
+        break;
+      case 'baqarah':
+        await cancelNotification(_baqarahNotificationId);
+        if (enabled) {
+          await scheduleBaqarahAlarm(hour: hour, minute: minute);
+        }
+        break;
+      default:
+        debugPrint('Unknown alarm type for reschedule: $type');
+    }
   }
 
   /// Save alarm time to preferences
@@ -499,7 +728,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     debugPrint('🧪 TEST NOTIFICATION: $title');
@@ -507,12 +736,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'test_channel',
-          'Test Notifications',
-          channelDescription: 'For testing notification system',
+          _testChannelId,
+          _testChannelName,
+          channelDescription: _testChannelDescription,
           importance: Importance.max,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
           playSound: true,
           enableVibration: true,
         );
@@ -542,7 +771,7 @@ class NotificationService {
 
   /// Check pending notifications
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
-    if (!_isInitialized) await initialize();
+    if (!_isInitialized) await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return [];
 
     final pending = await flutterLocalNotificationsPlugin

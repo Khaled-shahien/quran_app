@@ -35,7 +35,7 @@
         <!-- Default notification icon -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:value="@mipmap/ic_launcher" />
+            android:value="@drawable/ic_notification" />
         
         <!-- Default notification color -->
         <meta-data
@@ -71,7 +71,7 @@
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>

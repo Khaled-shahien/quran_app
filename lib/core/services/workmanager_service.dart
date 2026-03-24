@@ -5,9 +5,11 @@ import 'notification_service.dart';
 
 const String kRescheduleAlarmsTaskName = 'reschedule_alarms';
 const String kRescheduleAlarmsPeriodicUniqueName =
-  'reschedule_alarms_periodic_task';
-const String kRescheduleAlarmsOneOffUniqueName =
-  'reschedule_alarms_boot_task';
+    'reschedule_alarms_periodic_task';
+const String kRescheduleAlarmsOneOffUniqueName = 'reschedule_alarms_boot_task';
+const String _kLastBackgroundRescheduleAtMsKey =
+    'last_background_reschedule_at_ms';
+const int _kBackgroundRescheduleThrottleMs = 45 * 1000;
 
 /// Background task callback - MUST be a top-level function
 @pragma('vm:entry-point')
@@ -20,7 +22,7 @@ void callbackDispatcher() {
     try {
       switch (task) {
         case kRescheduleAlarmsTaskName:
-          await _handleRescheduleAlarms();
+          await _handleRescheduleAlarms(inputData: inputData);
           break;
         default:
           debugPrint('Unknown task: $task');
@@ -35,13 +37,24 @@ void callbackDispatcher() {
 }
 
 /// Handle alarm rescheduling
-Future<void> _handleRescheduleAlarms() async {
+Future<void> _handleRescheduleAlarms({Map<String, dynamic>? inputData}) async {
   debugPrint('Rescheduling alarms after boot/update');
 
   try {
-    final NotificationService notificationService = NotificationService();
-    await notificationService.initialize();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final int lastRunMs = prefs.getInt(_kLastBackgroundRescheduleAtMsKey) ?? 0;
+
+    // WorkManager can enqueue multiple near-identical startup jobs.
+    if (nowMs - lastRunMs < _kBackgroundRescheduleThrottleMs) {
+      debugPrint('⏭️ Skipping duplicate background reschedule execution');
+      return;
+    }
+
+    await prefs.setInt(_kLastBackgroundRescheduleAtMsKey, nowMs);
+
+    final NotificationService notificationService = NotificationService();
+    await notificationService.initialize(requestPermissions: false);
 
     // Reschedule only the alarms enabled in persisted settings.
     await notificationService.updateAllAlarms(
@@ -91,6 +104,11 @@ class WorkManagerService {
   /// Register boot reschedule task
   Future<void> registerRescheduleTask() async {
     try {
+      final Constraints constraints = Constraints(
+        networkType: NetworkType.notRequired,
+        requiresBatteryNotLow: false,
+      );
+
       // Register periodic task to reschedule alarms as a fallback safety net.
       await _workmanager.registerPeriodicTask(
         kRescheduleAlarmsPeriodicUniqueName,
@@ -98,6 +116,9 @@ class WorkManagerService {
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         frequency: const Duration(hours: 12),
         initialDelay: const Duration(minutes: 10),
+        constraints: constraints,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(minutes: 10),
         inputData: {'source': 'periodic'},
       );
 
@@ -108,14 +129,24 @@ class WorkManagerService {
   }
 
   /// Register immediate one-off reschedule task (used after boot/update).
-  Future<void> registerBootRescheduleTask() async {
+  Future<void> registerBootRescheduleTask({
+    String source = 'boot_or_update',
+  }) async {
     try {
+      final Constraints constraints = Constraints(
+        networkType: NetworkType.notRequired,
+        requiresBatteryNotLow: false,
+      );
+
       await _workmanager.registerOneOffTask(
         kRescheduleAlarmsOneOffUniqueName,
         kRescheduleAlarmsTaskName,
         existingWorkPolicy: ExistingWorkPolicy.replace,
         initialDelay: const Duration(seconds: 20),
-        inputData: {'source': 'boot_or_update'},
+        constraints: constraints,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(minutes: 5),
+        inputData: {'source': source},
       );
       debugPrint('✅ Boot reschedule task registered');
     } catch (e) {
@@ -123,10 +154,31 @@ class WorkManagerService {
     }
   }
 
+  /// Register immediate one-off reschedule after user settings changes.
+  Future<void> registerImmediateRescheduleTask({
+    String source = 'manual_settings_update',
+  }) async {
+    try {
+      await _workmanager.registerOneOffTask(
+        '${kRescheduleAlarmsOneOffUniqueName}_manual',
+        kRescheduleAlarmsTaskName,
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        initialDelay: const Duration(seconds: 3),
+        constraints: Constraints(networkType: NetworkType.notRequired),
+        inputData: {'source': source},
+      );
+      debugPrint('✅ Immediate reschedule task registered');
+    } catch (e) {
+      debugPrint('❌ Error registering immediate reschedule task: $e');
+    }
+  }
+
   /// Cancel reschedule task
   Future<void> cancelRescheduleTask() async {
     try {
-      await _workmanager.cancelByUniqueName(kRescheduleAlarmsPeriodicUniqueName);
+      await _workmanager.cancelByUniqueName(
+        kRescheduleAlarmsPeriodicUniqueName,
+      );
       await _workmanager.cancelByUniqueName(kRescheduleAlarmsOneOffUniqueName);
       debugPrint('Reschedule task cancelled');
     } catch (e) {

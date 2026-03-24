@@ -51,19 +51,19 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC4CLXnKzGyU7GO2fXtmL-O6M_t3Di26cc',
-    appId: '1:896557837272:android:3fed4d86f0c26ae36c20ad',
-    messagingSenderId: '896557837272',
-    projectId: 'quran-app-754e2',
-    storageBucket: 'quran-app-754e2.firebasestorage.app',
+    apiKey: 'AIzaSyAYhoTOkaYG2mr1asxm0uWA6jChJ1U_D_Y',
+    appId: '1:139097045866:android:ec96f94566e1d4eb268313',
+    messagingSenderId: '139097045866',
+    projectId: 'quran-app-10d05',
+    storageBucket: 'quran-app-10d05.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBMwzvxfOdowk83AqQh7Fc-dLXdskqYBrU',
-    appId: '1:896557837272:ios:be024dc0e4d2e8cd6c20ad',
-    messagingSenderId: '896557837272',
-    projectId: 'quran-app-754e2',
-    storageBucket: 'quran-app-754e2.firebasestorage.app',
+    apiKey: 'AIzaSyBfbuT2YdMNDCiS1yCtBgmm5Tq35JEtRS8',
+    appId: '1:139097045866:ios:0353b751c00c221c268313',
+    messagingSenderId: '139097045866',
+    projectId: 'quran-app-10d05',
+    storageBucket: 'quran-app-10d05.firebasestorage.app',
     iosBundleId: 'com.example.quranApp',
   );
 

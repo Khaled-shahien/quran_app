@@ -30,7 +30,7 @@ class NotificationProvider extends ChangeNotifier {
 
     try {
       // Initialize local notifications first (fast)
-      await _notificationService.initialize();
+      await _notificationService.initialize(requestPermissions: false);
 
       // Initialize Firebase in background (non-blocking)
       _initializeFirebaseInBackground();
@@ -49,13 +49,7 @@ class NotificationProvider extends ChangeNotifier {
     Future.microtask(() async {
       try {
         // Firebase Core is already initialized in main.dart
-        await _fcmService
-            .initialize()
-            .timeout(
-              const Duration(seconds: 5),
-              onTimeout: () => debugPrint('⚠️ Firebase Messaging init timeout'),
-            )
-            .catchError((e) => debugPrint('❌ Firebase Messaging error: $e'));
+        await _initializeFirebaseWithRetry();
 
         // Get FCM token after initialization
         _fcmToken = await _fcmService.getToken();
@@ -73,6 +67,23 @@ class NotificationProvider extends ChangeNotifier {
     });
   }
 
+  Future<void> _initializeFirebaseWithRetry() async {
+    const int maxAttempts = 3;
+
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await _fcmService.initialize().timeout(const Duration(seconds: 8));
+        return;
+      } catch (e) {
+        _addLog('Firebase init attempt $attempt/$maxAttempts failed: $e');
+        if (attempt == maxAttempts) {
+          rethrow;
+        }
+        await Future<void>.delayed(Duration(seconds: attempt * 2));
+      }
+    }
+  }
+
   /// Check notification permissions
   Future<void> _checkPermissionStatus() async {
     try {
@@ -88,7 +99,8 @@ class NotificationProvider extends ChangeNotifier {
   /// Request notification permissions
   Future<void> requestPermissions() async {
     try {
-      await _fcmService.initialize();
+      await _notificationService.requestPermissions();
+      await _initializeFirebaseWithRetry();
       await _checkPermissionStatus();
       _addLog('Permissions requested');
     } catch (e) {
@@ -123,15 +135,16 @@ class NotificationProvider extends ChangeNotifier {
     required String body,
   }) async {
     try {
-      final now = DateTime.now();
-      final scheduledTime = now.add(const Duration(minutes: 1));
+      final DateTime scheduledTime = DateTime.now().add(
+        const Duration(minutes: 1),
+      );
 
-      await _notificationService.scheduleDailyNotification(
+      await _notificationService.scheduleOneTimeNotification(
         id: id,
         title: title,
         body: body,
-        hour: scheduledTime.hour,
-        minute: scheduledTime.minute,
+        scheduledAt: scheduledTime,
+        payload: 'test',
       );
 
       _addLog('Delayed notification scheduled for ${scheduledTime.toString()}');
@@ -149,16 +162,16 @@ class NotificationProvider extends ChangeNotifier {
     required String body,
   }) async {
     try {
-      final now = DateTime.now();
-      final scheduledTime = now.add(const Duration(minutes: 5));
+      final DateTime scheduledTime = DateTime.now().add(
+        const Duration(minutes: 5),
+      );
 
-      // Use scheduleDailyNotification but ensure it's more than 2 minutes away
-      await _notificationService.scheduleDailyNotification(
+      await _notificationService.scheduleOneTimeNotification(
         id: id,
         title: title,
         body: body,
-        hour: scheduledTime.hour,
-        minute: scheduledTime.minute,
+        scheduledAt: scheduledTime,
+        payload: 'test',
       );
 
       _addLog(
