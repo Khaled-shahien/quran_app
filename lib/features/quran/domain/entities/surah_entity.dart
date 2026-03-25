@@ -37,7 +37,8 @@ class SurahEntity {
   @override
   String toString() {
     return 'SurahEntity(number: $number, name: $name, '
-        'englishName: $englishName, englishNameTranslation: $englishNameTranslation, '
+        'englishName: $englishName, '
+        'englishNameTranslation: $englishNameTranslation, '
         'revelationType: $revelationType, totalAyah: $totalAyah)';
   }
 

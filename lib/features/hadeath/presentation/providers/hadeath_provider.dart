@@ -30,7 +30,9 @@ class HadeathProvider extends ChangeNotifier {
 
       _ahadethList = loadedAhadeth;
     } catch (e) {
-      _errorMessage = 'حدث خطأ أثناء تحميل الأحاديث: $e';
+      _errorMessage =
+          'حدث خطأ أثناء تحميل الأحاديث: '
+          '$e';
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -31,7 +31,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   // Basmalah
                   Image.asset(
-                    'assets/images/بسم الله الرحمن الرحيم.png',
+                    'assets/images/'
+                    'بسم الله الرحمن الرحيم.png',
                     width: 350,
                     fit: BoxFit.contain,
                     color: Theme.of(context).colorScheme.onSurface,

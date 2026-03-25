@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/repositories/surah_repository.dart';
 import '../../domain/entities/surah_entity.dart';
+import '../../domain/repositories/surah_repository.dart';
 
 /// Quran Screen
 ///
-/// Displays the list of all 114 Surahs in the Quran with their details
+/// Displays the list of all 114 Surahs in the Quran with their details.
 class QuranScreen extends StatelessWidget {
   const QuranScreen({super.key});
 
@@ -33,7 +34,7 @@ class _QuranScreenContent extends StatefulWidget {
 
 class _QuranScreenState extends State<_QuranScreenContent> {
   late SurahRepository _repository;
-  List<SurahEntity> _surahs = [];
+  List<SurahEntity> _surahs = <SurahEntity>[];
   bool _isLoading = true;
   String? _error;
 
@@ -42,12 +43,6 @@ class _QuranScreenState extends State<_QuranScreenContent> {
     super.initState();
     _repository = widget.repository;
     _loadSurahs();
-  }
-
-  @override
-  void dispose() {
-    // No need to close repository
-    super.dispose();
   }
 
   Future<void> _loadSurahs() async {
@@ -72,7 +67,6 @@ class _QuranScreenState extends State<_QuranScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    // استخدم ألوان التطبيق
     final ThemeData theme = Theme.of(context);
     final Color primaryColor = theme.colorScheme.primary;
     final Color backgroundColor = theme.scaffoldBackgroundColor;
@@ -92,9 +86,13 @@ class _QuranScreenState extends State<_QuranScreenContent> {
           ),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: primaryColor),
-          onPressed: () => Navigator.pop(context),
+        leading: Semantics(
+          button: true,
+          label: 'الرجوع للشاشة السابقة',
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: primaryColor),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
       ),
       body: SafeArea(
@@ -124,13 +122,17 @@ class _QuranScreenState extends State<_QuranScreenContent> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadSurahs,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+            Semantics(
+              button: true,
+              label: 'إعادة تحميل السور',
+              child: ElevatedButton(
+                onPressed: _loadSurahs,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('إعادة المحاولة'),
               ),
-              child: const Text('إعادة المحاولة'),
             ),
           ],
         ),
@@ -211,107 +213,111 @@ class SurahCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: cardBackground,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: accentColor, width: 1),
-      ),
-      child: Material(
-        color: cardBackground,
-        borderRadius: BorderRadius.circular(15),
-        child: InkWell(
+    return Semantics(
+      button: true,
+      label: 'سورة $arabicName، عدد الآيات $versesCount، $type',
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: cardBackground,
           borderRadius: BorderRadius.circular(15),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                // رقم السورة داخل دائرة
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$index',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+          border: Border.all(color: accentColor, width: 1),
+        ),
+        child: Material(
+          color: cardBackground,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$index',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                // أسماء السورة
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        arabicName,
-                        style: GoogleFonts.cairo(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          arabicName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.cairo(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      Text(
-                        englishName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: accentColor.withAlpha((0.8 * 255).round()),
+                        Text(
+                          englishName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: accentColor.withAlpha((0.8 * 255).round()),
+                          ),
                         ),
-                      ),
-                      Text(
-                        translation,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: secondaryTextColor,
+                        Text(
+                          translation,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: secondaryTextColor,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                // تفاصيل (مكية/مدنية وعدد الآيات)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: accentColor.withAlpha((0.1 * 255).round()),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        type,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: accentColor,
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          type,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '$versesCount آية',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$versesCount آية',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: secondaryTextColor,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

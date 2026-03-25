@@ -140,7 +140,9 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
                     Expanded(
                       child: _buildPlanTypeCard(
                         title: 'حسب الورد اليومي',
-                        subtitle: 'تحدد مقدار القراءة كل يوم',
+                        subtitle:
+                            'تحدد مقدار '
+                            'القراءة كل يوم',
                         active: _goalType == KhatmaGoalType.byDailyAmount,
                         onTap: () {
                           setState(() {

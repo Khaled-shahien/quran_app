@@ -44,6 +44,7 @@ final GoRouter appRouter = GoRouter(
             state.extra as Map<String, dynamic>?;
         final SurahEntity? surah = extra?['surah'] as SurahEntity?;
         final int? initialAyahNumber = extra?['initialAyahNumber'] as int?;
+        final int? initialPageNumber = extra?['initialPageNumber'] as int?;
 
         if (surahNumber == null) {
           return const _RouteDataErrorScreen(
@@ -57,6 +58,7 @@ final GoRouter appRouter = GoRouter(
           return _SurahDetailsRouteLoader(
             surahNumber: surahNumber,
             initialAyahNumber: initialAyahNumber,
+            initialPageNumber: initialPageNumber,
           );
         }
 
@@ -64,6 +66,7 @@ final GoRouter appRouter = GoRouter(
           surah: surah,
           surahNumber: surahNumber,
           initialAyahNumber: initialAyahNumber,
+          initialPageNumber: initialPageNumber,
         );
       },
     ),
@@ -74,12 +77,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/duas', builder: (context, state) => const AzkarScreen()),
     GoRoute(path: '/duas/all', builder: (context, state) => const DuasScreen()),
     GoRoute(
-      path: '/azkar/details/:category',
-      builder: (context, state) => AzkarDetailsScreen(
-        categoryName: Uri.decodeComponent(
-          state.pathParameters['category'] ?? '',
-        ),
-      ),
+      path: '/azkar/details',
+      builder: (context, state) {
+        final Map<String, dynamic>? extra =
+            state.extra as Map<String, dynamic>?;
+        return AzkarDetailsScreen(
+          categoryName: extra?['categoryName'] as String? ?? '',
+        );
+      },
     ),
     GoRoute(
       path: '/duas/morning',
@@ -136,12 +141,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/khatma/duration',
       builder: (context, state) {
-        final String startMode = Uri.decodeComponent(
-          state.uri.queryParameters['startMode'] ?? 'بداية المصحف',
-        );
-        final int? startJuz = int.tryParse(
-          state.uri.queryParameters['startJuz'] ?? '1',
-        );
+        final Map<String, dynamic>? extra =
+            state.extra as Map<String, dynamic>?;
+        final String startMode =
+            extra?['startMode'] as String? ?? 'بداية المصحف';
+        final int? startJuz = extra?['startJuz'] as int?;
 
         return KhatmaDurationScreen(startMode: startMode, startJuz: startJuz);
       },
@@ -171,10 +175,12 @@ class _RouteDataErrorScreen extends StatelessWidget {
 class _SurahDetailsRouteLoader extends StatelessWidget {
   final int surahNumber;
   final int? initialAyahNumber;
+  final int? initialPageNumber;
 
   const _SurahDetailsRouteLoader({
     required this.surahNumber,
     this.initialAyahNumber,
+    this.initialPageNumber,
   });
 
   @override
@@ -201,6 +207,7 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
           surah: surah,
           surahNumber: surahNumber,
           initialAyahNumber: initialAyahNumber,
+          initialPageNumber: initialPageNumber,
         );
       },
     );

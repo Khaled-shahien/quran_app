@@ -21,12 +21,16 @@ class DuasScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Theme.of(context).colorScheme.primary,
+        leading: Semantics(
+          button: true,
+          label: 'الرجوع للشاشة السابقة',
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
@@ -90,24 +94,27 @@ class _DuasItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return Semantics(
+      container: true,
+      label: 'دعاء ${item.title}',
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondary,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Title
             Text(
               item.title,
@@ -131,17 +138,18 @@ class _DuasItemCard extends StatelessWidget {
             ),
 
             // Reference if available
-            if (item.reference != null && item.reference.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Divider(thickness: 0.5),
-              const SizedBox(height: 8),
-              Text(
-                item.reference,
-                style: GoogleFonts.cairo(fontSize: 12, color: Colors.grey),
-                textAlign: TextAlign.left,
-              ),
+              if (item.reference != null && item.reference.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Divider(thickness: 0.5),
+                const SizedBox(height: 8),
+                Text(
+                  item.reference,
+                  style: GoogleFonts.cairo(fontSize: 12, color: Colors.grey),
+                  textAlign: TextAlign.left,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

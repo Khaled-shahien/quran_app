@@ -13,7 +13,10 @@ class HadeathCard extends StatelessWidget {
       color: Theme.of(context).colorScheme.secondary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1,
+        ),
       ),
       elevation: 2,
       child: InkWell(

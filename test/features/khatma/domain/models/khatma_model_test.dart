@@ -82,5 +82,74 @@ void main() {
       expect(summary.remainingUnits, 26);
       expect(summary.progress, closeTo(4 / 30, 0.0001));
     });
+
+    test('serializes core fields as snake_case keys', () {
+      final model = KhatmaModel(
+        id: 'snake',
+        startMode: 'بداية المصحف',
+        startJuz: 1,
+        startDate: DateTime(2026, 3, 1),
+        trackingUnit: KhatmaTrackingUnit.juz,
+        goalType: KhatmaGoalType.byDuration,
+        plannedDurationDays: 30,
+        dailyTargetUnits: 1,
+        completedUnits: 2,
+        reminderHour: 7,
+        reminderMinute: 30,
+        isCompleted: false,
+      );
+
+      final json = model.toJson();
+
+      expect(json.containsKey('start_mode'), isTrue);
+      expect(json.containsKey('start_juz'), isTrue);
+      expect(json.containsKey('start_date'), isTrue);
+      expect(json.containsKey('tracking_unit'), isTrue);
+      expect(json.containsKey('planned_duration_days'), isTrue);
+      expect(json.containsKey('daily_target_units'), isTrue);
+      expect(json.containsKey('completed_units'), isTrue);
+      expect(json.containsKey('daily_logs'), isTrue);
+      expect(json.containsKey('completed_wirds'), isTrue);
+    });
+
+    test('parses snake_case payload with expected values', () {
+      final json = <String, dynamic>{
+        'id': 'snake-input',
+        'start_mode': 'بداية المصحف',
+        'start_juz': 2,
+        'start_date': DateTime(2026, 3, 1).toIso8601String(),
+        'tracking_unit': 'juz',
+        'goal_type': 'byDuration',
+        'planned_duration_days': 20,
+        'daily_target_units': 1.5,
+        'completed_units': 3,
+        'reminder_hour': 6,
+        'reminder_minute': 15,
+        'is_completed': true,
+        'daily_logs': <Map<String, dynamic>>[
+          {'date': DateTime(2026, 3, 2).toIso8601String(), 'units_read': 1},
+        ],
+        'completed_wirds': <Map<String, dynamic>>[
+          {
+            'from_unit': 1,
+            'to_unit': 2,
+            'completed_at': DateTime(2026, 3, 2).toIso8601String(),
+            'is_completed': true,
+          },
+        ],
+      };
+
+      final model = KhatmaModel.fromJson(json);
+
+      expect(model.startJuz, 2);
+      expect(model.plannedDurationDays, 20);
+      expect(model.dailyTargetUnits, 1.5);
+      expect(model.completedUnits, 3);
+      expect(model.isCompleted, isTrue);
+      expect(model.dailyLogs, hasLength(1));
+      expect(model.completedWirds, hasLength(1));
+      expect(model.dailyLogs.first.unitsRead, 1);
+      expect(model.completedWirds.first.fromUnit, 1);
+    });
   });
 }

@@ -605,18 +605,19 @@ class CurrentWirdWidget extends StatelessWidget {
       (surah) => surah.number == targetSurahNumber,
       orElse: () => surahs.first,
     );
-    final int targetAyah = _estimateAyahForPage(
-      targetPage: targetPage,
-      surah: targetSurah,
-    );
 
     if (!context.mounted) return;
+
+    // Calculate the page index within the surah (0-based)
+    final int surahIndex = targetSurah.number - 1;
+    final int surahStartPage = _surahStartPages[surahIndex];
+    final int pageIndexInSurah = targetPage - surahStartPage;
 
     context.push(
       '/quran/surah/${targetSurah.number}',
       extra: <String, dynamic>{
         'surah': targetSurah,
-        'initialAyahNumber': targetAyah,
+        'initialPageNumber': pageIndexInSurah,
       },
     );
   }

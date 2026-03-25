@@ -26,7 +26,8 @@ class AyahEntity {
 
   @override
   String toString() {
-    return 'AyahEntity(number: $number, text: $text, numberInSurah: $numberInSurah, '
+    return 'AyahEntity('
+        'number: $number, text: $text, numberInSurah: $numberInSurah, '
         'juz: $juz, manzil: $manzil, page: $page, ruku: $ruku, '
         'hizbQuarter: $hizbQuarter, sajda: $sajda)';
   }

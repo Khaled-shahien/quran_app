@@ -53,7 +53,8 @@ class _DailyVerseSectionWidgetState extends State<DailyVerseSectionWidget> {
       'surah': 'سورة طه',
       'arabic':
           'قَالَ لَا تَخَافَا ۖ '
-          'إِنَّنِي مَعَكُمَا أَسْمَعُ وَأَرَىٰ',
+          'إِنَّنِي مَعَكُمَا '
+          'أَسْمَعُ وَأَرَىٰ',
       'english':
           'He said, "Fear not. Indeed, I am with you both; I hear and I see."',
     },

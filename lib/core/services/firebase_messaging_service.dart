@@ -296,7 +296,15 @@ class FirebaseMessagingService {
       await _firebaseMessaging.deleteToken();
       final newToken = await _firebaseMessaging.getToken();
       developer.log('Token refreshed: $newToken', name: 'quran_app.fcm');
-      _updateTokenInBackend(newToken!);
+      if (newToken == null || newToken.isEmpty) {
+        developer.log(
+          'Token refresh returned null/empty token',
+          name: 'quran_app.fcm',
+          level: 900,
+        );
+        return;
+      }
+      _updateTokenInBackend(newToken);
     } catch (e) {
       developer.log(
         'Error refreshing token',

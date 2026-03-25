@@ -124,7 +124,9 @@ class SettingsProvider extends ChangeNotifier {
     required int minute,
   }) async {
     developer.log(
-      'Setting $type alarm to ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+      'Setting $type alarm to '
+      '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}',
       name: 'quran_app.settings',
     );
 

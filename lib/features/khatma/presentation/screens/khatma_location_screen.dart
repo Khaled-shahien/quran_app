@@ -187,13 +187,12 @@ class _KhatmaLocationScreenState extends State<KhatmaLocationScreen> {
               // Continue Button
               ElevatedButton(
                 onPressed: () {
-                  final String encodedStartMode = Uri.encodeComponent(
-                    _selectedStartMode,
-                  );
                   context.push(
-                    '/khatma/duration?'
-                    'startMode=$encodedStartMode&'
-                    'startJuz=$_selectedJuz',
+                    '/khatma/duration',
+                    extra: {
+                      'startMode': _selectedStartMode,
+                      'startJuz': _selectedJuz,
+                    },
                   );
                 },
                 style: ElevatedButton.styleFrom(

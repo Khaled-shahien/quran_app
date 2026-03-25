@@ -67,7 +67,8 @@ class AyahModel {
 
   @override
   String toString() {
-    return 'AyahModel(number: $number, text: $text, numberInSurah: $numberInSurah, '
+    return 'AyahModel('
+        'number: $number, text: $text, numberInSurah: $numberInSurah, '
         'juz: $juz, manzil: $manzil, page: $page, ruku: $ruku, '
         'hizbQuarter: $hizbQuarter, sajda: $sajda)';
   }

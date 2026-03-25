@@ -97,7 +97,9 @@ class PrayerTimesEntity {
 
   @override
   String toString() {
-    return 'PrayerTimesEntity(fajr: $fajr, sunrise: $sunrise, dhuhr: $dhuhr, asr: $asr, maghrib: $maghrib, isha: $isha)';
+    return 'PrayerTimesEntity('
+        'fajr: $fajr, sunrise: $sunrise, dhuhr: $dhuhr, '
+        'asr: $asr, maghrib: $maghrib, isha: $isha)';
   }
 
   @override

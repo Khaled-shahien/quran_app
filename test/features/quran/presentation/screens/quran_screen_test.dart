@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,8 @@ import 'package:quran_app/features/quran/domain/entities/surah_entity.dart';
 import 'package:quran_app/features/quran/domain/repositories/surah_repository.dart';
 import 'package:quran_app/features/quran/presentation/providers/bookmark_provider.dart';
 import 'package:quran_app/features/quran/presentation/screens/quran_screen.dart';
+
+import '../../../../helpers/router_test_helper.dart';
 
 class FakeSurahRepository implements SurahRepository {
   FakeSurahRepository({this.shouldThrow = false, List<SurahEntity>? surahs})
@@ -70,17 +73,22 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
+  Widget buildQuranTestApp({
+    required SurahRepository repository,
+    List<RouteBase> routes = const <RouteBase>[],
+  }) {
+    return Provider<SurahRepository>.value(
+      value: repository,
+      child: buildRouterTestApp(home: const QuranScreen(), routes: routes),
+    );
+  }
+
   testWidgets('shows surah list with localized revelation type', (
     tester,
   ) async {
     final repository = FakeSurahRepository();
 
-    await tester.pumpWidget(
-      Provider<SurahRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: QuranScreen()),
-      ),
-    );
+    await tester.pumpWidget(buildQuranTestApp(repository: repository));
 
     await tester.pumpAndSettle();
 
@@ -97,12 +105,7 @@ void main() {
   ) async {
     final repository = FakeSurahRepository(shouldThrow: true);
 
-    await tester.pumpWidget(
-      Provider<SurahRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: QuranScreen()),
-      ),
-    );
+    await tester.pumpWidget(buildQuranTestApp(repository: repository));
 
     await tester.pumpAndSettle();
 
@@ -118,12 +121,7 @@ void main() {
   testWidgets('shows loading indicator before data settles', (tester) async {
     final repository = FakeSurahRepository();
 
-    await tester.pumpWidget(
-      Provider<SurahRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: QuranScreen()),
-      ),
-    );
+    await tester.pumpWidget(buildQuranTestApp(repository: repository));
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
@@ -142,12 +140,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
-      Provider<SurahRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: QuranScreen()),
-      ),
-    );
+    await tester.pumpWidget(buildQuranTestApp(repository: repository));
     await tester.pumpAndSettle();
 
     expect(find.text('custom_place'), findsOneWidget);
@@ -169,7 +162,27 @@ void main() {
             value: bookmarkProvider,
           ),
         ],
-        child: const MaterialApp(home: QuranScreen()),
+        child: buildRouterTestApp(
+          home: const QuranScreen(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/quran/surah/:number',
+              builder: (context, state) {
+                return Scaffold(
+                  appBar: AppBar(
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.bookmark_outline),
+                        tooltip: 'حفظ العلامة',
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -202,12 +215,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
-      Provider<SurahRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: QuranScreen()),
-      ),
-    );
+    await tester.pumpWidget(buildQuranTestApp(repository: repository));
     await tester.pumpAndSettle();
 
     expect(find.text('مكية'), findsOneWidget);

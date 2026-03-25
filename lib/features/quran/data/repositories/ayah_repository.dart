@@ -88,7 +88,8 @@ class AyahRepositoryImpl implements AyahRepository {
       if (ayahNumber < 1 || ayahNumber > ayahs.length) {
         throw ApiException(
           message:
-              'Ayah number $ayahNumber is out of range for Surah $surahNumber (1-${ayahs.length})',
+              'Ayah number $ayahNumber is out of range '
+              'for Surah $surahNumber (1-${ayahs.length})',
           code: 404,
         );
       }

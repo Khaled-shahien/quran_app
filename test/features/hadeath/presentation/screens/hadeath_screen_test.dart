@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +10,8 @@ import 'package:quran_app/features/hadeath/domain/entities/hadeath_entity.dart';
 import 'package:quran_app/features/hadeath/domain/repositories/hadeath_repository.dart';
 import 'package:quran_app/features/hadeath/presentation/providers/hadeath_provider.dart';
 import 'package:quran_app/features/hadeath/presentation/screens/hadeath_screen.dart';
+
+import '../../../../helpers/router_test_helper.dart';
 
 class FakeHadeathRepository implements HadeathRepository {
   FakeHadeathRepository({this.onGetAll});
@@ -36,14 +39,25 @@ void main() {
 
     return ChangeNotifierProvider<HadeathProvider>.value(
       value: provider,
-      child: MaterialApp(
-        theme: ThemeData(
-          colorScheme: const ColorScheme.light(
-            primary: Colors.teal,
-            secondary: Color(0xFFF4FAF6),
-          ),
-        ),
+      child: buildRouterTestApp(
         home: const HadeathScreen(),
+        routes: <RouteBase>[
+          GoRoute(
+            path: '/hadeath/details/:index',
+            builder: (context, state) {
+              final int index = int.parse(state.pathParameters['index']!);
+              final hadeath = provider.ahadethList[index];
+              return Scaffold(
+                body: Column(
+                  children: [
+                    const Text('بِسْمِ اللَّهِ الرَّحْمَِٰ الرَّحِيمِ'),
+                    Text(hadeath.content.join(' ')),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

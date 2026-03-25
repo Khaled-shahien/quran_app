@@ -40,9 +40,9 @@ class KhatmaProvider extends ChangeNotifier {
   }
 
   Future<void> markCurrentWirdAsFinished() async {
-    if (_activeKhatma == null) return;
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
 
-    final KhatmaModel current = _activeKhatma!;
     final double readUnits = current.recommendedDailyTarget < 1
         ? 1
         : current.recommendedDailyTarget;
@@ -105,21 +105,24 @@ class KhatmaProvider extends ChangeNotifier {
   }
 
   Future<void> completeKhatma() async {
-    if (_activeKhatma != null) {
-      final updatedKhatma = _activeKhatma!.copyWith(
-        isCompleted: true,
-        completedUnits: _activeKhatma!.plannedUnits.toDouble(),
-      );
-      await repository.saveKhatma(updatedKhatma);
-      await _reminderService.cancelReminder(_khatmaReminderNotificationId);
-      _activeKhatma = updatedKhatma;
-      notifyListeners();
-    }
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
+
+    final updatedKhatma = current.copyWith(
+      isCompleted: true,
+      completedUnits: current.plannedUnits.toDouble(),
+    );
+    await repository.saveKhatma(updatedKhatma);
+    await _reminderService.cancelReminder(_khatmaReminderNotificationId);
+    _activeKhatma = updatedKhatma;
+    notifyListeners();
   }
 
   Future<void> updateDailyTarget(double targetUnits) async {
-    if (_activeKhatma == null) return;
-    final KhatmaModel updatedKhatma = _activeKhatma!.copyWith(
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
+
+    final KhatmaModel updatedKhatma = current.copyWith(
       dailyTargetUnits: targetUnits.clamp(1, 2000),
       goalType: KhatmaGoalType.byDailyAmount,
     );
@@ -130,8 +133,10 @@ class KhatmaProvider extends ChangeNotifier {
   }
 
   Future<void> updateReminderTime(TimeOfDay reminder) async {
-    if (_activeKhatma == null) return;
-    final KhatmaModel updatedKhatma = _activeKhatma!.copyWith(
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
+
+    final KhatmaModel updatedKhatma = current.copyWith(
       reminderHour: reminder.hour,
       reminderMinute: reminder.minute,
     );
@@ -142,8 +147,9 @@ class KhatmaProvider extends ChangeNotifier {
   }
 
   Future<void> resumeAfterGap() async {
-    if (_activeKhatma == null) return;
-    final KhatmaModel current = _activeKhatma!;
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
+
     if (current.goalType != KhatmaGoalType.byDuration || current.isCompleted) {
       return;
     }
@@ -193,7 +199,9 @@ class KhatmaProvider extends ChangeNotifier {
       notificationId: _khatmaReminderNotificationId,
       title: 'ورد الختمة اليومي',
       body:
-          'لا تنس وردك اليوم: ${khatma.amountValue} (من ${khatma.todayFromUnit} إلى ${khatma.todayToUnit})',
+          'لا تنس وردك اليوم: ${khatma.amountValue} '
+          '(من ${khatma.todayFromUnit} '
+          'إلى ${khatma.todayToUnit})',
       hour: khatma.reminderHour,
       minute: khatma.reminderMinute,
       payload: 'khatma',

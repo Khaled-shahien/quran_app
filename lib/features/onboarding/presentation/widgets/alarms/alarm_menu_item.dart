@@ -36,8 +36,9 @@ class AlarmMenuItem extends StatelessWidget {
         String timeText = '--:--';
 
         if (snapshot.hasData) {
-          final hour = snapshot.data!['hour']!;
-          final minute = snapshot.data!['minute']!;
+          final data = snapshot.data;
+          final hour = data?['hour'] ?? 0;
+          final minute = data?['minute'] ?? 0;
           timeText = _formatTime(hour, minute);
         }
 

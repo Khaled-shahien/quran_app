@@ -20,12 +20,16 @@ class AzkarScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Theme.of(context).colorScheme.primary,
+        leading: Semantics(
+          button: true,
+          label: 'الرجوع للشاشة السابقة',
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
@@ -135,21 +139,26 @@ class AzkarScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildHeaderCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Gradient gradient,
-  }) {
-    return InkWell(
+Widget _buildHeaderCard(
+  BuildContext context, {
+  required String title,
+  required IconData icon,
+  required Gradient gradient,
+}) {
+  final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+  return Semantics(
+    button: true,
+    label: 'فتح قسم $title',
+    child: InkWell(
       onTap: () {
-        final String encodedTitle = Uri.encodeComponent(title);
-        context.push('/azkar/details/$encodedTitle');
+        context.push('/azkar/details', extra: {'categoryName': title});
       },
       borderRadius: BorderRadius.circular(15),
       child: Container(
-        height: 100,
+        constraints: const BoxConstraints(minHeight: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
           gradient: gradient,
@@ -161,22 +170,20 @@ class AzkarScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Positioned(
-              left: 20,
-              top: 20,
-              bottom: 20,
-              child: Opacity(
-                opacity: 0.2,
-                child: Icon(icon, size: 70, color: Colors.white),
-              ),
+            Opacity(
+              opacity: 0.2,
+              child: Icon(icon, size: 56, color: Colors.white),
             ),
-            Positioned(
-              right: 20,
-              bottom: 20,
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
                 title,
+                maxLines: textScale > 1.2 ? 2 : 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
                 style: GoogleFonts.cairo(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -187,19 +194,23 @@ class AzkarScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildGridCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Color color,
-  }) {
-    return InkWell(
+Widget _buildGridCard(
+  BuildContext context, {
+  required String title,
+  required IconData icon,
+  required Color color,
+}) {
+  final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+  return Semantics(
+    button: true,
+    label: 'فتح قسم $title',
+    child: InkWell(
       onTap: () {
-        final String encodedTitle = Uri.encodeComponent(title);
-        context.push('/azkar/details/$encodedTitle');
+        context.push('/azkar/details', extra: {'categoryName': title});
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -214,31 +225,34 @@ class AzkarScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: 10,
-              top: 10,
-              child: Opacity(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Opacity(
                 opacity: 0.2,
-                child: Icon(icon, size: 60, color: Colors.white),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Icon(icon, size: 48, color: Colors.white),
+                ),
               ),
-            ),
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: Text(
+              const Spacer(),
+              Text(
                 title,
+                maxLines: textScale > 1.2 ? 2 : 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
                 style: GoogleFonts.cairo(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

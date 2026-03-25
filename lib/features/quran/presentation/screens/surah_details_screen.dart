@@ -21,12 +21,14 @@ class SurahDetailsScreen extends StatefulWidget {
   final SurahEntity surah;
   final int surahNumber;
   final int? initialAyahNumber;
+  final int? initialPageNumber;
 
   const SurahDetailsScreen({
     super.key,
     required this.surah,
     required this.surahNumber,
     this.initialAyahNumber,
+    this.initialPageNumber,
   });
 
   @override
@@ -60,10 +62,28 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   }
 
   void _focusInitialTarget() {
+    if (_focusInitialPageIfProvided()) {
+      return;
+    }
     if (_focusInitialAyahIfProvided()) {
       return;
     }
     _focusBookmarkedPage();
+  }
+
+  bool _focusInitialPageIfProvided() {
+    final int? targetPage = widget.initialPageNumber;
+    if (targetPage == null || _surahPages.isEmpty) {
+      return false;
+    }
+
+    final int safePage = targetPage.clamp(0, _surahPages.length - 1);
+    if (!mounted) return true;
+    setState(() {
+      _currentSurahPage = safePage;
+    });
+    _pageController.jumpToPage(safePage);
+    return true;
   }
 
   bool _focusInitialAyahIfProvided() {

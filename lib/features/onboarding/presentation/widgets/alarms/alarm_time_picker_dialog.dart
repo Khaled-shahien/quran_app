@@ -33,10 +33,11 @@ class _AlarmTimePickerDialogState extends State<AlarmTimePickerDialog> {
       listen: false,
     );
     final timeData = await settingsProvider.getAlarmTime(widget.alarmType);
+    if (!mounted) return;
 
     setState(() {
-      _selectedHour = timeData['hour']!;
-      _selectedMinute = timeData['minute']!;
+      _selectedHour = timeData['hour'] ?? 0;
+      _selectedMinute = timeData['minute'] ?? 0;
     });
   }
 

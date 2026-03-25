@@ -80,7 +80,7 @@ extension KhatmaGoalTypeX on KhatmaGoalType {
   }
 }
 
-@JsonSerializable()
+@JsonSerializable(fieldRename: FieldRename.snake)
 class KhatmaDailyLog {
   @JsonKey(fromJson: KhatmaModel.parseDateTime, toJson: KhatmaModel.dateToJson)
   final DateTime date;
@@ -108,7 +108,7 @@ class KhatmaReportSummary {
   });
 }
 
-@JsonSerializable()
+@JsonSerializable(fieldRename: FieldRename.snake)
 class KhatmaCompletedWird {
   @JsonKey(fromJson: KhatmaModel.parseInt, defaultValue: 1)
   final int fromUnit;
@@ -135,7 +135,7 @@ class KhatmaCompletedWird {
   Map<String, dynamic> toJson() => _$KhatmaCompletedWirdToJson(this);
 }
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
 class KhatmaModel {
   @JsonKey(defaultValue: '')
   final String id;
@@ -408,17 +408,20 @@ class KhatmaModel {
   }
 
   static Map<String, dynamic> _normalizeLegacyJson(Map<String, dynamic> json) {
+    Object? readValue(String snake, String camel) => json[snake] ?? json[camel];
+
     final KhatmaTrackingUnit unit = KhatmaTrackingUnitX.fromStorage(
-      json['trackingUnit']?.toString() ?? json['amountType']?.toString(),
+      readValue('tracking_unit', 'trackingUnit')?.toString() ??
+          json['amountType']?.toString(),
     );
     final KhatmaGoalType goalType = KhatmaGoalTypeX.fromStorage(
-      json['goalType']?.toString(),
+      readValue('goal_type', 'goalType')?.toString(),
     );
 
     final double legacyCompletedUnits =
-        (json['completedUnits'] as num?)?.toDouble() ??
+        (readValue('completed_units', 'completedUnits') as num?)?.toDouble() ??
         ((json['currentJuz'] as num?)?.toDouble() ?? 1) -
-            (json['startJuz'] as num? ?? 1);
+            ((readValue('start_juz', 'startJuz') as num?) ?? 1);
 
     final double parsedLegacyDailyTarget = _parseLegacyDailyTarget(
       unit: unit,
@@ -430,24 +433,34 @@ class KhatmaModel {
       'id':
           json['id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
-      'startMode': json['startMode']?.toString() ?? 'بداية المصحف',
-      'startJuz': (json['startJuz'] as num?)?.toInt() ?? 1,
-      'startDate': parseDateTime(json['startDate']).toIso8601String(),
-      'trackingUnit': unit.name,
-      'goalType': goalType.name,
-      'plannedDurationDays':
-          (json['plannedDurationDays'] as num?)?.toInt() ??
+      'start_mode':
+          readValue('start_mode', 'startMode')?.toString() ?? 'بداية المصحف',
+      'start_juz': (readValue('start_juz', 'startJuz') as num?)?.toInt() ?? 1,
+      'start_date': parseDateTime(
+        readValue('start_date', 'startDate'),
+      ).toIso8601String(),
+      'tracking_unit': unit.name,
+      'goal_type': goalType.name,
+      'planned_duration_days':
+          (readValue('planned_duration_days', 'plannedDurationDays') as num?)
+              ?.toInt() ??
           (json['durationDays'] as num?)?.toInt() ??
           30,
-      'dailyTargetUnits':
-          (json['dailyTargetUnits'] as num?)?.toDouble() ??
+      'daily_target_units':
+          (readValue('daily_target_units', 'dailyTargetUnits') as num?)
+              ?.toDouble() ??
           parsedLegacyDailyTarget,
-      'completedUnits': math.max(0, legacyCompletedUnits),
-      'reminderHour': (json['reminderHour'] as num?)?.toInt() ?? 8,
-      'reminderMinute': (json['reminderMinute'] as num?)?.toInt() ?? 0,
-      'isCompleted': json['isCompleted'] as bool? ?? false,
-      'dailyLogs': _safeJsonList(json['dailyLogs']),
-      'completedWirds': _safeJsonList(json['completedWirds']),
+      'completed_units': math.max(0, legacyCompletedUnits),
+      'reminder_hour':
+          (readValue('reminder_hour', 'reminderHour') as num?)?.toInt() ?? 8,
+      'reminder_minute':
+          (readValue('reminder_minute', 'reminderMinute') as num?)?.toInt() ??
+          0,
+      'is_completed': parseBool(readValue('is_completed', 'isCompleted')),
+      'daily_logs': _safeJsonList(readValue('daily_logs', 'dailyLogs')),
+      'completed_wirds': _safeJsonList(
+        readValue('completed_wirds', 'completedWirds'),
+      ),
     };
   }
 
@@ -483,7 +496,8 @@ class KhatmaModel {
 
     final double parsed = double.tryParse(normalized.split(' ').first) ?? 1;
     if (amountType == 'ربع') {
-      // Legacy quarter-juz option is converted to hizb-like tracking as half hizb per quarter.
+      // Legacy quarter-juz option is converted to hizb-like
+      // tracking as half hizb per quarter.
       if (unit == KhatmaTrackingUnit.hizb) {
         return math.max(0.5, parsed / 2);
       }

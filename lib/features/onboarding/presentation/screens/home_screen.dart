@@ -102,13 +102,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            Icons.segment,
-            color: Theme.of(context).colorScheme.primary,
-            size: 30,
+        Semantics(
+          button: true,
+          label: 'فتح القائمة الجانبية',
+          child: IconButton(
+            icon: Icon(
+              Icons.segment,
+              color: Theme.of(context).colorScheme.primary,
+              size: 30,
+            ),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
-          onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
         ),
       ],
     );
@@ -135,20 +139,29 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
+                  Semantics(
+                    button: true,
+                    label: 'إغلاق القائمة الجانبية',
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
-                  Text(
-                    'القرآن الكريم',
-                    style: GoogleFonts.cairo(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'القرآن الكريم',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const CircleAvatar(
@@ -194,20 +207,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _drawerTabItem(String label, int index) {
     bool active = drawerSubTab == index;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => drawerSubTab = index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: active ? AppColors.accent : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.cairo(
-              color: active ? Colors.white : AppColors.primary,
-              fontWeight: FontWeight.bold,
+      child: Semantics(
+        button: true,
+        selected: active,
+        label: 'تبويب $label',
+        child: GestureDetector(
+          onTap: () => setState(() => drawerSubTab = index),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: active ? AppColors.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                color: active ? Colors.white : AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
@@ -239,34 +257,38 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback? onTap,
     Color? textColor,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            if (leadingIcon != null) ...[
-              leadingIcon,
-              const SizedBox(width: 16),
-            ],
-            if (leadingIcon == null) const SizedBox(width: 40),
+    return Semantics(
+      button: true,
+      label: title,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            children: [
+              if (leadingIcon != null) ...[
+                leadingIcon,
+                const SizedBox(width: 16),
+              ],
+              if (leadingIcon == null) const SizedBox(width: 40),
 
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.right,
-                style: GoogleFonts.cairo(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: textColor ?? Theme.of(context).colorScheme.primary,
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.cairo(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textColor ?? Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
-            ),
-            if (trailingWidget != null) ...[
-              const SizedBox(width: 16),
-              trailingWidget,
+              if (trailingWidget != null) ...[
+                const SizedBox(width: 16),
+                trailingWidget,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -280,68 +302,73 @@ class _HomeScreenState extends State<HomeScreen> {
     required ValueChanged<bool> onChanged,
     String? rightSubtitle,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        children: [
-          // Right Side: Icon
-          leadingIcon,
-          const SizedBox(width: 16),
+    return Semantics(
+      label: title,
+      toggled: value,
+      value: value ? 'مفعل' : 'معطل',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Row(
+          children: [
+            // Right Side: Icon
+            leadingIcon,
+            const SizedBox(width: 16),
 
-          // Middle: Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start, // start in RTL is right
+            // Middle: Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start, // start in RTL is right
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.cairo(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Left Side: Switch & Subtitle
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end, // end in RTL is left
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.cairo(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
+                SizedBox(
+                  height: 30,
+                  child: Switch(
+                    value: value,
+                    onChanged: onChanged,
+                    activeThumbColor: AppColors.primary,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.5),
+                if (rightSubtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    rightSubtitle,
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.5),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
-          ),
-
-          // Left Side: Switch & Subtitle
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end, // end in RTL is left
-            children: [
-              SizedBox(
-                height: 30,
-                child: Switch(
-                  value: value,
-                  onChanged: onChanged,
-                  activeThumbColor: AppColors.primary,
-                ),
-              ),
-              if (rightSubtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  rightSubtitle,
-                  style: GoogleFonts.cairo(
-                    fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.5),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -869,17 +896,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: Icon(
-                          Icons.cancel,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20,
+                      Semantics(
+                        button: true,
+                        label: 'إزالة الآية من المفضلة',
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: Icon(
+                            Icons.cancel,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            favoritesProvider.removeFavorite(verse);
+                          },
                         ),
-                        onPressed: () {
-                          favoritesProvider.removeFavorite(verse);
-                        },
                       ),
                       Expanded(
                         child: Text(

@@ -60,7 +60,8 @@ class PrayerTimesRepositoryImpl implements PrayerTimesRepository {
   /// - [date]: The date to get prayer times for
   /// - [latitude]: User's latitude
   /// - [longitude]: User's longitude
-  /// - [calculationMethod]: Calculation method (default 3 for Muslim World League)
+  /// - [calculationMethod]: Calculation method
+  ///   (default 3 for Muslim World League)
   ///
   /// Returns: Future<PrayerTimesEntity>
   /// Throws: NetworkException, ApiException

@@ -75,11 +75,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        provider.fetchTodayForCurrentLocation();
-                      },
-                      child: const Text('Retry'),
+                    Semantics(
+                      button: true,
+                      label: 'إعادة تحميل مواقيت الصلاة',
+                      child: ElevatedButton(
+                        onPressed: () {
+                          provider.fetchTodayForCurrentLocation();
+                        },
+                        child: const Text('Retry'),
+                      ),
                     ),
                   ],
                 ),
@@ -123,7 +127,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                  '${DateTime.now().day}/'
+                  '${DateTime.now().month}/'
+                  '${DateTime.now().year}',
                   style: GoogleFonts.cairo(
                     fontSize: 14,
                     color: Theme.of(
@@ -158,32 +164,46 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     required String prayerName,
     required String prayerTime,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            _getArabicPrayerName(prayerName),
-            style: GoogleFonts.cairo(
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.primary,
+    return Semantics(
+      container: true,
+      label: '${_getArabicPrayerName(prayerName)} الساعة $prayerTime',
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                _getArabicPrayerName(prayerName),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.cairo(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
-          ),
-          Text(
-            prayerTime,
-            style: GoogleFonts.cairo(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
+            const SizedBox(width: 12),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  prayerTime,
+                  style: GoogleFonts.cairo(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

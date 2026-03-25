@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../prayers/presentation/providers/prayer_times_performance_provider.dart';
+import '../../../prayers/presentation/providers/'
+    'prayer_times_performance_provider.dart';
 
 class HeaderCardWidget extends StatelessWidget {
   const HeaderCardWidget({super.key});

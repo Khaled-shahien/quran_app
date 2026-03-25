@@ -10,11 +10,11 @@ class AppTheme {
       primary: AppColors.lightPrimary,
       onPrimary: AppColors.white,
       secondary: AppColors.lightSecondary,
-      onSecondary: AppColors.white,
+      onSecondary: AppColors.primaryText,
       surface: AppColors.lightBackground,
       onSurface: AppColors.primaryText,
       error: AppColors.error,
-      onError: AppColors.white,
+      onError: AppColors.black,
       outline: AppColors.lightSecondary,
     );
 
@@ -245,11 +245,14 @@ class AppTheme {
     ColorScheme colorScheme,
   ) {
     return NavigationBarThemeData(
-      indicatorColor: colorScheme.primary,
+      indicatorColor: colorScheme.primaryContainer,
       labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
         Set<WidgetState> states,
       ) {
         return AppTypography.labelMedium.copyWith(
+          color: states.contains(WidgetState.selected)
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurface,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.bold
               : FontWeight.normal,
@@ -260,7 +263,7 @@ class AppTheme {
       ) {
         return IconThemeData(
           color: states.contains(WidgetState.selected)
-              ? colorScheme.primary
+              ? colorScheme.onPrimaryContainer
               : colorScheme.onSurface.withValues(alpha: 0.60),
         );
       }),

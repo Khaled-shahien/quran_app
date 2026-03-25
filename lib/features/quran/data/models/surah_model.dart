@@ -63,7 +63,8 @@ class SurahModel {
   @override
   String toString() {
     return 'SurahModel(number: $number, name: $name, '
-        'englishName: $englishName, englishNameTranslation: $englishNameTranslation, '
+        'englishName: $englishName, '
+        'englishNameTranslation: $englishNameTranslation, '
         'revelationType: $revelationType, numberOfAyahs: $numberOfAyahs)';
   }
 

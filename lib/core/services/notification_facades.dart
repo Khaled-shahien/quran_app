@@ -6,16 +6,20 @@ import 'notification_service.dart';
 
 /// Abstraction for local notification operations used by providers.
 abstract class LocalNotificationGateway {
+  /// Initializes local notifications and optionally requests permissions.
   Future<void> initialize({bool requestPermissions = false});
 
+  /// Requests platform notification permissions from the user.
   Future<void> requestPermissions();
 
+  /// Triggers a foreground test notification for diagnostics.
   Future<void> testNotification({
     required int id,
     required String title,
     required String body,
   });
 
+  /// Schedules a one-time notification at [scheduledAt].
   Future<void> scheduleOneTimeNotification({
     required int id,
     required String title,
@@ -24,12 +28,16 @@ abstract class LocalNotificationGateway {
     String? payload,
   });
 
+  /// Cancels a specific pending notification by id.
   Future<void> cancelNotification(int id);
 
+  /// Cancels all scheduled and shown notifications.
   Future<void> cancelAllNotifications();
 
+  /// Returns currently pending notifications from the platform plugin.
   Future<List<PendingNotificationRequest>> getPendingNotifications();
 
+  /// Rebuilds alarm schedules based on current feature toggles.
   Future<void> updateAllAlarms({
     required bool isMorningEnabled,
     required bool isEveningEnabled,
@@ -38,6 +46,7 @@ abstract class LocalNotificationGateway {
   });
 }
 
+/// Adapter that forwards [LocalNotificationGateway] calls to [NotificationService].
 class NotificationServiceGateway implements LocalNotificationGateway {
   final NotificationService _notificationService;
 
@@ -119,15 +128,20 @@ class NotificationServiceGateway implements LocalNotificationGateway {
 
 /// Abstraction for FCM operations used by providers.
 abstract class MessagingGateway {
+  /// Initializes Firebase messaging and handlers.
   Future<void> initialize();
 
+  /// Returns the current FCM device token if available.
   Future<String?> getToken();
 
+  /// Reads the current notification permission/settings state.
   Future<NotificationSettings> getNotificationSettings();
 
+  /// Forces FCM token refresh and backend sync hooks.
   Future<void> refreshToken();
 }
 
+/// Adapter that forwards [MessagingGateway] calls to [FirebaseMessagingService].
 class FirebaseMessagingGateway implements MessagingGateway {
   final FirebaseMessagingService _firebaseMessagingService;
 

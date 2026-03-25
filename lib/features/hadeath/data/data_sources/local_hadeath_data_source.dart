@@ -4,7 +4,8 @@ import '../models/hadeath_model.dart';
 class LocalHadeathDataSource {
   final String _assetPath = 'assets/hadeath/ahadeth.txt';
 
-  /// Loads the ahadeth text file from assets, parses it, and returns a list of models
+  /// Loads the ahadeth text file from assets, parses it,
+  /// and returns a list of models.
   Future<List<HadeathModel>> loadAhadeth() async {
     try {
       // Load the file content
