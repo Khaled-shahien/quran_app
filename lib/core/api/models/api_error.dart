@@ -40,6 +40,10 @@ class ApiError {
 
   @override
   String toString() {
-    return 'ApiError(code: $code, message: $message, details: $details, errors: $errors)';
+    return 'ApiError('
+        'code: $code, '
+        'message: $message, '
+        'details: $details, '
+        'errors: $errors)';
   }
 }

@@ -49,6 +49,10 @@ class BaseResponse<T> {
 
   @override
   String toString() {
-    return 'BaseResponse(status: $status, message: $message, code: $code, data: $data)';
+    return 'BaseResponse('
+        'status: $status, '
+        'message: $message, '
+        'code: $code, '
+        'data: $data)';
   }
 }

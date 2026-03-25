@@ -33,49 +33,52 @@ class DuasScreen extends StatelessWidget {
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Consumer<DuasProvider>(
-          builder: (context, provider, child) {
-            if (provider.isLoading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              );
-            }
-
-            if (provider.errorMessage != null) {
-              return Center(
-                child: Text(
-                  'حدث خطأ في تحميل الأدعية',
-                  style: GoogleFonts.cairo(color: Colors.red, fontSize: 18),
-                ),
-              );
-            }
-
-            // The JSON has one category ("أدعية قرآنية"), so let's grab it directly
-            final category = provider.getCategoryByName('أدعية قرآنية');
-
-            if (category == null || category.items.isEmpty) {
-              return Center(
-                child: Text(
-                  'لا توجد أدعية حالياً',
-                  style: GoogleFonts.cairo(
-                    fontSize: 18,
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return Center(
+                  child: CircularProgressIndicator(
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                ),
-              );
-            }
+                );
+              }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: category.items.length,
-              itemBuilder: (context, index) {
-                final item = category.items[index];
-                return _DuasItemCard(item: item);
-              },
-            );
-          },
-        ),        ),      ),
+              if (provider.errorMessage != null) {
+                return Center(
+                  child: Text(
+                    'حدث خطأ في تحميل الأدعية',
+                    style: GoogleFonts.cairo(color: Colors.red, fontSize: 18),
+                  ),
+                );
+              }
+
+              // The JSON has one category ("أدعية قرآنية"),
+              // so let's grab it directly.
+              final category = provider.getCategoryByName('أدعية قرآنية');
+
+              if (category == null || category.items.isEmpty) {
+                return Center(
+                  child: Text(
+                    'لا توجد أدعية حالياً',
+                    style: GoogleFonts.cairo(
+                      fontSize: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: category.items.length,
+                itemBuilder: (context, index) {
+                  final item = category.items[index];
+                  return _DuasItemCard(item: item);
+                },
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

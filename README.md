@@ -1,77 +1,229 @@
-# 📖 Quran App
+# 🚀 Quran App
 
-A beautiful, performant, and accessible Flutter application designed to provide a premium experience for reading the Holy Quran, viewing prayer times, and learning the Asma-ul-Husna (Names of Allah). Built completely with Clean Architecture and Feature-First principles.
+A modern Islamic Flutter application for Quran reading, prayer times, adhkar/duas, hadith, and daily worship tools.
 
-Current delivery/verification state is tracked in `PROJECT_STATUS.md`.
+## 📱 Screenshots
+
+Use clean and aligned screenshots.
+
+| Home | Quran | Adhkar | Hadith |
+|------|-------|--------|--------|
+| ![Home](assets/images/بسم%20الله%20الرحمن%20الرحيم.png) | ![Quran](assets/images/القران.png) | ![Adhkar](assets/images/الاذكار.png) | ![Hadith](assets/images/الاحاديث.png) |
 
 ## 🌟 Features
-* **Interactive Quran Reader:** Read the Holy Quran with a traditional Mushaf feel. Smooth right-to-left horizontal pagination with auto-scaling verses.
-* **Prayer Times:** Accurate prayer time calculations fetched cleanly with local caching integration.
-* **Asma-ul-Husna:** A dedicated visually appealing screen to read and learn the 99 Names of Allah with meanings.
-* **Modern UI/UX:** Material 3 design, carefully selected color scheme featuring warm, eye-comforting palettes (`AppColors.lightBackground`, `AppColors.lightPrimary`).
-* **Offline Ready:** Utilizes local asset files and robust caching to work seamlessly without internet.
+
+- 🔹 **Quran Reading** - Browse surahs and read verses with an Arabic-first experience.
+- 🔹 **Prayer Times** - Fetch and display prayer times with caching and performance provider support.
+- 🔹 **Duas & Adhkar** - Dedicated sections for daily azkar and supplications.
+- 🔹 **Hadith Section** - Read hadith collections from local assets.
+- 🔹 **Tasbih Counter** - Digital tasbih with simple interaction flow.
+- 🔹 **Khatma Tracking** - Track recitation progress and reminders.
+- 🔹 **Notifications** - Local notifications + Firebase Messaging integration.
+- 🔹 **Dark/Light Theme** - Theme switching with persisted settings.
 
 ## 🛠️ Technologies & Packages
-* **[Flutter](https://flutter.dev/):** UI framework for natively compiled applications.
-* **[Provider](https://pub.dev/packages/provider):** Clean and straightforward State Management.
-* **[Shared Preferences](https://pub.dev/packages/shared_preferences):** Persistent local storage for caching API responses & user settings.
-* **[Google Fonts](https://pub.dev/packages/google_fonts):** High-quality typography (Amiri, Cairo).
-* **[JSON Serializable](https://pub.dev/packages/json_serializable):** Robust, type-safe data modeling.
+
+### 🔧 Core Technologies
+
+- Flutter
+- Dart
+- Firebase (Core + Messaging)
+- Material 3
+
+### 📦 Key Packages
+
+- State Management: Provider
+- Networking: http
+- Routing: go_router
+- Serialization: json_annotation + json_serializable
+- Local Storage: shared_preferences
+- Notifications: flutter_local_notifications + workmanager + timezone
+- Utilities: connectivity_plus + logger + share_plus + url_launcher + google_fonts
 
 ## 🏗️ Architecture
-The app follows **Clean Architecture** combined with a **Feature-first** folder structure. This ensures separation of concerns, testability, and extreme scalability.
+
+The project follows a scalable and maintainable architecture:
 
 ```text
 lib/
 ├── core/
-│   ├── theme/             # Modern AppColors and Theme configuration
-│   ├── utils/             # Helper functions and security utils
-│   └── errors/            # Centralized error handling
+│   ├── api/               # Shared API helpers and network utilities
+│   ├── constants/         # App-wide constants
+│   ├── errors/            # Error models and handlers
+│   ├── navigation/        # Router and notification routing
+│   ├── providers/         # Global providers (settings, notifications)
+│   ├── services/          # Notification, FCM, background services
+│   ├── theme/             # Colors, typography, themes
+│   ├── utils/             # Shared utility functions
+│   └── widgets/           # Reusable widgets
+│
 └── features/
-    ├── onboarding/        # Onboarding flow Presentation
-    ├── prayers/           # Prayer Times Feature (Data, Domain, Presentation)
-    └── quran/             # Quran & Asma Feature (Data, Domain, Presentation)
+      ├── onboarding/
+      │   ├── data/
+      │   ├── domain/
+      │   └── presentation/
+      ├── quran/
+      │   ├── data/
+      │   ├── domain/
+      │   └── presentation/
+      ├── prayers/
+      │   ├── data/
+      │   ├── domain/
+      │   └── presentation/
+      ├── duas/
+      ├── hadeath/
+      ├── khatma/
+      └── settings/
 ```
 
 ## 🔄 App Flow
-1. **App Initialization:** Loads `SharedPreferences` asynchronously and injects it into Repositories.
-2. **Onboarding:** Greets the user and directs them to the main interface.
-3. **Home Overview:** Displays Prayer metrics or navigates to Quran / Asma.
-4. **Quran Reading Flow:** Parses `assets/ayaat/` `.txt` files in real-time, splits them efficiently, scales them to fit the screen, and paginates horizontally using a `PageView`.
+
+```mermaid
+graph TD
+      A[App Start] --> B[Initialize Firebase]
+      B --> C[Load SharedPreferences]
+      C --> D[RunApp]
+      D --> E[Onboarding Screen]
+      E --> F[Home Screen]
+      F --> G[Quran / Prayer Times / Duas / Hadith / Tasbih]
+      G --> H[Optional Notification-Driven Navigation]
+```
 
 ## 🎨 UI/UX Design
-Designed with **Palette** guidelines to be visually stunning:
-* **Background:** `Color(0xFFFEFBF4)` - A warm, paper-like off-white to reduce eye strain.
-* **Primary / Text:** `Color(0xFF795547)` - Earthy brown tones creating contrast while remaining soft.
-* **Typography:** `Amiri` for Quranic text guaranteeing authentic shaping, `Cairo` for modern standard Arabic interface text.
+
+### 🎨 Color Palette
+
+- Primary: `#795547`
+- Secondary: `#F0E6D2`
+- Background: `#FEFBF4`
+- Surface: `#FFFBF9`
+- Error: `#E57373`
+
+### ✍️ Typography
+
+- Headline: Cairo
+- Title: Cairo
+- Body: Cairo
+- Caption: Cairo
+
+### 🧭 Navigation
+
+- GoRouter-based named routes
+- Home hub with feature navigation cards
+- Notification routing support for deep links
 
 ## 🚀 Getting Started
 
-### Prerequisites
-* Flutter SDK (`^3.8.0` or higher)
-* Dart SDK
+### 📌 Prerequisites
 
-### Installation
-1. Clone the repository.
-   ```bash
-   git clone <repo-url>
-   ```
-2. Fetch dependencies.
-   ```bash
-   flutter pub get
-   ```
-3. Run the application.
-   ```bash
-   flutter run
-   ```
+- Flutter SDK `^3.8.0`
+- Dart SDK (compatible with Flutter SDK)
+- Android Studio or VS Code
 
-## 🔐 Code Health & Security
-Maintained dynamically by **Sentinel** Agent:
-* Checked and resolved code lints (e.g., deprecated `withOpacity`, unused variables).
-* Graceful `try-catch` structures preventing UI crashes when loading `rootBundle` assets or fetching API endpoints.
+### ⚙️ Installation
+
+```bash
+git clone <REPO_URL>
+cd quran_app
+flutter pub get
+flutter run
+```
+
+## 📁 Project Structure
+
+### 🔹 Core Layer
+
+Contains shared logic:
+
+- Utilities
+- Constants
+- Themes
+- Shared widgets
+- Services (notifications, background tasks, FCM)
+
+### 🔹 Feature Layer
+
+Each feature is isolated and modular:
+
+- Data Layer -> API calls, local data sources, repositories
+- Domain Layer -> Entities, repository contracts, business logic
+- Presentation Layer -> Screens, providers, widgets
+
+## 🔐 Backend / API / Firebase Integration
+
+- 🔑 Authentication -> Not enabled yet (Firebase project is configured for messaging/core usage)
+- ☁️ Database -> Local assets + SharedPreferences cache (Firestore not used currently)
+- 🌐 APIs -> Prayer times and Quran metadata integrations via http services
+- 🔔 Messaging -> Firebase Cloud Messaging + local notification scheduling
+
+## 📱 Responsive Design
+
+The app supports multiple platforms:
+
+- ✅ Mobile
+- ✅ Tablet (layout-adaptive widgets)
+- ✅ Web (Flutter web target available)
+- ✅ Desktop (Windows, macOS, Linux folders included)
+
+## 🧪 Testing
+
+Run tests using:
+
+```bash
+flutter test
+```
+
+### Test Types
+
+- Unit Tests
+- Widget Tests
+- Integration Tests (planned expansion)
 
 ## 🤝 Contributing
-Contributions are totally welcome! Feel free to open an Issue or submit a Pull Request.
+
+To contribute:
+
+1. Fork the repository.
+2. Create a new branch.
+3. Make your changes.
+4. Commit your work.
+5. Push to GitHub.
+6. Open a Pull Request.
 
 ## 📄 License
-This project is open-sourced and available under the standard MIT License.
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgements
+
+- Flutter
+- Dart
+- Material Design
+- Firebase
+- All external packages used in pubspec
+
+## 📞 Support (Optional)
+
+- GitHub Issues
+- Discussions
+- Wiki
+
+## 📚 Predefined Project Profile (For AI Usage)
+
+### 🕌 Islamic App
+
+- Features:
+   - Quran
+   - Hadith
+   - Prayer Times
+   - Tasbih Counter
+   - Dark/Light Mode
+   - Localization-ready (AR/EN)
+- Technologies:
+   - Flutter
+   - Provider
+   - http
+   - google_fonts
+   - Firebase Messaging
+- Architecture:
+   - Feature-first + Clean Architecture

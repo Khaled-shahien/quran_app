@@ -43,7 +43,8 @@ class SurahRepositoryImpl implements SurahRepository {
 
   /// Get all Surahs from local storage
   ///
-  /// First checks local cache, then loads from local assets if cache is not available.
+  /// First checks local cache,
+  /// then loads from local assets if cache is not available.
   ///
   /// Returns: Future<List<SurahEntity>>
   /// Throws: ApiException
@@ -134,7 +135,8 @@ class SurahRepositoryImpl implements SurahRepository {
 
       final filteredSurahs = allSurahs.where((surah) {
         final surahPlace = surah.revelationType.toLowerCase();
-        // Match both the old format (mecca/madina) and new format (meccan/medinan)
+        // Match both the old format (mecca/madina)
+        // and new format (meccan/medinan).
         if (normalizedPlace == 'mecca' || normalizedPlace == 'meccan') {
           return surahPlace == 'mecca' ||
               surahPlace == 'meccan' ||
@@ -242,5 +244,4 @@ class SurahRepositoryImpl implements SurahRepository {
       return null;
     }
   }
-
 }

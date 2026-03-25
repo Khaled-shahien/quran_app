@@ -48,225 +48,230 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Padding(
-          padding: const EdgeInsets.all(AppConstants.kPaddingLarge),
-          child: Column(
-            children: [
-              // Tasbeeh phrases list
-              Expanded(
-                flex: 2,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.kBorderRadiusLarge,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+            padding: const EdgeInsets.all(AppConstants.kPaddingLarge),
+            child: Column(
+              children: [
+                // Tasbeeh phrases list
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.kBorderRadiusLarge,
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppConstants.kPaddingMedium),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            'الأدعية',
-                            style: GoogleFonts.cairo(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: AppConstants.kPaddingSmall),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: tasbeehPhrases.length,
-                            itemBuilder: (context, index) {
-                              final phrase = tasbeehPhrases[index];
-                              bool isCompleted =
-                                  phrase['count'] >= phrase['target'];
-
-                              return _tasbeehRow(
-                                itemKey: phrase,
-                                index: index,
-                                title: phrase['text'],
-                                counter: phrase['count'].toString(),
-                                isCompleted: isCompleted,
-                                isSelected: index == selectedIndex,
-                              );
-                            },
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
                       ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(
+                        AppConstants.kPaddingMedium,
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              'الأدعية',
+                              style: GoogleFonts.cairo(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: AppConstants.kPaddingSmall),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: tasbeehPhrases.length,
+                              itemBuilder: (context, index) {
+                                final phrase = tasbeehPhrases[index];
+                                bool isCompleted =
+                                    phrase['count'] >= phrase['target'];
+
+                                return _tasbeehRow(
+                                  itemKey: phrase,
+                                  index: index,
+                                  title: phrase['text'],
+                                  counter: phrase['count'].toString(),
+                                  isCompleted: isCompleted,
+                                  isSelected: index == selectedIndex,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: AppConstants.kPaddingLarge),
+                const SizedBox(height: AppConstants.kPaddingLarge),
 
-              // Current tasbeeh display
-              Expanded(
-                flex: 1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Theme.of(
-                          context,
-                        ).colorScheme.primary.withAlpha((0.2 * 255).round()),
-                        Theme.of(context).colorScheme.secondary,
+                // Current tasbeeh display
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withAlpha((0.2 * 255).round()),
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.kBorderRadiusLarge,
+                      ),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.kBorderRadiusLarge,
+                    child: Center(
+                      child: Text(
+                        tasbeehPhrases.isNotEmpty &&
+                                selectedIndex < tasbeehPhrases.length
+                            ? tasbeehPhrases[selectedIndex]['text']
+                            : '',
+                        style: GoogleFonts.amiri(
+                          fontSize: 28,
+                          color: Theme.of(context).colorScheme.primary,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1.5,
-                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppConstants.kPaddingMedium),
+
+                // Counter display
+                Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: Theme.of(
                           context,
                         ).colorScheme.primary.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
                       ),
                     ],
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
                   ),
                   child: Center(
                     child: Text(
-                      tasbeehPhrases.isNotEmpty &&
-                              selectedIndex < tasbeehPhrases.length
-                          ? tasbeehPhrases[selectedIndex]['text']
-                          : '',
-                      style: GoogleFonts.amiri(
-                        fontSize: 28,
+                      count.toString().padLeft(2, '0'),
+                      style: GoogleFonts.cairo(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,
-                        height: 1.5,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: AppConstants.kPaddingMedium),
+                const SizedBox(height: AppConstants.kPaddingMedium),
 
-              // Counter display
-              Container(
-                width: 130,
-                height: 130,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
+                // Increment button
+                FloatingActionButton.extended(
+                  onPressed: _incrementCounter,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  label: const Text('تسبيحة'),
+                  icon: const Icon(Icons.add),
+                ),
+
+                const SizedBox(height: AppConstants.kPaddingSmall),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Add new tasbeeh button
+                    ElevatedButton.icon(
+                      onPressed: _showAddTasbeehDialog,
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: Text(
+                        'إضافة جديد',
+                        style: GoogleFonts.cairo(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.kPaddingMedium,
+                          vertical: AppConstants.kPaddingSmall,
+                        ),
+                      ),
+                    ),
+                    // Reset button
+                    OutlinedButton.icon(
+                      onPressed: _resetCounters,
+                      icon: const Icon(
+                        Icons.refresh,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                      label: Text(
+                        'إعادة تعيين',
+                        style: GoogleFonts.cairo(
+                          color: Colors.red,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red, width: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.kPaddingMedium,
+                          vertical: AppConstants.kPaddingSmall,
+                        ),
+                      ),
                     ),
                   ],
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
                 ),
-                child: Center(
-                  child: Text(
-                    count.toString().padLeft(2, '0'),
-                    style: GoogleFonts.cairo(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppConstants.kPaddingMedium),
-
-              // Increment button
-              FloatingActionButton.extended(
-                onPressed: _incrementCounter,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                label: const Text('تسبيحة'),
-                icon: const Icon(Icons.add),
-              ),
-
-              const SizedBox(height: AppConstants.kPaddingSmall),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Add new tasbeeh button
-                  ElevatedButton.icon(
-                    onPressed: _showAddTasbeehDialog,
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: Text(
-                      'إضافة جديد',
-                      style: GoogleFonts.cairo(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.kPaddingMedium,
-                        vertical: AppConstants.kPaddingSmall,
-                      ),
-                    ),
-                  ),
-                  // Reset button
-                  OutlinedButton.icon(
-                    onPressed: _resetCounters,
-                    icon: const Icon(
-                      Icons.refresh,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                    label: Text(
-                      'إعادة تعيين',
-                      style: GoogleFonts.cairo(color: Colors.red, fontSize: 14),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.kPaddingMedium,
-                        vertical: AppConstants.kPaddingSmall,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -395,7 +400,8 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
 
           // Adjust selectedIndex if needed
           if (selectedIndex == index) {
-            // If we deleted the selected item, select the first item or set to 0
+            // If we deleted the selected item,
+            // select the first item or set to 0.
             selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
             if (tasbeehPhrases.isNotEmpty &&
                 selectedIndex < tasbeehPhrases.length) {
@@ -422,7 +428,8 @@ class _TasbeehScreenState extends State<TasbeehScreen> {
                   // Step 3: Restore the item
                   tasbeehPhrases.insert(deletedIndex, deletedItem);
 
-                  // Restore selection if it was the selected item or if we need to adjust index
+                  // Restore selection if it was selected
+                  // or if we need to adjust index.
                   if (wasSelected) {
                     selectedIndex = deletedIndex;
                     count = deletedItem['count'];

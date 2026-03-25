@@ -249,7 +249,8 @@ class _KhatmaDurationScreenState extends State<KhatmaDurationScreen> {
                             '${_formatDouble(_computedDailyTargetForDuration)} '
                             '$_unitLabel يومياً'
                       : 'المدة المتوقعة للإتمام: '
-                            '${(_remainingUnits / _dailyTarget).ceil()} يوماً',
+                            '${(_remainingUnits / _dailyTarget).ceil()}'
+                            ' يوماً',
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,

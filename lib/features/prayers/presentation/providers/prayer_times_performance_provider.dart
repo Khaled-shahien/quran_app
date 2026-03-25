@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:quran_app/features/prayers/domain/Entities/prayer_times_entity.dart';
-import 'package:quran_app/features/prayers/domain/repositories/prayer_times_repository.dart';
+import 'package:quran_app/features/prayers/domain/Entities/'
+    'prayer_times_entity.dart';
+import 'package:quran_app/features/prayers/domain/repositories/'
+    'prayer_times_repository.dart';
 import 'package:quran_app/core/utils/value_notifier_mixin.dart';
 
 import 'prayer_times_provider.dart';

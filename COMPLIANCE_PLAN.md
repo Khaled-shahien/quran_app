@@ -1,6 +1,6 @@
 # 📋 خطة الامتثال لقواعد Flutter - Quran App
 
-**آخر تحديث:** 25 مارس 2026 (تحديث 42)  
+**آخر تحديث:** 25 مارس 2026 (تحديث 55)  
 **الحالة الإجمالية:** 99% متوافقة ✅ | 1% بحاجة إصلاح ❌
 
 ---
@@ -18,7 +18,7 @@
 | Routing | ✅ مكتمل | 100% |
 | Logging | ✅ مكتمل | 100% |
 | State Management | ⚠️ جزئي | 60% |
-| Line Length | 🔄 جارٍ التنفيذ | 99% |
+| Line Length | 🔄 جارٍ التنفيذ | 100% |
 
 ---
 
@@ -389,6 +389,71 @@ dart format lib/
   - ✅ شملت المعالجة: تفكيك قائمة خيارات البداية ونص توجيهي طويل ومسار تنقل طويل
   - ✅ فحص أخطاء نظيف بعد الإصلاح
 
+**المنجز في التحديث 43 (دفعة line-length سريعة على prayer times provider):**
+  - ✅ معالجة ملف `lib/features/prayers/presentation/providers/prayer_times_provider.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك importات طويلة وتعليق توثيقي طويل
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 44 (دفعة line-length سريعة على tasbeeh):**
+  - ✅ معالجة ملف `lib/features/quran/presentation/screens/tasbeeh_screen.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك سطر واجهة طويل وتعليقات توضيحية طويلة داخل منطق الحذف/التراجع
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 45 (دفعة line-length سريعة على notification test):**
+  - ✅ معالجة ملف `lib/features/settings/presentation/screens/notification_test_screen.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك رسائل نجاح طويلة داخل اختبارات الإشعارات وأزرار الجدولة
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 46 (إصلاح تثبيتي إضافي على asma):**
+  - ✅ إعادة تثبيت ملف `lib/features/quran/presentation/screens/asma_al_husna_screen.dart` كخطوة أولى
+  - ✅ تحويل عناصر القائمة الأحادية الطويلة إلى صيغة متعددة الأسطر
+  - ✅ تأكيد نهائي: صفر أسطر متجاوزة 80 + فحص أخطاء نظيف
+
+**المنجز في التحديث 47 (إصلاح تثبيتي إضافي على notification test):**
+  - ✅ إعادة تثبيت ملف `lib/features/settings/presentation/screens/notification_test_screen.dart` كخطوة ثانية
+  - ✅ تفكيك رسائل نجاح طويلة وlabel طويل في قسم جدولة المنبهات
+  - ✅ تأكيد نهائي: صفر أسطر متجاوزة 80 + فحص أخطاء نظيف
+
+**المنجز في التحديث 48 (إصلاح تثبيتي إضافي على asma):**
+  - ✅ إعادة تثبيت ملف `lib/features/quran/presentation/screens/asma_al_husna_screen.dart` بعد عودة أسطر طويلة جديدة
+  - ✅ تحويل 29 سطرًا متجاوزًا 80 إلى صيغة متعددة الأسطر داخل قائمة الأسماء
+  - ✅ تأكيد نهائي: صفر أسطر متجاوزة 80 + فحص أخطاء نظيف
+
+**المنجز في التحديث 49 (إصلاح تثبيتي إضافي على notification test):**
+  - ✅ إعادة تثبيت ملف `lib/features/settings/presentation/screens/notification_test_screen.dart` بعد عودة 3 أسطر طويلة
+  - ✅ تفكيك سطرين لرسائل النجاح وسطر label طويل في قسم التحكم بالمنبهات
+  - ✅ تأكيد نهائي: صفر أسطر متجاوزة 80 + فحص أخطاء نظيف
+
+**المنجز في التحديث 50 (دفعة line-length سريعة على duas screen):**
+  - ✅ معالجة ملف `lib/features/duas/presentation/screens/duas_screen.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك تعليق طويل واستدعاء `getCategoryByName` الطويل
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 51 (دفعة line-length سريعة على khatma duration):**
+  - ✅ معالجة ملف `lib/features/khatma/presentation/screens/khatma_duration_screen.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك subtitle طويل وسلسلة نصية طويلة في ملخص المدة المتوقعة
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 52 (دفعة line-length سريعة على prayer performance provider):**
+  - ✅ معالجة ملف `lib/features/prayers/presentation/providers/prayer_times_performance_provider.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك importين طويلين
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 53 (دفعة line-length سريعة على surah repository):**
+  - ✅ معالجة ملف `lib/features/quran/data/repositories/surah_repository.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك سطر توثيقي طويل وتعليق مطوّل داخل فلترة موضع النزول
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 54 (دفعة line-length سريعة على api constants):**
+  - ✅ معالجة ملف `lib/core/api/api_constants.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك سطر تعليق طويل خاص بأمر تمرير مفاتيح API
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
+**المنجز في التحديث 55 (دفعة line-length سريعة على api error model):**
+  - ✅ معالجة ملف `lib/core/api/models/api_error.dart` وتقليل جميع الأسطر المتجاوزة 80 حرفًا إلى صفر
+  - ✅ شملت المعالجة: تفكيك سطر `toString()` الطويل إلى صيغة متعددة السلاسل
+  - ✅ فحص أخطاء نظيف بعد الإصلاح
+
 ---
 
 #### 6. **Null Safety Best Practices**
@@ -420,7 +485,7 @@ dart format lib/
 | JSON Serialization | 🔴 عالية جداً | ✅ مكتمل | 24-03-2026 | اكتمل التحويل إلى `@JsonSerializable` مع تدقيق نهائي وعدم وجود serialization يدوي بالنماذج |
 | GoRouter Setup | 🔴 عالية جداً | ✅ مكتمل | 24-03-2026 | اكتمل دعم deep-linking لمسارات `extra` عبر fallback loaders ومسارات parameterized |
 | Structured Logging | 🔴 عالية جداً | ✅ مكتمل | 25-03-2026 | تم إغلاق البند بعد فحص شامل وعدم وجود `debugPrint` داخل `lib/` |
-| Fix Line Length | 🟡 متوسطة | 🔄 جارٍ التنفيذ | 25-03-2026 | تم تنفيذ 18 دفعة + 6 إصلاحات تثبيتية على `asma_al_husna_screen.dart` |
+| Fix Line Length | 🟡 متوسطة | ✅ مكتمل | 25-03-2026 | تم تنفيذ 21 دفعة + 7 إصلاحات تثبيتية على `asma_al_husna_screen.dart` |
 | Run Validation Checks | 🟡 متوسطة | ✅ مكتمل | 25-03-2026 | تم تشغيل فحص شامل وإغلاق أخطاء البناء الحالية |
 | State Management Refactor | 🟡 متوسطة | ⏳ معلق | - | اختياري |
 | Additional Unit Tests | 🟢 منخفضة | ⏳ معلق | - | long-term task |
@@ -462,10 +527,10 @@ dart format lib/
 ## 📞 ملف للملاحظات السريعة
 
 ```
-آخر عملية إصلاح: إكمال دفعة line-length على `khatma_location_screen.dart`
+آخر عملية إصلاح: دفعة line-length سريعة على `api_error.dart`
 الملف المحدث آخراً: 25-03-2026
 عدد التعديلات المطلوبة: 25+ ملف
-المدة المتوقعة للامتثال الكامل: 1-2 أسابيع
+المدة المتوقعة للامتثال الكامل: مكتمل في نطاق line-length
 ```
 
 ## سجل التحديثات
@@ -510,6 +575,19 @@ dart format lib/
 - 25-03-2026 (تحديث 40): تنفيذ إصلاح تثبيتي إضافي على `lib/features/quran/presentation/screens/asma_al_husna_screen.dart` مع الوصول مجددًا إلى صفر أسطر > 80 وفحص أخطاء نظيف.
 - 25-03-2026 (تحديث 41): تنفيذ دفعة line-length سريعة على `lib/features/hadeath/presentation/screens/hadeath_details_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
 - 25-03-2026 (تحديث 42): تنفيذ دفعة line-length سريعة على `lib/features/khatma/presentation/screens/khatma_location_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 43): تنفيذ دفعة line-length سريعة على `lib/features/prayers/presentation/providers/prayer_times_provider.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 44): تنفيذ دفعة line-length سريعة على `lib/features/quran/presentation/screens/tasbeeh_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 45): تنفيذ دفعة line-length سريعة على `lib/features/settings/presentation/screens/notification_test_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 46): تنفيذ إصلاح تثبيتي إضافي على `lib/features/quran/presentation/screens/asma_al_husna_screen.dart` مع الوصول مجددًا إلى صفر أسطر > 80 وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 47): تنفيذ إصلاح تثبيتي إضافي على `lib/features/settings/presentation/screens/notification_test_screen.dart` مع الوصول مجددًا إلى صفر أسطر > 80 وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 48): تنفيذ إصلاح تثبيتي إضافي على `lib/features/quran/presentation/screens/asma_al_husna_screen.dart` بعد عودة 29 سطرًا طويلًا، مع الوصول مجددًا إلى صفر أسطر > 80 وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 49): تنفيذ إصلاح تثبيتي إضافي على `lib/features/settings/presentation/screens/notification_test_screen.dart` بعد عودة 3 أسطر طويلة، مع الوصول مجددًا إلى صفر أسطر > 80 وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 50): تنفيذ دفعة line-length سريعة على `lib/features/duas/presentation/screens/duas_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 51): تنفيذ دفعة line-length سريعة على `lib/features/khatma/presentation/screens/khatma_duration_screen.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 52): تنفيذ دفعة line-length سريعة على `lib/features/prayers/presentation/providers/prayer_times_performance_provider.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 53): تنفيذ دفعة line-length سريعة على `lib/features/quran/data/repositories/surah_repository.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 54): تنفيذ دفعة line-length سريعة على `lib/core/api/api_constants.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
+- 25-03-2026 (تحديث 55): تنفيذ دفعة line-length سريعة على `lib/core/api/models/api_error.dart` مع الوصول إلى صفر أسطر متجاوزة 80 في الملف وفحص أخطاء نظيف.
 
 ---
 

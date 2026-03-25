@@ -24,7 +24,8 @@ class ApiConstants {
 
   // API Keys
   // Securely passed at build time. Example:
-  // flutter run --dart-define=QURAN_API_KEY=your_key --dart-define=PRAYER_API_KEY=your_key
+  // flutter run --dart-define=QURAN_API_KEY=your_key
+  //   --dart-define=PRAYER_API_KEY=your_key
   static const String quranApiKey = String.fromEnvironment(
     'QURAN_API_KEY',
     defaultValue: 'YOUR_QURAN_API_KEY',
