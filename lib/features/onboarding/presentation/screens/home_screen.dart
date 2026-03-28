@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/providers/settings_provider.dart';
+import '../../../khatma/domain/models/khatma_model.dart';
+import '../../../khatma/domain/services/khatma_quran_locator.dart';
 import '../../../khatma/presentation/providers/khatma_provider.dart';
 import '../../../quran/domain/entities/surah_entity.dart';
 import '../../../quran/domain/repositories/surah_repository.dart';
@@ -32,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedTabIndex = 0; // 0: جميع التصنيفات
   int drawerSubTab = 0; // 0 للمزيد، 1 للمفضلة
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final KhatmaQuranLocator _quranLocator = KhatmaQuranLocator();
 
   @override
   void initState() {
@@ -399,7 +402,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final int duration = activeKhatma.durationDays;
     final int completed = activeKhatma.completedDays.clamp(0, duration);
     final int remaining = (duration - completed).clamp(0, duration);
-    final int count = showCompleted ? completed : remaining;
+    final List<KhatmaCompletedWird> completedWirds = activeKhatma
+        .completedWirds
+        .reversed
+        .toList();
+    final int count = showCompleted ? completedWirds.length : remaining;
     final String title;
     if (showCompleted) {
       title = 'الأوراد السابقة';
@@ -468,9 +475,47 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: count,
                       separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final int wirdDay = showCompleted
-                            ? index + 1
-                            : completed + index + 1;
+                        if (showCompleted) {
+                          final KhatmaCompletedWird wird =
+                              completedWirds[index];
+                          final DateTime at = wird.completedAt;
+                          final String dateLabel =
+                              '${at.year}/${at.month.toString().padLeft(2, '0')}/'
+                              '${at.day.toString().padLeft(2, '0')}';
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'من ${wird.fromUnit} إلى ${wird.toUnit} (${activeKhatma.amountType})',
+                              style: GoogleFonts.cairo(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                            subtitle: Text(
+                              'مكتمل في $dateLabel',
+                              style: GoogleFonts.cairo(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.65),
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                            leading: Icon(
+                              Icons.open_in_new,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _openWirdFromUnit(
+                                khatma: activeKhatma,
+                                unitIndex: wird.fromUnit,
+                              );
+                            },
+                          );
+                        }
+
+                        final int wirdDay = completed + index + 1;
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(
@@ -482,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             textAlign: TextAlign.right,
                           ),
                           subtitle: Text(
-                            showCompleted ? 'مكتمل' : 'قادم',
+                            'قادم',
                             style: GoogleFonts.cairo(
                               color: Theme.of(
                                 context,
@@ -491,9 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             textAlign: TextAlign.right,
                           ),
                           leading: Icon(
-                            showCompleted
-                                ? Icons.check_circle_outline
-                                : Icons.schedule,
+                            Icons.schedule,
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         );
@@ -504,6 +547,36 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         );
+      },
+    );
+  }
+
+  Future<void> _openWirdFromUnit({
+    required KhatmaModel khatma,
+    required int unitIndex,
+  }) async {
+    final position = await _quranLocator.resolveStartPosition(
+      trackingUnit: khatma.trackingUnit,
+      unitIndex: unitIndex,
+    );
+
+    final SurahRepository surahRepository = Provider.of<SurahRepository>(
+      context,
+      listen: false,
+    );
+    final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
+    final SurahEntity targetSurah = surahs.firstWhere(
+      (surah) => surah.number == position.surahNumber,
+      orElse: () => surahs.first,
+    );
+
+    if (!mounted) return;
+
+    context.push(
+      '/quran/surah/${targetSurah.number}',
+      extra: <String, dynamic>{
+        'surah': targetSurah,
+        'initialAyahNumber': position.ayahNumber,
       },
     );
   }

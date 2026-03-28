@@ -14,7 +14,7 @@ class LocalSurahDataSource {
     try {
       // Read the surah metadata from assets
       final jsonString = await rootBundle.loadString(
-        'assets/surah_metadata.json',
+        'assets/quran_master.json',
       );
       final List<dynamic> jsonData = jsonDecode(jsonString);
 

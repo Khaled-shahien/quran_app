@@ -74,6 +74,9 @@ KhatmaModel _$KhatmaModelFromJson(Map<String, dynamic> json) => KhatmaModel(
   isCompleted: json['is_completed'] == null
       ? false
       : KhatmaModel.parseBool(json['is_completed']),
+  nextSurahNumber: KhatmaModel.parseNullableInt(json['next_surah_number']),
+  nextAyahNumber: KhatmaModel.parseNullableInt(json['next_ayah_number']),
+  nextPageNumber: KhatmaModel.parseNullableInt(json['next_page_number']),
   dailyLogs:
       (json['daily_logs'] as List<dynamic>?)
           ?.map((e) => KhatmaDailyLog.fromJson(e as Map<String, dynamic>))
@@ -101,6 +104,9 @@ Map<String, dynamic> _$KhatmaModelToJson(
   'reminder_hour': instance.reminderHour,
   'reminder_minute': instance.reminderMinute,
   'is_completed': instance.isCompleted,
+    'next_surah_number': instance.nextSurahNumber,
+    'next_ayah_number': instance.nextAyahNumber,
+    'next_page_number': instance.nextPageNumber,
   'daily_logs': instance.dailyLogs.map((e) => e.toJson()).toList(),
   'completed_wirds': instance.completedWirds.map((e) => e.toJson()).toList(),
 };

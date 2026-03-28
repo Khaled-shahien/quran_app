@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../../domain/models/khatma_model.dart';
 import '../../data/repositories/khatma_repository.dart';
 import '../../domain/services/khatma_reminder_service.dart';
 import '../../data/services/local_khatma_reminder_service.dart';
+import '../../domain/services/khatma_quran_locator.dart';
 
 class KhatmaProvider extends ChangeNotifier {
   static const int _khatmaReminderNotificationId = 1205;
 
   final KhatmaRepository repository;
   final KhatmaReminderService _reminderService;
+  final KhatmaQuranLocator _quranLocator;
   KhatmaModel? _activeKhatma;
 
   KhatmaProvider({
     required this.repository,
     KhatmaReminderService? reminderService,
-  }) : _reminderService = reminderService ?? LocalKhatmaReminderService() {
+    KhatmaQuranLocator? quranLocator,
+  }) : _reminderService = reminderService ?? LocalKhatmaReminderService(),
+       _quranLocator = quranLocator ?? KhatmaQuranLocator() {
     _loadActiveKhatma();
   }
 
@@ -33,9 +38,21 @@ class KhatmaProvider extends ChangeNotifier {
   }
 
   Future<void> startNewKhatma(KhatmaModel khatma) async {
-    await repository.saveKhatma(khatma);
-    _activeKhatma = khatma;
-    await _scheduleKhatmaReminder(khatma);
+    final KhatmaAyahPosition startPosition = await _quranLocator
+        .resolveStartPosition(
+          trackingUnit: khatma.trackingUnit,
+          unitIndex: khatma.todayFromUnit,
+        );
+
+    final KhatmaModel enriched = khatma.copyWith(
+      nextSurahNumber: startPosition.surahNumber,
+      nextAyahNumber: startPosition.ayahNumber,
+      nextPageNumber: startPosition.pageNumber,
+    );
+
+    await repository.saveKhatma(enriched);
+    _activeKhatma = enriched;
+    await _scheduleKhatmaReminder(enriched);
     notifyListeners();
   }
 
@@ -43,9 +60,10 @@ class KhatmaProvider extends ChangeNotifier {
     final KhatmaModel? current = _activeKhatma;
     if (current == null) return;
 
-    final double readUnits = current.recommendedDailyTarget < 1
-        ? 1
-        : current.recommendedDailyTarget;
+    final double readUnits = math.max(
+      1,
+      current.recommendedDailyTarget.ceilToDouble(),
+    );
     final int completedFrom = current.todayFromUnit;
     final int completedTo = current.todayToUnit;
 
@@ -87,9 +105,23 @@ class KhatmaProvider extends ChangeNotifier {
         );
 
     final bool completed = nextCompleted >= current.plannedUnits;
+    KhatmaAyahPosition nextPosition;
+    if (completed) {
+      nextPosition = await _quranLocator.resolveLastAyah();
+    } else {
+      final int nextUnit = (completedTo + 1).clamp(1, current.totalUnits);
+      nextPosition = await _quranLocator.resolveStartPosition(
+        trackingUnit: current.trackingUnit,
+        unitIndex: nextUnit,
+      );
+    }
+
     final KhatmaModel updatedKhatma = current.copyWith(
       completedUnits: nextCompleted,
       isCompleted: completed,
+      nextSurahNumber: nextPosition.surahNumber,
+      nextAyahNumber: nextPosition.ayahNumber,
+      nextPageNumber: nextPosition.pageNumber,
       dailyLogs: nextLogs,
       completedWirds: nextCompletedWirds,
     );
@@ -129,6 +161,56 @@ class KhatmaProvider extends ChangeNotifier {
     await repository.saveKhatma(updatedKhatma);
     _activeKhatma = updatedKhatma;
     await _scheduleKhatmaReminder(updatedKhatma);
+    notifyListeners();
+  }
+
+  Future<void> updatePlan({
+    required KhatmaGoalType goalType,
+    double? dailyTargetUnits,
+    int? durationDays,
+    TimeOfDay? reminder,
+  }) async {
+    final KhatmaModel? current = _activeKhatma;
+    if (current == null) return;
+
+    final DateTime today = DateTime.now();
+    final DateTime normalizedStart = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    );
+
+    double nextTarget;
+    int nextDuration;
+
+    if (goalType == KhatmaGoalType.byDuration) {
+      nextDuration = (durationDays ?? current.plannedDurationDays).clamp(
+        1,
+        3650,
+      );
+      nextTarget = (current.remainingUnits / nextDuration).clamp(1, 2000);
+    } else {
+      nextTarget = (dailyTargetUnits ?? current.dailyTargetUnits).clamp(
+        1,
+        2000,
+      );
+      nextDuration = math.max(1, (current.remainingUnits / nextTarget).ceil());
+    }
+
+    final KhatmaModel updated = current.copyWith(
+      goalType: goalType,
+      dailyTargetUnits: nextTarget,
+      plannedDurationDays: nextDuration,
+      reminderHour: reminder?.hour ?? current.reminderHour,
+      reminderMinute: reminder?.minute ?? current.reminderMinute,
+      startDate: goalType == KhatmaGoalType.byDuration
+          ? normalizedStart
+          : current.startDate,
+    );
+
+    await repository.saveKhatma(updated);
+    _activeKhatma = updated;
+    await _scheduleKhatmaReminder(updated);
     notifyListeners();
   }
 

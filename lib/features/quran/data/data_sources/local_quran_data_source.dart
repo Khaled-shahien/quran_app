@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
 import '../../../../core/errors/api_exception.dart';
 import '../models/ayah_model.dart';
 
@@ -10,7 +9,24 @@ import '../models/ayah_model.dart';
 ///
 /// Handles reading and parsing Quran verses from local assets
 class LocalQuranDataSource {
-  static const String _assetsPath = 'assets/ayaat';
+  static const String _assetPath = 'assets/quran_master.json';
+
+  List<Map<String, dynamic>>? _cachedSurahData;
+
+  Future<List<Map<String, dynamic>>> _loadMasterData() async {
+    if (_cachedSurahData != null) {
+      return _cachedSurahData!;
+    }
+
+    final String jsonString = await rootBundle.loadString(_assetPath);
+    final List<dynamic> jsonData = jsonDecode(jsonString) as List<dynamic>;
+
+    _cachedSurahData = jsonData
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+
+    return _cachedSurahData!;
+  }
 
   /// Reads the Quran verses for a specific Surah from the assets folder
   ///
@@ -28,24 +44,27 @@ class LocalQuranDataSource {
         );
       }
 
-      // Build the file path
-      final fileName = '$surahNumber.txt';
-      final filePath = path.join(_assetsPath, fileName);
+      final List<Map<String, dynamic>> allSurahs = await _loadMasterData();
+      final Map<String, dynamic> surahData = allSurahs.firstWhere(
+        (surah) => surah['number'] == surahNumber,
+        orElse: () => <String, dynamic>{},
+      );
 
-      // Read the file content
-      String content;
-      try {
-        content = await rootBundle.loadString(filePath);
-      } catch (e) {
+      if (surahData.isEmpty) {
         throw ApiException(
-          message:
-              'Could not find verses file for Surah $surahNumber at $filePath',
+          message: 'Could not find Surah $surahNumber in $_assetPath',
           code: 404,
         );
       }
 
-      // Parse the content into Ayah models
-      final ayahs = _parseAyahs(content, surahNumber);
+      final List<dynamic> ayahsJson =
+          (surahData['ayahs'] as List<dynamic>? ?? <dynamic>[]);
+      final List<AyahModel> ayahs = ayahsJson
+          .map(
+            (item) =>
+                AyahModel.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
 
       return ayahs;
     } catch (e) {
@@ -64,14 +83,25 @@ class LocalQuranDataSource {
   Future<Map<int, List<AyahModel>>> getAllAyahs() async {
     try {
       final allAyahs = <int, List<AyahModel>>{};
+      final List<Map<String, dynamic>> allSurahs = await _loadMasterData();
 
-      // Process all 114 Surahs
-      for (int surahNumber = 1; surahNumber <= 114; surahNumber++) {
+      for (final surah in allSurahs) {
+        final int? surahNumber = surah['number'] as int?;
+        if (surahNumber == null) {
+          continue;
+        }
+
         try {
-          final ayahs = await getAyahsForSurah(surahNumber);
+          final List<dynamic> ayahsJson =
+              (surah['ayahs'] as List<dynamic>? ?? <dynamic>[]);
+          final List<AyahModel> ayahs = ayahsJson
+              .map(
+                (item) =>
+                    AyahModel.fromJson(Map<String, dynamic>.from(item as Map)),
+              )
+              .toList();
           allAyahs[surahNumber] = ayahs;
         } catch (e) {
-          // Continue processing other Surahs even if one fails
           developer.log(
             'Could not load verses for Surah $surahNumber',
             name: 'quran_app.quran_data',
@@ -88,125 +118,5 @@ class LocalQuranDataSource {
         code: 500,
       );
     }
-  }
-
-  /// Parses the content of a Surah file into Ayah models
-  ///
-  /// Parameters:
-  /// - [content]: The raw text content of the Surah file
-  /// - [surahNumber]: The Surah number this content belongs to
-  ///
-  /// Returns: List<AyahModel>
-  List<AyahModel> _parseAyahs(String content, int surahNumber) {
-    final lines = LineSplitter.split(content).toList();
-    final ayahs = <AyahModel>[];
-
-    for (int i = 0; i < lines.length; i++) {
-      final trimmedLine = lines[i].trim();
-      if (trimmedLine.isEmpty) continue;
-
-      // Create an Ayah model for each line
-      // We'll assign default values for metadata
-      // that's not available in the text files.
-      final ayah = AyahModel(
-        number: i + 1, // Sequential numbering based on line position
-        text: trimmedLine,
-        numberInSurah: i + 1,
-        juz: _getJuzForAyah(surahNumber, i + 1),
-        manzil: _getManzilForAyah(surahNumber, i + 1),
-        page: _getPageForAyah(surahNumber, i + 1),
-        ruku: _getRukuForAyah(surahNumber, i + 1),
-        hizbQuarter: _getHizbQuarterForAyah(surahNumber, i + 1),
-        sajda: false, // Default to false, as this info is not in the text files
-      );
-
-      ayahs.add(ayah);
-    }
-
-    return ayahs;
-  }
-
-  // Helper methods to estimate metadata based on Surah and Ayah numbers
-  // These are approximate values because
-  // actual metadata is not available in the text files.
-
-  /// Estimates Juz number for a given Surah and Ayah
-  int _getJuzForAyah(int surahNumber, int ayahNumber) {
-    // Simplified estimation; in a real app,
-    // use actual Juz boundaries.
-    if (surahNumber <= 2) return 1;
-    if (surahNumber <= 4) return 2;
-    if (surahNumber <= 6) return 3;
-    if (surahNumber <= 9) return 4;
-    if (surahNumber <= 12) return 5;
-    if (surahNumber <= 16) return 6;
-    if (surahNumber <= 21) return 7;
-    if (surahNumber <= 26) return 8;
-    if (surahNumber <= 33) return 9;
-    if (surahNumber <= 40) return 10;
-    if (surahNumber <= 47) return 11;
-    if (surahNumber <= 54) return 12;
-    if (surahNumber <= 61) return 13;
-    if (surahNumber <= 68) return 14;
-    if (surahNumber <= 77) return 15;
-    if (surahNumber <= 84) return 16;
-    if (surahNumber <= 90) return 17;
-    if (surahNumber <= 97) return 18;
-    if (surahNumber <= 104) return 19;
-    if (surahNumber <= 110) return 20;
-    return 21; // Remaining Surahs
-  }
-
-  /// Estimates Manzil number for a given Surah and Ayah
-  int _getManzilForAyah(int surahNumber, int ayahNumber) {
-    return ((surahNumber - 1) ~/ 19) + 1;
-  }
-
-  /// Estimates Page number for a given Surah and Ayah
-  int _getPageForAyah(int surahNumber, int ayahNumber) {
-    // Simplified calculation; in reality this depends
-    // on actual Quran page divisions.
-    if (surahNumber <= 2) return 1;
-    if (surahNumber <= 4) return 2;
-    if (surahNumber <= 7) return 3;
-    if (surahNumber <= 10) return 4;
-    if (surahNumber <= 13) return 5;
-    if (surahNumber <= 17) return 6;
-    if (surahNumber <= 21) return 7;
-    if (surahNumber <= 25) return 8;
-    if (surahNumber <= 29) return 9;
-    if (surahNumber <= 33) return 10;
-    if (surahNumber <= 37) return 11;
-    if (surahNumber <= 41) return 12;
-    if (surahNumber <= 45) return 13;
-    if (surahNumber <= 49) return 14;
-    if (surahNumber <= 53) return 15;
-    if (surahNumber <= 57) return 16;
-    if (surahNumber <= 61) return 17;
-    if (surahNumber <= 65) return 18;
-    if (surahNumber <= 69) return 19;
-    if (surahNumber <= 73) return 20;
-    if (surahNumber <= 77) return 21;
-    if (surahNumber <= 81) return 22;
-    if (surahNumber <= 85) return 23;
-    if (surahNumber <= 89) return 24;
-    if (surahNumber <= 93) return 25;
-    if (surahNumber <= 97) return 26;
-    if (surahNumber <= 101) return 27;
-    if (surahNumber <= 105) return 28;
-    if (surahNumber <= 109) return 29;
-    return 30;
-  }
-
-  /// Estimates Ruku number for a given Surah and Ayah
-  int _getRukuForAyah(int surahNumber, int ayahNumber) {
-    // Simplified calculation
-    return ((ayahNumber - 1) ~/ 10) + 1;
-  }
-
-  /// Estimates Hizb Quarter number for a given Surah and Ayah
-  int _getHizbQuarterForAyah(int surahNumber, int ayahNumber) {
-    // Simplified calculation
-    return ((ayahNumber - 1) ~/ 25) + 1;
   }
 }

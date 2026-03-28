@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:math' as math;
-import 'dart:convert';
-import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../khatma/domain/models/khatma_model.dart';
+import '../../../khatma/domain/services/khatma_quran_locator.dart';
 import '../../../quran/domain/entities/surah_entity.dart';
 import '../../../quran/domain/repositories/surah_repository.dart';
 import 'package:provider/provider.dart';
@@ -22,128 +20,13 @@ class _WirdPreviewData {
 class CurrentWirdWidget extends StatelessWidget {
   const CurrentWirdWidget({super.key});
 
+  static final KhatmaQuranLocator _quranLocator = KhatmaQuranLocator();
+
   static const String _completedWirdMessage =
       'تم إتمام ورد اليوم، '
       'انتقل إلى الورد التالي';
   static const String _completedKhatmaMessage =
       'تم إتمام الختمة بنجاح، بارك الله فيك';
-
-  static const List<int> _surahStartPages = [
-    1,
-    2,
-    50,
-    77,
-    106,
-    128,
-    151,
-    177,
-    187,
-    208,
-    221,
-    235,
-    249,
-    255,
-    262,
-    267,
-    282,
-    293,
-    305,
-    312,
-    322,
-    332,
-    342,
-    350,
-    359,
-    367,
-    377,
-    385,
-    396,
-    404,
-    411,
-    415,
-    418,
-    428,
-    434,
-    440,
-    446,
-    453,
-    458,
-    467,
-    477,
-    483,
-    489,
-    496,
-    499,
-    502,
-    507,
-    511,
-    515,
-    518,
-    520,
-    523,
-    526,
-    528,
-    531,
-    534,
-    537,
-    542,
-    545,
-    549,
-    551,
-    553,
-    554,
-    556,
-    558,
-    560,
-    562,
-    564,
-    566,
-    568,
-    570,
-    572,
-    574,
-    575,
-    577,
-    578,
-    580,
-    582,
-    583,
-    585,
-    586,
-    587,
-    587,
-    589,
-    590,
-    591,
-    591,
-    592,
-    593,
-    594,
-    595,
-    595,
-    596,
-    596,
-    597,
-    597,
-    598,
-    598,
-    599,
-    599,
-    600,
-    600,
-    601,
-    601,
-    601,
-    602,
-    602,
-    602,
-    603,
-    603,
-    603,
-    604,
-    604,
-    604,
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +177,7 @@ class CurrentWirdWidget extends StatelessWidget {
                                   final bool stillActive =
                                       nextKhatma != null &&
                                       !nextKhatma.isCompleted;
+
                                   final String message = stillActive
                                       ? _completedWirdMessage
                                       : _completedKhatmaMessage;
@@ -399,43 +283,50 @@ class CurrentWirdWidget extends StatelessWidget {
                       ),
                       textAlign: TextAlign.right,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text(
-                              'إلغاء الختمة',
-                              style: GoogleFonts.cairo(),
-                            ),
-                            content: Text(
-                              'هل أنت متأكد من '
-                              'إلغاء الختمة الحالية؟',
-                              style: GoogleFonts.cairo(),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(
-                                  'تراجع',
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: Colors.red),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  'إلغاء الختمة',
                                   style: GoogleFonts.cairo(),
                                 ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  khatmaProvider.cancelKhatma();
-                                  Navigator.pop(context);
-                                },
-                                child: Text(
-                                  'نعم، إلغاء',
-                                  style: GoogleFonts.cairo(color: Colors.red),
+                                content: Text(
+                                  'هل أنت متأكد من '
+                                  'إلغاء الختمة الحالية؟',
+                                  style: GoogleFonts.cairo(),
                                 ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      'تراجع',
+                                      style: GoogleFonts.cairo(),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      khatmaProvider.cancelKhatma();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text(
+                                      'نعم، إلغاء',
+                                      style: GoogleFonts.cairo(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -477,48 +368,6 @@ class CurrentWirdWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (activeKhatma.isBehindSchedule) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.orange.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'هناك انقطاع في المتابعة. '
-                            'اضغط لاستئناف '
-                            'الخطة تلقائياً.',
-                            style: GoogleFonts.cairo(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textDark,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        TextButton(
-                          onPressed: () {
-                            khatmaProvider.resumeAfterGap();
-                          },
-                          child: Text(
-                            'استئناف',
-                            style: GoogleFonts.cairo(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ] else ...[
                 // Empty State (No Active Khatma)
                 Container(
@@ -593,110 +442,43 @@ class CurrentWirdWidget extends StatelessWidget {
     required BuildContext context,
     required KhatmaModel khatma,
   }) async {
-    final int targetPage = _resolveTargetPageFromCurrentWird(khatma);
+    final KhatmaAyahPosition position = await _quranLocator
+        .resolvePositionFromStoredOrUnit(khatma: khatma);
 
     final SurahRepository surahRepository = Provider.of<SurahRepository>(
       context,
       listen: false,
     );
     final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
-    final int targetSurahNumber = _resolveSurahForPage(targetPage);
     final SurahEntity targetSurah = surahs.firstWhere(
-      (surah) => surah.number == targetSurahNumber,
+      (surah) => surah.number == position.surahNumber,
       orElse: () => surahs.first,
     );
 
     if (!context.mounted) return;
 
-    // Calculate the page index within the surah (0-based)
-    final int surahIndex = targetSurah.number - 1;
-    final int surahStartPage = _surahStartPages[surahIndex];
-    final int pageIndexInSurah = targetPage - surahStartPage;
-
     context.push(
       '/quran/surah/${targetSurah.number}',
       extra: <String, dynamic>{
         'surah': targetSurah,
-        'initialPageNumber': pageIndexInSurah,
+        'initialAyahNumber': position.ayahNumber,
       },
     );
-  }
-
-  int _resolveTargetPageFromCurrentWird(KhatmaModel khatma) {
-    switch (khatma.trackingUnit) {
-      case KhatmaTrackingUnit.page:
-        return khatma.todayFromUnit.clamp(1, 604);
-      case KhatmaTrackingUnit.hizb:
-        return (((khatma.todayFromUnit - 1) * 604) / 60).round().clamp(0, 603) +
-            1;
-      case KhatmaTrackingUnit.juz:
-        return (((khatma.todayFromUnit - 1) * 604) / 30).round().clamp(0, 603) +
-            1;
-    }
-  }
-
-  int _resolveSurahForPage(int page) {
-    final int safePage = page.clamp(1, 604);
-    for (int i = _surahStartPages.length - 1; i >= 0; i--) {
-      if (safePage >= _surahStartPages[i]) {
-        return i + 1;
-      }
-    }
-    return 1;
-  }
-
-  int _estimateAyahForPage({
-    required int targetPage,
-    required SurahEntity surah,
-  }) {
-    final int surahIndex = surah.number - 1;
-    final int startPage = _surahStartPages[surahIndex];
-    final int endPage = surah.number < 114
-        ? _surahStartPages[surahIndex + 1] - 1
-        : 604;
-    final int span = math.max(1, endPage - startPage + 1);
-    final double ratio = ((targetPage - startPage) / span).clamp(0, 1);
-    final int ayah = (ratio * surah.totalAyah).floor() + 1;
-    return ayah.clamp(1, surah.totalAyah);
   }
 
   Future<_WirdPreviewData> _loadCurrentWirdPreview({
     required BuildContext context,
     required KhatmaModel khatma,
   }) async {
-    final int targetPage = _resolveTargetPageFromCurrentWird(khatma);
-
-    final SurahRepository surahRepository = Provider.of<SurahRepository>(
-      context,
-      listen: false,
-    );
-    final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
-    final int targetSurahNumber = _resolveSurahForPage(targetPage);
-    final SurahEntity targetSurah = surahs.firstWhere(
-      (surah) => surah.number == targetSurahNumber,
-      orElse: () => surahs.first,
-    );
-
-    final int targetAyah = _estimateAyahForPage(
-      targetPage: targetPage,
-      surah: targetSurah,
-    );
-
-    final String content = await rootBundle.loadString(
-      'assets/ayaat/${targetSurah.number}.txt',
-    );
-    final List<String> verses = LineSplitter.split(
-      content,
-    ).map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
-
-    final int ayahIndex = targetAyah.clamp(1, verses.length) - 1;
-    final String ayahText = verses.isEmpty
-        ? 'تعذر تحميل آية الورد'
-        : verses[ayahIndex];
+    final KhatmaAyahPosition position = await _quranLocator
+        .resolvePositionFromStoredOrUnit(khatma: khatma);
 
     return _WirdPreviewData(
-      ayahText: ayahText,
-      reference: '${targetSurah.name} - الآية $targetAyah',
+      ayahText: position.ayahText.isEmpty
+          ? 'تعذر تحميل آية الورد'
+          : position.ayahText,
+      reference:
+          '${position.surahName} - الآية ${position.ayahNumber} - صفحة ${position.pageNumber}',
     );
   }
 }

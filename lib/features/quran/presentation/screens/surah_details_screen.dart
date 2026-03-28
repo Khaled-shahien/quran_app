@@ -62,13 +62,29 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   }
 
   void _focusInitialTarget() {
-    if (_focusInitialPageIfProvided()) {
-      return;
-    }
     if (_focusInitialAyahIfProvided()) {
       return;
     }
+    if (_focusInitialPageIfProvided()) {
+      return;
+    }
     _focusBookmarkedPage();
+  }
+
+  void _setCurrentPage(int pageIndex) {
+    if (!mounted) return;
+
+    setState(() {
+      _currentSurahPage = pageIndex;
+    });
+
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(pageIndex);
+      return;
+    }
+
+    _pageController.dispose();
+    _pageController = PageController(initialPage: pageIndex);
   }
 
   bool _focusInitialPageIfProvided() {
@@ -78,11 +94,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     }
 
     final int safePage = targetPage.clamp(0, _surahPages.length - 1);
-    if (!mounted) return true;
-    setState(() {
-      _currentSurahPage = safePage;
-    });
-    _pageController.jumpToPage(safePage);
+    _setCurrentPage(safePage);
     return true;
   }
 
@@ -103,11 +115,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       }
     }
 
-    if (!mounted) return true;
-    setState(() {
-      _currentSurahPage = targetPage;
-    });
-    _pageController.jumpToPage(targetPage);
+    _setCurrentPage(targetPage);
     return true;
   }
 
@@ -117,17 +125,12 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       listen: false,
     );
 
-    if (!mounted) return;
-
     if (bookmarkProvider.surahNumber == widget.surahNumber &&
         bookmarkProvider.pageIndex != null &&
         _surahPages.isNotEmpty) {
       final int targetPage = bookmarkProvider.pageIndex!;
       if (targetPage < _surahPages.length) {
-        setState(() {
-          _currentSurahPage = targetPage;
-        });
-        _pageController.jumpToPage(targetPage);
+        _setCurrentPage(targetPage);
       }
     }
   }
@@ -139,12 +142,25 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     });
 
     try {
-      final String filePath = 'assets/ayaat/${widget.surahNumber}.txt';
-      final String content = await rootBundle.loadString(filePath);
+      final String jsonString = await rootBundle.loadString(
+        'assets/quran_master.json',
+      );
+      final List<dynamic> jsonData = jsonDecode(jsonString) as List<dynamic>;
 
-      final List<String> verses = LineSplitter.split(
-        content,
-      ).map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+      final Map<String, dynamic> surahData = jsonData
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .firstWhere(
+            (item) => item['number'] == widget.surahNumber,
+            orElse: () => <String, dynamic>{},
+          );
+
+      final List<String> verses = surahData.isEmpty
+          ? <String>[]
+          : (surahData['ayahs'] as List<dynamic>? ?? <dynamic>[])
+                .map((ayah) => Map<String, dynamic>.from(ayah as Map))
+                .map((ayah) => (ayah['text'] as String? ?? '').trim())
+                .where((text) => text.isNotEmpty)
+                .toList();
 
       final List<_SurahPageData> paginatedVerses = [];
       List<String> currentPageVerses = [];

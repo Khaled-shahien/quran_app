@@ -173,6 +173,15 @@ class KhatmaModel {
   @JsonKey(fromJson: parseBool, defaultValue: false)
   final bool isCompleted;
 
+  @JsonKey(fromJson: parseNullableInt)
+  final int? nextSurahNumber;
+
+  @JsonKey(fromJson: parseNullableInt)
+  final int? nextAyahNumber;
+
+  @JsonKey(fromJson: parseNullableInt)
+  final int? nextPageNumber;
+
   final List<KhatmaDailyLog> dailyLogs;
 
   final List<KhatmaCompletedWird> completedWirds;
@@ -190,6 +199,9 @@ class KhatmaModel {
     required this.reminderHour,
     required this.reminderMinute,
     this.isCompleted = false,
+    this.nextSurahNumber,
+    this.nextAyahNumber,
+    this.nextPageNumber,
     this.dailyLogs = const <KhatmaDailyLog>[],
     this.completedWirds = const <KhatmaCompletedWird>[],
   });
@@ -223,6 +235,9 @@ class KhatmaModel {
     int? reminderHour,
     int? reminderMinute,
     bool? isCompleted,
+    int? nextSurahNumber,
+    int? nextAyahNumber,
+    int? nextPageNumber,
     List<KhatmaDailyLog>? dailyLogs,
     List<KhatmaCompletedWird>? completedWirds,
   }) {
@@ -239,6 +254,9 @@ class KhatmaModel {
       reminderHour: reminderHour ?? this.reminderHour,
       reminderMinute: reminderMinute ?? this.reminderMinute,
       isCompleted: isCompleted ?? this.isCompleted,
+      nextSurahNumber: nextSurahNumber ?? this.nextSurahNumber,
+      nextAyahNumber: nextAyahNumber ?? this.nextAyahNumber,
+      nextPageNumber: nextPageNumber ?? this.nextPageNumber,
       dailyLogs: dailyLogs ?? this.dailyLogs,
       completedWirds: completedWirds ?? this.completedWirds,
     );
@@ -390,6 +408,13 @@ class KhatmaModel {
     return 0;
   }
 
+  static int? parseNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   static double parseDouble(dynamic value) {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0;
@@ -457,6 +482,12 @@ class KhatmaModel {
           (readValue('reminder_minute', 'reminderMinute') as num?)?.toInt() ??
           0,
       'is_completed': parseBool(readValue('is_completed', 'isCompleted')),
+        'next_surah_number':
+          (readValue('next_surah_number', 'nextSurahNumber') as num?)?.toInt(),
+        'next_ayah_number':
+          (readValue('next_ayah_number', 'nextAyahNumber') as num?)?.toInt(),
+        'next_page_number':
+          (readValue('next_page_number', 'nextPageNumber') as num?)?.toInt(),
       'daily_logs': _safeJsonList(readValue('daily_logs', 'dailyLogs')),
       'completed_wirds': _safeJsonList(
         readValue('completed_wirds', 'completedWirds'),
