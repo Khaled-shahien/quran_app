@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../navigation/notification_router.dart';
@@ -75,10 +75,24 @@ class NotificationService {
   bool _isInitialized = false;
   bool _isPluginAvailable = true;
   String? _lastAppliedAlarmStateSignature;
+  Future<void>? _initFuture;
 
   /// Initialize the notification service.
   Future<void> initialize({bool requestPermissions = false}) async {
     if (_isInitialized) return;
+    if (_initFuture != null) {
+      await _initFuture;
+      if (requestPermissions) {
+        await this.requestPermissions();
+      }
+      return;
+    }
+
+    _initFuture = _doInitialize(requestPermissions);
+    await _initFuture;
+  }
+
+  Future<void> _doInitialize(bool requestPermissions) async {
 
     try {
       tzdata.initializeTimeZones();
@@ -121,6 +135,7 @@ class NotificationService {
       );
     } finally {
       _isInitialized = true;
+      _initFuture = null;
     }
   }
 
@@ -128,20 +143,20 @@ class NotificationService {
     try {
       final String timezoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timezoneName));
-      developer.log(
-        'Notification timezone configured: $timezoneName',
-        name: 'quran_app.notifications',
-      );
     } catch (e) {
-      // Fallback to UTC to keep scheduling deterministic.
-      tz.setLocalLocation(tz.UTC);
+      // Fallback to Africa/Cairo as explicitly required for time-based calculations
+      tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
       developer.log(
-        'Failed to resolve local timezone, falling back to UTC',
+        'Failed to resolve local timezone, falling back to Africa/Cairo',
         name: 'quran_app.notifications',
         level: 900,
         error: e,
       );
     }
+    developer.log(
+      'Notification timezone configured. Final selected timezone: ${tz.local.name}',
+      name: 'quran_app.notifications',
+    );
   }
 
   Future<void> _createAndroidNotificationChannels() async {
@@ -190,9 +205,7 @@ class NotificationService {
 
   /// Request runtime notification permissions.
   Future<void> requestPermissions() async {
-    if (!_isInitialized) {
-      await initialize(requestPermissions: false);
-    }
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable || kIsWeb) return;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
@@ -278,7 +291,7 @@ class NotificationService {
     String? payload,
     Map<String, dynamic>? payloadData,
   }) async {
-    if (!_isInitialized) await initialize();
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     const AndroidNotificationDetails androidNotificationDetails =
@@ -330,7 +343,7 @@ class NotificationService {
     String? payload,
     Map<String, dynamic>? payloadData,
   }) async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
@@ -432,7 +445,7 @@ class NotificationService {
     String? payload,
     Map<String, dynamic>? payloadData,
   }) async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
@@ -500,7 +513,7 @@ class NotificationService {
 
   /// Cancel a scheduled notification.
   Future<void> cancelNotification(int id) async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     await flutterLocalNotificationsPlugin.cancel(id);
@@ -512,7 +525,7 @@ class NotificationService {
 
   /// Cancel all notifications.
   Future<void> cancelAllNotifications() async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     await flutterLocalNotificationsPlugin.cancelAll();
@@ -655,6 +668,8 @@ class NotificationService {
     required bool isMulkEnabled,
     required bool isBaqarahEnabled,
   }) async {
+    await initialize(requestPermissions: false);
+
     final String newSignature =
         '${isMorningEnabled ? 1 : 0}-'
         '${isEveningEnabled ? 1 : 0}-'
@@ -701,6 +716,7 @@ class NotificationService {
     int? hour,
     int? minute,
   }) async {
+    await initialize(requestPermissions: false);
     switch (type) {
       case 'morning':
         await cancelNotification(_morningAdhkarNotificationId);
@@ -802,7 +818,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return;
 
     developer.log('TEST NOTIFICATION: $title', name: 'quran_app.notifications');
@@ -848,7 +864,7 @@ class NotificationService {
 
   /// Check pending notifications.
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
-    if (!_isInitialized) await initialize(requestPermissions: false);
+    await initialize(requestPermissions: false);
     if (!_isPluginAvailable) return <PendingNotificationRequest>[];
 
     final List<PendingNotificationRequest> pending =

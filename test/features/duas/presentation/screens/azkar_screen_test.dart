@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quran_app/features/duas/presentation/screens/azkar_screen.dart';
 
@@ -48,9 +48,7 @@ void main() {
       expect(find.byType(InkWell), findsWidgets);
     });
 
-    testWidgets('AzkarScreen has back button', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('AzkarScreen has back button', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: AzkarScreen())),
       );

@@ -7,6 +7,7 @@ part 'surah_model.g.dart';
 /// Surah Model
 ///
 /// Represents a single Surah (chapter) of the Quran with all its metadata
+// TODO: Verify JSON field casing
 @JsonSerializable(explicitToJson: true)
 class SurahModel {
   final int number;

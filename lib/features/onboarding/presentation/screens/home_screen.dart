@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/settings_provider.dart';
 import '../../../khatma/domain/models/khatma_model.dart';
 import '../../../khatma/domain/services/khatma_quran_locator.dart';
@@ -555,16 +556,22 @@ class _HomeScreenState extends State<HomeScreen> {
     required KhatmaModel khatma,
     required int unitIndex,
   }) async {
+    final SurahRepository surahRepository = Provider.of<SurahRepository>(
+      context,
+      listen: false,
+    );
     final position = await _quranLocator.resolveStartPosition(
       trackingUnit: khatma.trackingUnit,
       unitIndex: unitIndex,
     );
 
-    final SurahRepository surahRepository = Provider.of<SurahRepository>(
-      context,
-      listen: false,
-    );
     final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
+    if (surahs.isEmpty) {
+      if (!mounted) return;
+      _showFeatureMessage('تعذر تحميل بيانات السور');
+      return;
+    }
+
     final SurahEntity targetSurah = surahs.firstWhere(
       (surah) => surah.number == position.surahNumber,
       orElse: () => surahs.first,
@@ -577,6 +584,11 @@ class _HomeScreenState extends State<HomeScreen> {
       extra: <String, dynamic>{
         'surah': targetSurah,
         'initialAyahNumber': position.ayahNumber,
+        'rangeTrackingUnit': khatma.trackingUnit.storageValue,
+        'rangeFromUnit': unitIndex,
+        'rangeToUnit': khatma.todayToUnit < unitIndex
+            ? unitIndex
+            : khatma.todayToUnit,
       },
     );
   }
@@ -784,6 +796,154 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'بدء ختمة جديدة',
           leadingIcon: Icon(Icons.add, color: iconColor),
           onTap: () => context.push('/khatma/location'),
+        ),
+        const Divider(height: 1),
+
+        // 5.1 اختبار الإشعارات
+        _buildSectionHeader('اختبار الإشعارات'),
+        Consumer<NotificationProvider>(
+          builder: (context, provider, child) {
+            return Column(
+              children: [
+                _buildMoreMenuItem(
+                  title: 'إشعار فوري',
+                  leadingIcon: Icon(
+                    Icons.notifications_active,
+                    color: iconColor,
+                  ),
+                  onTap: () async {
+                    try {
+                      await provider.scheduleTestNotification(
+                        id: DateTime.now().millisecondsSinceEpoch.remainder(
+                          100000,
+                        ),
+                        title: 'اختبار فوري',
+                        body: 'هذا إشعار اختبار فوري ناجح',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إظهار الإشعار بنجاح'),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('فشل الاختبار: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                _buildMoreMenuItem(
+                  title: 'إشعار بعد دقيقة',
+                  leadingIcon: Icon(Icons.schedule, color: iconColor),
+                  onTap: () async {
+                    try {
+                      await provider.scheduleDelayedNotification(
+                        id: DateTime.now().millisecondsSinceEpoch.remainder(
+                          100000,
+                        ),
+                        title: 'اختبار مؤجل',
+                        body: 'سيظهر هذا الإشعار بعد دقيقة من الآن',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم جدولة الإشعار بعد دقيقة'),
+                            backgroundColor: Colors.blue,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('فشل الجدولة: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                _buildMoreMenuItem(
+                  title: 'إشعار بعد 5 دقائق',
+                  leadingIcon: Icon(Icons.timer, color: iconColor),
+                  onTap: () async {
+                    try {
+                      await provider.scheduleTestAlarmAfter5Minutes(
+                        id: DateTime.now().millisecondsSinceEpoch.remainder(
+                          100000,
+                        ),
+                        title: 'اختبار 5 دقائق',
+                        body: 'سيظهر هذا الإشعار بعد 5 دقائق من الآن',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم جدولة الإشعار بعد 5 دقائق'),
+                            backgroundColor: Colors.orange,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('فشل الجدولة: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                _buildMoreMenuItem(
+                  title: 'إلغاء جميع الإشعارات',
+                  leadingIcon: Icon(Icons.cancel, color: iconColor),
+                  onTap: () async {
+                    try {
+                      await provider.cancelAllNotifications();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إلغاء جميع الإشعارات'),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('فشل الإلغاء: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         ),
         const Divider(height: 1),
 

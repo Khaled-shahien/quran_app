@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/models/khatma_model.dart';
 
@@ -19,8 +20,14 @@ class KhatmaRepository {
       try {
         final Map<String, dynamic> decoded = jsonDecode(jsonData);
         return KhatmaModel.fromJson(decoded);
-      } catch (e) {
-        // Handle parsing error by returning null (no valid active khatma)
+      } catch (e, stackTrace) {
+        developer.log(
+          'Failed to parse stored khatma plan',
+          name: 'quran_app.khatma',
+          level: 1000,
+          error: e,
+          stackTrace: stackTrace,
+        );
         return null;
       }
     }

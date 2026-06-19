@@ -99,18 +99,18 @@ class FirebaseMessagingService {
         // Set up message handlers
         await _setupMessageHandlers();
 
-        // Get and log FCM token with timeout to avoid startup stalls.
+        // Get the FCM token with timeout to avoid startup stalls.
         final token = await _firebaseMessaging.getToken().timeout(
           const Duration(seconds: 6),
         );
-        developer.log('[FCM] Token generated: $token', name: 'quran_app.fcm');
+        developer.log(
+          '[FCM] Token generated: ${token == null ? 'no' : 'yes'}',
+          name: 'quran_app.fcm',
+        );
 
         // Listen for token refresh
         _firebaseMessaging.onTokenRefresh.listen((newToken) {
-          developer.log(
-            '[FCM] Token refreshed: $newToken',
-            name: 'quran_app.fcm',
-          );
+          developer.log('[FCM] Token refreshed', name: 'quran_app.fcm');
           _updateTokenInBackend(newToken);
         });
 
@@ -270,9 +270,9 @@ class FirebaseMessagingService {
   }
 
   /// Update token in backend (placeholder)
-  void _updateTokenInBackend(String token) {
+  void _updateTokenInBackend(String _) {
     // Intentionally left as a hook for optional backend token registration.
-    developer.log('Token to be sent to backend: $token', name: 'quran_app.fcm');
+    developer.log('Backend token sync hook invoked', name: 'quran_app.fcm');
   }
 
   /// Get current FCM token
@@ -295,7 +295,7 @@ class FirebaseMessagingService {
     try {
       await _firebaseMessaging.deleteToken();
       final newToken = await _firebaseMessaging.getToken();
-      developer.log('Token refreshed: $newToken', name: 'quran_app.fcm');
+      developer.log('Token refreshed', name: 'quran_app.fcm');
       if (newToken == null || newToken.isEmpty) {
         developer.log(
           'Token refresh returned null/empty token',

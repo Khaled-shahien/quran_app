@@ -4,6 +4,7 @@ import '../../domain/entities/onboarding_content_entity.dart';
 
 part 'onboarding_content_model.g.dart';
 
+// TODO: Verify JSON field casing
 @JsonSerializable()
 class OnboardingContentModel implements OnboardingContentEntity {
   @override

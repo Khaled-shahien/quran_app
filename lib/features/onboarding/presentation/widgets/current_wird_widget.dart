@@ -442,14 +442,22 @@ class CurrentWirdWidget extends StatelessWidget {
     required BuildContext context,
     required KhatmaModel khatma,
   }) async {
-    final KhatmaAyahPosition position = await _quranLocator
-        .resolvePositionFromStoredOrUnit(khatma: khatma);
-
     final SurahRepository surahRepository = Provider.of<SurahRepository>(
       context,
       listen: false,
     );
+    final KhatmaAyahPosition position = await _quranLocator
+        .resolvePositionFromStoredOrUnit(khatma: khatma);
+
     final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
+    if (surahs.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تحميل بيانات السور')));
+      return;
+    }
+
     final SurahEntity targetSurah = surahs.firstWhere(
       (surah) => surah.number == position.surahNumber,
       orElse: () => surahs.first,
@@ -462,6 +470,9 @@ class CurrentWirdWidget extends StatelessWidget {
       extra: <String, dynamic>{
         'surah': targetSurah,
         'initialAyahNumber': position.ayahNumber,
+        'rangeTrackingUnit': khatma.trackingUnit.storageValue,
+        'rangeFromUnit': khatma.todayFromUnit,
+        'rangeToUnit': khatma.todayToUnit,
       },
     );
   }

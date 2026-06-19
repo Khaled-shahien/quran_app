@@ -13,10 +13,7 @@ GoRouter createTestRouter({
   return GoRouter(
     initialLocation: initialLocation,
     routes: <RouteBase>[
-      GoRoute(
-        path: '/',
-        builder: (context, state) => home,
-      ),
+      GoRoute(path: '/', builder: (context, state) => home),
       ...routes,
     ],
   );

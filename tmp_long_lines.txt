@@ -1,3 +1,0 @@
-F:\Projects\Flutter Projects\Random Apps\quran_app\lib\features\duas\presentation\screens\duas_screen.dart:56:              final category = provider.getCategoryByName('أدعية قرآنية');
-F:\Projects\Flutter Projects\Random Apps\quran_app\lib\features\khatma\presentation\screens\khatma_location_screen.dart:19:  final List<String> _startModes = ['بداية المصحف', 'جزء مخصص'];
-F:\Projects\Flutter Projects\Random Apps\quran_app\lib\features\quran\presentation\screens\tasbeeh_screen.dart:352:              child: Text('إلغاء', style: GoogleFonts.cairo(color: Colors.red)),

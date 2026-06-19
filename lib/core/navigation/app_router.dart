@@ -45,6 +45,10 @@ final GoRouter appRouter = GoRouter(
         final SurahEntity? surah = extra?['surah'] as SurahEntity?;
         final int? initialAyahNumber = extra?['initialAyahNumber'] as int?;
         final int? initialPageNumber = extra?['initialPageNumber'] as int?;
+        final String? rangeTrackingUnit =
+            extra?['rangeTrackingUnit'] as String?;
+        final int? rangeFromUnit = (extra?['rangeFromUnit'] as num?)?.toInt();
+        final int? rangeToUnit = (extra?['rangeToUnit'] as num?)?.toInt();
 
         if (surahNumber == null) {
           return const _RouteDataErrorScreen(
@@ -59,6 +63,9 @@ final GoRouter appRouter = GoRouter(
             surahNumber: surahNumber,
             initialAyahNumber: initialAyahNumber,
             initialPageNumber: initialPageNumber,
+            rangeTrackingUnit: rangeTrackingUnit,
+            rangeFromUnit: rangeFromUnit,
+            rangeToUnit: rangeToUnit,
           );
         }
 
@@ -67,6 +74,9 @@ final GoRouter appRouter = GoRouter(
           surahNumber: surahNumber,
           initialAyahNumber: initialAyahNumber,
           initialPageNumber: initialPageNumber,
+          rangeTrackingUnit: rangeTrackingUnit,
+          rangeFromUnit: rangeFromUnit,
+          rangeToUnit: rangeToUnit,
         );
       },
     ),
@@ -176,11 +186,17 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
   final int surahNumber;
   final int? initialAyahNumber;
   final int? initialPageNumber;
+  final String? rangeTrackingUnit;
+  final int? rangeFromUnit;
+  final int? rangeToUnit;
 
   const _SurahDetailsRouteLoader({
     required this.surahNumber,
     this.initialAyahNumber,
     this.initialPageNumber,
+    this.rangeTrackingUnit,
+    this.rangeFromUnit,
+    this.rangeToUnit,
   });
 
   @override
@@ -208,6 +224,9 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
           surahNumber: surahNumber,
           initialAyahNumber: initialAyahNumber,
           initialPageNumber: initialPageNumber,
+          rangeTrackingUnit: rangeTrackingUnit,
+          rangeFromUnit: rangeFromUnit,
+          rangeToUnit: rangeToUnit,
         );
       },
     );

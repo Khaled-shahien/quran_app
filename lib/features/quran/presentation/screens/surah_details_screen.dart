@@ -22,6 +22,9 @@ class SurahDetailsScreen extends StatefulWidget {
   final int surahNumber;
   final int? initialAyahNumber;
   final int? initialPageNumber;
+  final String? rangeTrackingUnit;
+  final int? rangeFromUnit;
+  final int? rangeToUnit;
 
   const SurahDetailsScreen({
     super.key,
@@ -29,6 +32,9 @@ class SurahDetailsScreen extends StatefulWidget {
     required this.surahNumber,
     this.initialAyahNumber,
     this.initialPageNumber,
+    this.rangeTrackingUnit,
+    this.rangeFromUnit,
+    this.rangeToUnit,
   });
 
   @override
@@ -135,6 +141,25 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     }
   }
 
+  int? _unitValueForAyah(Map<String, dynamic> ayah) {
+    switch (widget.rangeTrackingUnit) {
+      case 'page':
+      case 'صفحة':
+        return (ayah['page'] as num?)?.toInt();
+      case 'hizb':
+      case 'حزب':
+      case 'ربع':
+        final int? hizbQuarter = (ayah['hizbQuarter'] as num?)?.toInt();
+        if (hizbQuarter == null) return null;
+        return ((hizbQuarter - 1) ~/ 2) + 1;
+      case 'juz':
+      case 'جزء':
+        return (ayah['juz'] as num?)?.toInt();
+      default:
+        return null;
+    }
+  }
+
   Future<void> _loadVerses() async {
     setState(() {
       _isLoading = true;
@@ -154,32 +179,75 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             orElse: () => <String, dynamic>{},
           );
 
-      final List<String> verses = surahData.isEmpty
-          ? <String>[]
+      final List<Map<String, dynamic>> surahAyahs = surahData.isEmpty
+          ? <Map<String, dynamic>>[]
           : (surahData['ayahs'] as List<dynamic>? ?? <dynamic>[])
                 .map((ayah) => Map<String, dynamic>.from(ayah as Map))
-                .map((ayah) => (ayah['text'] as String? ?? '').trim())
-                .where((text) => text.isNotEmpty)
                 .toList();
+
+      final int? rangeFromUnit = widget.rangeFromUnit;
+      final int? rangeToUnit = widget.rangeToUnit;
+      final bool hasRange =
+          widget.rangeTrackingUnit != null &&
+          rangeFromUnit != null &&
+          rangeToUnit != null;
+
+      final int minUnit;
+      final int maxUnit;
+      if (hasRange) {
+        minUnit = rangeFromUnit <= rangeToUnit ? rangeFromUnit : rangeToUnit;
+        maxUnit = rangeFromUnit <= rangeToUnit ? rangeToUnit : rangeFromUnit;
+      } else {
+        minUnit = 0;
+        maxUnit = 0;
+      }
+
+      final List<Map<String, dynamic>> selectedAyahs = hasRange
+          ? surahAyahs.where((ayah) {
+              final int? unitValue = _unitValueForAyah(ayah);
+              if (unitValue == null) return false;
+              return unitValue >= minUnit && unitValue <= maxUnit;
+            }).toList()
+          : surahAyahs;
 
       final List<_SurahPageData> paginatedVerses = [];
       List<String> currentPageVerses = [];
       int currentLength = 0;
-      int startIndex = 0;
+      int? currentPageStartVerseIndex;
       const int maxCharsPerPage = 550;
 
-      for (int i = 0; i < verses.length; i++) {
-        currentPageVerses.add(verses[i]);
-        currentLength += verses[i].length;
+      for (int i = 0; i < selectedAyahs.length; i++) {
+        final Map<String, dynamic> ayah = selectedAyahs[i];
+        final String verseText = (ayah['text'] as String? ?? '').trim();
+        final int verseNumber = (ayah['numberInSurah'] as num?)?.toInt() ?? 1;
+        if (verseText.isEmpty) {
+          continue;
+        }
 
-        if (currentLength >= maxCharsPerPage || i == verses.length - 1) {
+        currentPageStartVerseIndex ??= (verseNumber - 1).clamp(0, 9999);
+        currentPageVerses.add(verseText);
+        currentLength += verseText.length;
+
+        if (currentLength >= maxCharsPerPage) {
           paginatedVerses.add(
-            _SurahPageData(List<String>.from(currentPageVerses), startIndex),
+            _SurahPageData(
+              List<String>.from(currentPageVerses),
+              currentPageStartVerseIndex,
+            ),
           );
           currentPageVerses = [];
           currentLength = 0;
-          startIndex = i + 1;
+          currentPageStartVerseIndex = null;
         }
+      }
+
+      if (currentPageVerses.isNotEmpty && currentPageStartVerseIndex != null) {
+        paginatedVerses.add(
+          _SurahPageData(
+            List<String>.from(currentPageVerses),
+            currentPageStartVerseIndex,
+          ),
+        );
       }
 
       setState(() {
@@ -230,7 +298,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   border: Border.all(color: pageBorder),
                 ),
                 width: double.infinity,
-                child: Text(
+                child: SelectableText(
                   'بِسْمِ اللَّهِ '
                   'الرَّحْمَٰنِ الرَّحِيمِ',
                   textAlign: TextAlign.center,

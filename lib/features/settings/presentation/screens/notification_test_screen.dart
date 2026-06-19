@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../core/providers/notification_provider.dart';
 
-/// Notification Test Screen
-///
-/// Provides UI for testing all notification features:
-/// - Permission management
-/// - Local notifications
-/// - FCM push notifications
-/// - Pending notifications viewer
-/// - Alarm controls
+/// Diagnostic screen for verifying notification permissions and scheduling.
 class NotificationTestScreen extends StatefulWidget {
   const NotificationTestScreen({super.key});
 
@@ -19,74 +13,176 @@ class NotificationTestScreen extends StatefulWidget {
 }
 
 class _NotificationTestScreenState extends State<NotificationTestScreen> {
-  bool _isLoading = false;
-
   @override
   void initState() {
     super.initState();
-    _initializeServices();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialNotificationState();
+    });
   }
 
-  Future<void> _initializeServices() async {
-    setState(() => _isLoading = true);
-    try {
-      final provider = context.read<NotificationProvider>();
-      await provider.initialize();
-      await provider.getPendingNotifications();
-    } catch (e) {
-      _showError('Initialization failed: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  Future<void> _loadInitialNotificationState() async {
+    final provider = context.read<NotificationProvider>();
+    await provider.initialize();
+    await provider.getPendingNotifications();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('اختبار الإشعارات'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('اختبار الإشعارات')),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, child) {
-          if (_isLoading && !provider.isInitialized) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Permission Status Card
-                _buildPermissionCard(provider),
-
-                const SizedBox(height: 16),
-
-                // Local Notifications Section
-                _buildLocalNotificationsSection(provider),
-
-                const SizedBox(height: 16),
-
-                // Push Notifications Section
-                _buildPushNotificationsSection(provider),
-
-                const SizedBox(height: 16),
-
-                // Pending Notifications Section
-                _buildPendingNotificationsSection(provider),
-
-                const SizedBox(height: 16),
-
-                // Alarm Controls Section
-                _buildAlarmControlsSection(provider),
-
-                const SizedBox(height: 16),
-
-                // Debug Logs Section
-                _buildDebugLogsSection(provider),
+                _SectionCard(
+                  title: 'حالة الصلاحيات',
+                  icon: Icons.verified_user_outlined,
+                  children: [
+                    _InfoRow(
+                      label: 'الحالة',
+                      value: provider.permissionStatus ?? 'غير معروفة',
+                    ),
+                    _InfoRow(
+                      label: 'جاهزية الخدمة',
+                      value: provider.isInitialized ? 'جاهزة' : 'قيد التشغيل',
+                    ),
+                  ],
+                ),
+                _SectionCard(
+                  title: 'الإشعارات المحلية',
+                  icon: Icons.notifications_active_outlined,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => _showImmediateNotification(provider),
+                          icon: const Icon(Icons.flash_on),
+                          label: const Text('إشعار فوري'),
+                        ),
+                        FilledButton.icon(
+                          onPressed: () =>
+                              _scheduleDelayedNotification(provider),
+                          icon: const Icon(Icons.schedule),
+                          label: const Text('إشعار بعد دقيقة'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => _cancelAllNotifications(provider),
+                          icon: const Icon(Icons.delete_sweep_outlined),
+                          label: const Text('إلغاء الكل'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                _SectionCard(
+                  title: 'إشعارات الدفع (FCM)',
+                  icon: Icons.cloud_queue,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => _requestPermissions(provider),
+                          icon: const Icon(Icons.lock_open_outlined),
+                          label: const Text('طلب الصلاحيات'),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _InfoRow(
+                            label: 'رمز FCM:',
+                            value: _maskedToken(provider.fcmToken),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => _refreshFcmToken(provider),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('تحديث'),
+                        ),
+                        TextButton.icon(
+                          onPressed: provider.fcmToken == null
+                              ? null
+                              : () => _copyFcmToken(provider),
+                          icon: const Icon(Icons.copy),
+                          label: const Text('نسخ'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                _SectionCard(
+                  title: 'الإشعارات المجدولة',
+                  icon: Icons.pending_actions_outlined,
+                  trailing: TextButton.icon(
+                    onPressed: () => provider.getPendingNotifications(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('تحديث'),
+                  ),
+                  children: [
+                    if (provider.pendingNotifications.isEmpty)
+                      Text(
+                        'لا توجد إشعارات مجدولة',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      )
+                    else
+                      ...provider.pendingNotifications.map(
+                        (notification) => _PendingNotificationTile(
+                          notification: notification,
+                          onCancel: () => _cancelNotification(
+                            provider,
+                            notification['id'] as int,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                _SectionCard(
+                  title: 'التحكم في المنبهات',
+                  icon: Icons.alarm_on_outlined,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => _rescheduleAlarms(provider),
+                      icon: const Icon(Icons.restart_alt),
+                      label: const Text('إعادة جدولة جميع المنبهات'),
+                    ),
+                  ],
+                ),
+                _SectionCard(
+                  title: 'سجلات التصحيح',
+                  icon: Icons.bug_report_outlined,
+                  trailing: TextButton.icon(
+                    onPressed: provider.clearLogs,
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('مسح'),
+                  ),
+                  children: [
+                    if (provider.debugLogs.isEmpty)
+                      Text(
+                        'لا توجد سجلات',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      )
+                    else
+                      ...provider.debugLogs.map(
+                        (log) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            log,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           );
@@ -95,471 +191,184 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
     );
   }
 
-  Widget _buildPermissionCard(NotificationProvider provider) {
+  Future<void> _showImmediateNotification(NotificationProvider provider) async {
+    try {
+      await provider.scheduleTestNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'اختبار فوري',
+        body: 'هذا إشعار اختبار فوري ناجح',
+      );
+      if (!mounted) return;
+      _showSnackBar('تم إظهار الإشعار بنجاح');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnackBar('فشل الاختبار: $error');
+    }
+  }
+
+  Future<void> _scheduleDelayedNotification(
+    NotificationProvider provider,
+  ) async {
+    try {
+      await provider.scheduleDelayedNotification(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: 'إشعار بعد دقيقة',
+        body: 'سيظهر هذا الإشعار بعد دقيقة من الآن',
+      );
+      await provider.getPendingNotifications();
+      if (!mounted) return;
+      _showSnackBar('تمت جدولة الإشعار بعد دقيقة');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnackBar('فشل الجدولة: $error');
+    }
+  }
+
+  Future<void> _cancelAllNotifications(NotificationProvider provider) async {
+    await provider.cancelAllNotifications();
+    await provider.getPendingNotifications();
+    if (!mounted) return;
+    _showSnackBar('تم إلغاء جميع الإشعارات');
+  }
+
+  Future<void> _requestPermissions(NotificationProvider provider) async {
+    await provider.requestPermissions();
+    if (!mounted) return;
+    _showSnackBar('تم طلب الصلاحيات');
+  }
+
+  Future<void> _refreshFcmToken(NotificationProvider provider) async {
+    await provider.refreshFCMToken();
+    if (!mounted) return;
+    _showSnackBar('تم تحديث الرمز');
+  }
+
+  Future<void> _copyFcmToken(NotificationProvider provider) async {
+    final token = provider.fcmToken;
+    if (token == null || token.isEmpty) return;
+
+    await Clipboard.setData(ClipboardData(text: token));
+    await provider.copyFCMToken();
+    if (!mounted) return;
+    _showSnackBar('تم نسخ الرمز');
+  }
+
+  Future<void> _cancelNotification(
+    NotificationProvider provider,
+    int id,
+  ) async {
+    await provider.cancelNotification(id);
+    await provider.getPendingNotifications();
+  }
+
+  Future<void> _rescheduleAlarms(NotificationProvider provider) async {
+    await provider.rescheduleAllAlarms();
+    if (!mounted) return;
+    _showSnackBar('تم إعادة جدولة جميع المنبهات');
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _maskedToken(String? token) {
+    if (token == null || token.isEmpty) return 'غير متاح';
+    if (token.length <= 8) return '********';
+    return '${token.substring(0, 4)}...${token.substring(token.length - 4)}';
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+    this.trailing,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Icon(
-                  _getPermissionIcon(provider.permissionStatus),
-                  color: _getPermissionColor(provider.permissionStatus),
-                  size: 32,
-                ),
-                const SizedBox(width: 16),
+                Icon(icon, color: colorScheme.primary),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'حالة الصلاحيات',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        provider.permissionStatus ?? 'غير معروف',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _getPermissionColor(provider.permissionStatus),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => provider.requestPermissions(),
-                icon: const Icon(Icons.lock_open),
-                label: const Text('طلب الصلاحيات'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLocalNotificationsSection(NotificationProvider provider) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'الإشعارات المحلية',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            // Immediate Test
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    await provider.scheduleTestNotification(
-                      id: DateTime.now().millisecondsSinceEpoch.remainder(
-                        100000,
-                      ),
-                      title: 'اختبار فوري',
-                      body: 'هذا إشعار اختبار فوري',
-                    );
-                    _showSuccess('تم إظهار الإشعار');
-                  } catch (e) {
-                    _showError('فشل الاختبار: $e');
-                  }
-                },
-                icon: const Icon(Icons.notifications_active),
-                label: const Text('إشعار فوري'),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Delayed Test
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    await provider.scheduleDelayedNotification(
-                      id: DateTime.now().millisecondsSinceEpoch.remainder(
-                        100000,
-                      ),
-                      title: 'اختبار مؤجل',
-                      body:
-                          'سيظهر هذا الإشعار '
-                          'خلال دقيقة',
-                    );
-                    _showSuccess('تم جدولة الإشعار بعد دقيقة');
-                  } catch (e) {
-                    _showError('فشل الجدولة: $e');
-                  }
-                },
-                icon: const Icon(Icons.schedule),
-                label: const Text('إشعار بعد دقيقة'),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Cancel All
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    await provider.cancelAllNotifications();
-                    _showSuccess('تم إلغاء جميع الإشعارات');
-                    await provider.getPendingNotifications();
-                  } catch (e) {
-                    _showError('فشل الإلغاء: $e');
-                  }
-                },
-                icon: const Icon(Icons.cancel),
-                label: const Text('إلغاء الكل'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPushNotificationsSection(NotificationProvider provider) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'إشعارات الدفع (FCM)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            // Token Display
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'رمز FCM:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.fcmToken ?? 'غير متوفر',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            if (provider.fcmToken != null) {
-                              Clipboard.setData(
-                                ClipboardData(text: provider.fcmToken!),
-                              );
-                              _showSuccess('تم نسخ الرمز');
-                            }
-                          },
-                          icon: const Icon(Icons.copy, size: 18),
-                          label: const Text('نسخ'),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: () => provider.refreshFCMToken(),
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: const Text('تحديث'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Instructions
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: const Text(
-                'لإرسال إشعار دفع:\n'
-                '1. اذهب إلى Firebase Console\n'
-                '2. Cloud Messaging → New notification\n'
-                '3. استخدم الرمز أعلاه '
-                'للإرسال لهذا الجهاز',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPendingNotificationsSection(NotificationProvider provider) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'الإشعارات المجدولة',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                TextButton.icon(
-                  onPressed: () => provider.getPendingNotifications(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('تحديث'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            if (provider.pendingNotifications.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
                   child: Text(
-                    'لا توجد إشعارات مجدولة',
-                    style: TextStyle(color: Colors.grey),
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: provider.pendingNotifications.length,
-                itemBuilder: (context, index) {
-                  final notification = provider.pendingNotifications[index];
-                  return ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.notifications),
-                    ),
-                    title: Text(notification['title'] ?? 'بدون عنوان'),
-                    subtitle: Text(
-                      'ID: ${notification['id']}\n'
-                      '${notification['body'] ?? ''}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red),
-                      onPressed: () async {
-                        await provider.cancelNotification(notification['id']);
-                        await provider.getPendingNotifications();
-                      },
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAlarmControlsSection(NotificationProvider provider) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'التحكم في المنبهات',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    await provider.rescheduleAllAlarms();
-                    _showSuccess('تم إعادة جدولة جميع المنبهات');
-                  } catch (e) {
-                    _showError('فشل إعادة الجدولة: $e');
-                  }
-                },
-                icon: const Icon(Icons.update),
-                label: const Text('إعادة جدولة جميع المنبهات'),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              'المنبهات النشطة:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+                if (trailing != null) trailing!,
+              ],
             ),
             const SizedBox(height: 8),
-
-            _buildAlarmInfo('أذكار الصباح', '7:00 ص'),
-            _buildAlarmInfo('أذكار المساء', '5:30 م'),
-            _buildAlarmInfo('سورة الملك', '9:00 م'),
-            _buildAlarmInfo('سورة البقرة', '8:30 م'),
+            ...children,
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildAlarmInfo(String name, String time) {
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          const Icon(Icons.access_time, size: 20, color: Colors.green),
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(width: 8),
-          Expanded(child: Text(name)),
-          Text(time, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDebugLogsSection(NotificationProvider provider) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'سجلات التصحيح',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                TextButton.icon(
-                  onPressed: () => provider.clearLogs(),
-                  icon: const Icon(Icons.clear_all),
-                  label: const Text('مسح'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+class _PendingNotificationTile extends StatelessWidget {
+  const _PendingNotificationTile({
+    required this.notification,
+    required this.onCancel,
+  });
 
-            Container(
-              height: 200,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListView.builder(
-                reverse: true,
-                itemCount: provider.debugLogs.length,
-                itemBuilder: (context, index) {
-                  final log = provider.debugLogs[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      log,
-                      style: const TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  final Map<String, dynamic> notification;
+  final VoidCallback onCancel;
 
-  IconData _getPermissionIcon(String? status) {
-    switch (status) {
-      case 'authorized':
-        return Icons.check_circle;
-      case 'denied':
-        return Icons.cancel;
-      case 'provisional':
-        return Icons.info;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  Color _getPermissionColor(String? status) {
-    switch (status) {
-      case 'authorized':
-        return Colors.green;
-      case 'denied':
-        return Colors.red;
-      case 'provisional':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(notification['title']?.toString() ?? ''),
+      subtitle: Text(notification['body']?.toString() ?? ''),
+      trailing: IconButton(
+        tooltip: 'إلغاء',
+        icon: const Icon(Icons.cancel),
+        onPressed: onCancel,
       ),
     );
   }

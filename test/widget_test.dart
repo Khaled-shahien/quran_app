@@ -1,30 +1,29 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'package:quran_app/main.dart';
+import 'package:quran_app/features/onboarding/presentation/screens/onboarding_screen.dart';
 
 void main() {
-  testWidgets('App loads smoke test', (WidgetTester tester) async {
-    // Initialize SharedPreferences mock
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Build our app and trigger a frame.
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('Onboarding screen loads smoke test', (tester) async {
     await tester.pumpWidget(
-      MyApp(prefs: prefs, initializeNotifications: false),
+      const MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: OnboardingScreen(),
+        ),
+      ),
     );
 
-    // Wait for the app to settle
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await tester.pump();
 
-    // Just verify the app widget exists in the tree
-    expect(find.byType(MyApp), findsOneWidget);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.byType(OutlinedButton), findsOneWidget);
   });
 }

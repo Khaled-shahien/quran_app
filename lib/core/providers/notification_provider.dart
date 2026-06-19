@@ -245,7 +245,7 @@ class NotificationProvider extends ChangeNotifier {
     try {
       await _messagingGateway.refreshToken();
       _fcmToken = await _messagingGateway.getToken();
-      _addLog('FCM token refreshed: $_fcmToken');
+      _addLog('FCM token refreshed');
       notifyListeners();
     } catch (e) {
       _addLog('Error refreshing FCM token: $e');
@@ -255,7 +255,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Copy FCM token to clipboard
   Future<void> copyFCMToken() async {
     if (_fcmToken != null) {
-      _addLog('FCM Token copied: $_fcmToken');
+      _addLog('FCM Token copied');
       // Clipboard copying handled in UI
     }
   }

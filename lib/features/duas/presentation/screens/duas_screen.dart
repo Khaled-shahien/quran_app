@@ -115,29 +115,29 @@ class _DuasItemCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            // Title
-            Text(
-              item.title,
-              style: GoogleFonts.cairo(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+              // Title
+              Text(
+                item.title,
+                style: GoogleFonts.cairo(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Duas Text
-            Text(
-              item.text,
-              style: GoogleFonts.amiri(
-                fontSize: 22,
-                height: 2.0,
-                color: Theme.of(context).colorScheme.onSurface,
+              // Duas Text
+              Text(
+                item.text,
+                style: GoogleFonts.amiri(
+                  fontSize: 22,
+                  height: 2.0,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
 
-            // Reference if available
+              // Reference if available
               if (item.reference != null && item.reference.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 const Divider(thickness: 0.5),

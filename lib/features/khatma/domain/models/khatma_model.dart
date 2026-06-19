@@ -482,11 +482,11 @@ class KhatmaModel {
           (readValue('reminder_minute', 'reminderMinute') as num?)?.toInt() ??
           0,
       'is_completed': parseBool(readValue('is_completed', 'isCompleted')),
-        'next_surah_number':
+      'next_surah_number':
           (readValue('next_surah_number', 'nextSurahNumber') as num?)?.toInt(),
-        'next_ayah_number':
+      'next_ayah_number':
           (readValue('next_ayah_number', 'nextAyahNumber') as num?)?.toInt(),
-        'next_page_number':
+      'next_page_number':
           (readValue('next_page_number', 'nextPageNumber') as num?)?.toInt(),
       'daily_logs': _safeJsonList(readValue('daily_logs', 'dailyLogs')),
       'completed_wirds': _safeJsonList(

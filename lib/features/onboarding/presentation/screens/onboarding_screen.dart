@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../widgets/notification_permission_dialog.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -131,8 +133,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       bottom: AppConstants.kPaddingLarge,
                     ),
                     child: OutlinedButton(
-                      onPressed: () {
-                        context.go('/home');
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        final hasSeenP =
+                            prefs.getBool('has_seen_notification_permission') ??
+                            false;
+
+                        if (!hasSeenP && context.mounted) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (ctx) => NotificationPermissionDialog(
+                              onFinish: () {
+                                Navigator.of(ctx).pop();
+                                context.go('/home');
+                              },
+                            ),
+                          );
+                        } else {
+                          if (context.mounted) {
+                            context.go('/home');
+                          }
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.surface,

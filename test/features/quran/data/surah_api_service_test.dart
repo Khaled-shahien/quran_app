@@ -128,14 +128,14 @@ void main() {
 
       // Assert
       expect(baqarahResults.length, 1);
-        expect(baqarahResults[0].englishName, 'Al-Baqara');
+      expect(baqarahResults[0].englishName, 'Al-Baqara');
     });
 
     test('should search Surahs by Arabic name', () async {
       // Act
       final result = await localDataSource.loadAllSurahs();
 
-        // Find surahs containing a stable Arabic fragment from Al-Fatihah
+      // Find surahs containing a stable Arabic fragment from Al-Fatihah
       final fatihahResults = result
           .where((s) => s.name.contains('فَاتِح'))
           .toList();
@@ -163,10 +163,14 @@ void main() {
       // Act
       final result = await localDataSource.loadAllSurahs();
 
-      // Check first few surahs have empty ayahs arrays (metadata only)
-      for (int i = 0; i < 5; i++) {
-        expect(result[i].ayahs, isEmpty);
-      }
+      // Check the full Quran asset exposes structured ayah data.
+      final firstSurahAyahs = result.first.ayahs;
+      expect(firstSurahAyahs, hasLength(7));
+      expect(firstSurahAyahs.first.number, 1);
+      expect(firstSurahAyahs.first.numberInSurah, 1);
+      expect(firstSurahAyahs.first.juz, 1);
+      expect(firstSurahAyahs.first.page, 1);
+      expect(firstSurahAyahs.first.text.trim(), isNotEmpty);
     });
 
     test('should generate correct JSON structure', () async {
@@ -182,7 +186,13 @@ void main() {
       expect(json['englishNameTranslation'], 'The Opening');
       expect(json['revelationType'], 'Meccan');
       expect(json['numberOfAyahs'], 7);
-      expect(json['ayahs'], isEmpty);
+      expect(json['ayahs'], isNotEmpty);
+      expect(json['ayahs'], hasLength(7));
+      expect((json['ayahs'] as List<dynamic>).first, containsPair('number', 1));
+      expect(
+        (json['ayahs'] as List<dynamic>).first,
+        containsPair('numberInSurah', 1),
+      );
     });
   });
 

@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'prayer_times_response.g.dart';
 
+// TODO: Verify JSON field casing
 @JsonSerializable(includeIfNull: false, explicitToJson: true)
 class PrayerTimesResponse {
   @JsonKey(fromJson: _parseIntOrZero)
@@ -32,6 +33,7 @@ class Data {
   Map<String, dynamic> toJson() => _$DataToJson(this);
 }
 
+// TODO: Verify JSON field casing
 @JsonSerializable(includeIfNull: false)
 class Timings {
   @JsonKey(name: 'Fajr', fromJson: _parseString)

@@ -6,6 +6,7 @@ part 'base_response.g.dart';
 ///
 /// Generic response wrapper that can be used for all API responses.
 /// Contains common fields like status, message, and data.
+// TODO: Verify JSON field casing
 @JsonSerializable(genericArgumentFactories: true, includeIfNull: false)
 class BaseResponse<T> {
   final bool status;

@@ -34,6 +34,9 @@ class NotificationRouter {
       case 'prayer_time':
         _navigateToPrayerTimes(data);
         break;
+      case 'khatma':
+        _navigateToKhatma(data);
+        break;
       case 'general':
       default:
         _navigateToHome(data);
@@ -59,6 +62,13 @@ class NotificationRouter {
   static void _navigateToPrayerTimes(Map<String, dynamic>? data) {
     if (_onNavigate != null) {
       _onNavigate!('/prayers', data);
+    }
+  }
+
+  /// Navigate to the active Khatma area on the home screen.
+  static void _navigateToKhatma(Map<String, dynamic>? data) {
+    if (_onNavigate != null) {
+      _onNavigate!('/khatma', data);
     }
   }
 

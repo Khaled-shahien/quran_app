@@ -1,4 +1,3 @@
-
 /// Quran Verses Repository Interface
 ///
 /// Defines the contract for accessing Quran verses data

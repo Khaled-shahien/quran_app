@@ -104,9 +104,9 @@ Map<String, dynamic> _$KhatmaModelToJson(
   'reminder_hour': instance.reminderHour,
   'reminder_minute': instance.reminderMinute,
   'is_completed': instance.isCompleted,
-    'next_surah_number': instance.nextSurahNumber,
-    'next_ayah_number': instance.nextAyahNumber,
-    'next_page_number': instance.nextPageNumber,
+  'next_surah_number': instance.nextSurahNumber,
+  'next_ayah_number': instance.nextAyahNumber,
+  'next_page_number': instance.nextPageNumber,
   'daily_logs': instance.dailyLogs.map((e) => e.toJson()).toList(),
   'completed_wirds': instance.completedWirds.map((e) => e.toJson()).toList(),
 };
