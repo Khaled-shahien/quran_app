@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../domain/models/khatma_model.dart';
+import '../../domain/models/wird_reading_position.dart';
 import '../../data/repositories/khatma_repository.dart';
 import '../../domain/services/khatma_reminder_service.dart';
 import '../../data/services/local_khatma_reminder_service.dart';
@@ -13,6 +14,7 @@ class KhatmaProvider extends ChangeNotifier {
   final KhatmaReminderService _reminderService;
   final KhatmaQuranLocator _quranLocator;
   KhatmaModel? _activeKhatma;
+  WirdReadingPosition? _savedWirdPosition;
 
   KhatmaProvider({
     required this.repository,
@@ -28,13 +30,28 @@ class KhatmaProvider extends ChangeNotifier {
 
   double get progressValue => _activeKhatma?.progress ?? 0;
 
+  WirdReadingPosition? get savedWirdPosition {
+    final KhatmaModel? khatma = _activeKhatma;
+    if (khatma == null) return null;
+    return savedWirdPositionFor(khatma);
+  }
+
   KhatmaReportSummary? get weeklySummary => _activeKhatma?.summaryForDays(7);
 
   KhatmaReportSummary? get monthlySummary => _activeKhatma?.summaryForDays(30);
 
   void _loadActiveKhatma() {
     _activeKhatma = repository.getActiveKhatma();
+    _savedWirdPosition = repository.getSavedWirdPosition();
     notifyListeners();
+  }
+
+  WirdReadingPosition? savedWirdPositionFor(KhatmaModel khatma) {
+    final WirdReadingPosition? position = _savedWirdPosition;
+    if (position == null || !position.matchesCurrentWird(khatma)) {
+      return null;
+    }
+    return position;
   }
 
   Future<void> startNewKhatma(KhatmaModel khatma) async {
@@ -50,10 +67,46 @@ class KhatmaProvider extends ChangeNotifier {
       nextPageNumber: startPosition.pageNumber,
     );
 
+    await repository.clearWirdPosition();
+    _savedWirdPosition = null;
     await repository.saveKhatma(enriched);
     _activeKhatma = enriched;
     await _scheduleKhatmaReminder(enriched);
     notifyListeners();
+  }
+
+  Future<bool> saveWirdPosition({
+    required String trackingUnitValue,
+    required int fromUnit,
+    required int toUnit,
+    required int surahNumber,
+    required int ayahNumber,
+    required int pageNumber,
+    required int pageIndex,
+  }) async {
+    final KhatmaModel? khatma = _activeKhatma;
+    if (khatma == null || khatma.isCompleted) return false;
+
+    final WirdReadingPosition position = WirdReadingPosition(
+      khatmaId: khatma.id,
+      trackingUnit: KhatmaTrackingUnitX.fromStorage(trackingUnitValue),
+      fromUnit: fromUnit,
+      toUnit: toUnit,
+      surahNumber: surahNumber,
+      ayahNumber: ayahNumber,
+      pageNumber: pageNumber,
+      pageIndex: pageIndex,
+      savedAt: DateTime.now(),
+    );
+
+    if (!position.matchesCurrentWird(khatma)) {
+      return false;
+    }
+
+    await repository.saveWirdPosition(position);
+    _savedWirdPosition = position;
+    notifyListeners();
+    return true;
   }
 
   Future<void> markCurrentWirdAsFinished() async {
@@ -127,7 +180,9 @@ class KhatmaProvider extends ChangeNotifier {
     );
 
     await repository.saveKhatma(updatedKhatma);
+    await repository.clearWirdPosition();
     _activeKhatma = updatedKhatma;
+    _savedWirdPosition = null;
 
     if (completed) {
       await _reminderService.cancelReminder(_khatmaReminderNotificationId);
@@ -145,8 +200,10 @@ class KhatmaProvider extends ChangeNotifier {
       completedUnits: current.plannedUnits.toDouble(),
     );
     await repository.saveKhatma(updatedKhatma);
+    await repository.clearWirdPosition();
     await _reminderService.cancelReminder(_khatmaReminderNotificationId);
     _activeKhatma = updatedKhatma;
+    _savedWirdPosition = null;
     notifyListeners();
   }
 
@@ -267,7 +324,9 @@ class KhatmaProvider extends ChangeNotifier {
   Future<void> cancelKhatma() async {
     await _reminderService.cancelReminder(_khatmaReminderNotificationId);
     await repository.deleteActiveKhatma();
+    await repository.clearWirdPosition();
     _activeKhatma = null;
+    _savedWirdPosition = null;
     notifyListeners();
   }
 

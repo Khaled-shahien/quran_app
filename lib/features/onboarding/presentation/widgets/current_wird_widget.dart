@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../khatma/domain/models/khatma_model.dart';
+import '../../../khatma/domain/models/wird_reading_position.dart';
 import '../../../khatma/domain/services/khatma_quran_locator.dart';
 import '../../../quran/domain/entities/surah_entity.dart';
 import '../../../quran/domain/repositories/surah_repository.dart';
@@ -49,6 +50,9 @@ class CurrentWirdWidget extends StatelessWidget {
     return Consumer<KhatmaProvider>(
       builder: (context, khatmaProvider, child) {
         final activeKhatma = khatmaProvider.activeKhatma;
+        final WirdReadingPosition? savedPosition = activeKhatma == null
+            ? null
+            : khatmaProvider.savedWirdPositionFor(activeKhatma);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -158,6 +162,32 @@ class CurrentWirdWidget extends StatelessWidget {
                           ),
                           textAlign: TextAlign.right,
                         ),
+                        if (savedPosition != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'يوجد موضع محفوظ لاستكمال الورد',
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: primaryColor,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.bookmark,
+                                size: 16,
+                                color: primaryColor,
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 24),
 
                         // Action Buttons
@@ -446,8 +476,24 @@ class CurrentWirdWidget extends StatelessWidget {
       context,
       listen: false,
     );
-    final KhatmaAyahPosition position = await _quranLocator
-        .resolvePositionFromStoredOrUnit(khatma: khatma);
+    final KhatmaProvider khatmaProvider = Provider.of<KhatmaProvider>(
+      context,
+      listen: false,
+    );
+    final WirdReadingPosition? savedPosition = khatmaProvider
+        .savedWirdPositionFor(khatma);
+
+    final int targetSurahNumber;
+    final int targetAyahNumber;
+    if (savedPosition != null) {
+      targetSurahNumber = savedPosition.surahNumber;
+      targetAyahNumber = savedPosition.ayahNumber;
+    } else {
+      final KhatmaAyahPosition position = await _quranLocator
+          .resolvePositionFromStoredOrUnit(khatma: khatma);
+      targetSurahNumber = position.surahNumber;
+      targetAyahNumber = position.ayahNumber;
+    }
 
     final List<SurahEntity> surahs = await surahRepository.getAllSurahs();
     if (surahs.isEmpty) {
@@ -459,7 +505,7 @@ class CurrentWirdWidget extends StatelessWidget {
     }
 
     final SurahEntity targetSurah = surahs.firstWhere(
-      (surah) => surah.number == position.surahNumber,
+      (surah) => surah.number == targetSurahNumber,
       orElse: () => surahs.first,
     );
 
@@ -469,7 +515,8 @@ class CurrentWirdWidget extends StatelessWidget {
       '/quran/surah/${targetSurah.number}',
       extra: <String, dynamic>{
         'surah': targetSurah,
-        'initialAyahNumber': position.ayahNumber,
+        'initialSurahNumber': targetSurahNumber,
+        'initialAyahNumber': targetAyahNumber,
         'rangeTrackingUnit': khatma.trackingUnit.storageValue,
         'rangeFromUnit': khatma.todayFromUnit,
         'rangeToUnit': khatma.todayToUnit,

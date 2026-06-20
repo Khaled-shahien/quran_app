@@ -7,19 +7,45 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entities/surah_entity.dart';
+import '../../../khatma/presentation/providers/khatma_provider.dart';
 import '../providers/bookmark_provider.dart';
 import '../widgets/quran_settings_dialog.dart';
 
 class _SurahPageData {
-  final List<String> verses;
+  final List<_SurahVerseData> verses;
   final int startVerseIndex;
 
   _SurahPageData(this.verses, this.startVerseIndex);
 }
 
+class _SurahVerseData {
+  final String text;
+  final int surahNumber;
+  final int verseNumber;
+  final int pageNumber;
+  final String surahName;
+  final String revelationType;
+  final int totalAyah;
+  final bool showSurahHeader;
+  final bool showBasmala;
+
+  const _SurahVerseData({
+    required this.text,
+    required this.surahNumber,
+    required this.verseNumber,
+    required this.pageNumber,
+    required this.surahName,
+    required this.revelationType,
+    required this.totalAyah,
+    this.showSurahHeader = false,
+    this.showBasmala = false,
+  });
+}
+
 class SurahDetailsScreen extends StatefulWidget {
   final SurahEntity surah;
   final int surahNumber;
+  final int? initialSurahNumber;
   final int? initialAyahNumber;
   final int? initialPageNumber;
   final String? rangeTrackingUnit;
@@ -30,6 +56,7 @@ class SurahDetailsScreen extends StatefulWidget {
     super.key,
     required this.surah,
     required this.surahNumber,
+    this.initialSurahNumber,
     this.initialAyahNumber,
     this.initialPageNumber,
     this.rangeTrackingUnit,
@@ -53,6 +80,19 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   double _lineHeight = 1.95;
   bool _showVerseMarkers = true;
   bool _immersiveMode = false;
+
+  bool get _hasUnitRange =>
+      widget.rangeTrackingUnit != null &&
+      widget.rangeFromUnit != null &&
+      widget.rangeToUnit != null;
+
+  _SurahVerseData? get _currentPageLeadVerse {
+    if (_surahPages.isEmpty) return null;
+    final int pageIndex = _currentSurahPage.clamp(0, _surahPages.length - 1);
+    final List<_SurahVerseData> verses = _surahPages[pageIndex].verses;
+    if (verses.isEmpty) return null;
+    return verses.first;
+  }
 
   @override
   void initState() {
@@ -110,12 +150,15 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       return false;
     }
 
+    final int targetSurah = widget.initialSurahNumber ?? widget.surahNumber;
     int targetPage = 0;
     for (int i = 0; i < _surahPages.length; i++) {
       final _SurahPageData page = _surahPages[i];
-      final int start = page.startVerseIndex + 1;
-      final int end = start + page.verses.length - 1;
-      if (targetAyah >= start && targetAyah <= end) {
+      final bool hasTarget = page.verses.any(
+        (verse) =>
+            verse.surahNumber == targetSurah && verse.verseNumber == targetAyah,
+      );
+      if (hasTarget) {
         targetPage = i;
         break;
       }
@@ -160,6 +203,64 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     }
   }
 
+  List<Map<String, dynamic>> _ayahsForSurah(Map<String, dynamic> surahData) {
+    if (surahData.isEmpty) return <Map<String, dynamic>>[];
+
+    final int surahNumber =
+        (surahData['number'] as num?)?.toInt() ?? widget.surahNumber;
+    final List<dynamic> ayahs =
+        surahData['ayahs'] as List<dynamic>? ?? <dynamic>[];
+
+    return ayahs.map((ayah) {
+      final Map<String, dynamic> mapped = Map<String, dynamic>.from(
+        ayah as Map,
+      );
+      mapped['_surahNumber'] = surahNumber;
+      mapped['_surahName'] = surahData['name']?.toString() ?? '';
+      mapped['_surahRevelationType'] =
+          surahData['revelationType']?.toString() ?? '';
+      mapped['_surahTotalAyah'] =
+          (surahData['numberOfAyahs'] as num?)?.toInt() ??
+          (surahData['ayahs'] as List<dynamic>? ?? <dynamic>[]).length;
+      return mapped;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _ayahsForUnitRange({
+    required List<Map<String, dynamic>> quran,
+    required int minUnit,
+    required int maxUnit,
+  }) {
+    final List<Map<String, dynamic>> selected = <Map<String, dynamic>>[];
+
+    for (final Map<String, dynamic> surah in quran) {
+      final int surahNumber =
+          (surah['number'] as num?)?.toInt() ?? widget.surahNumber;
+      final List<dynamic> ayahs =
+          surah['ayahs'] as List<dynamic>? ?? <dynamic>[];
+
+      for (final dynamic rawAyah in ayahs) {
+        final Map<String, dynamic> ayah = Map<String, dynamic>.from(
+          rawAyah as Map,
+        );
+        final int? unitValue = _unitValueForAyah(ayah);
+        if (unitValue == null || unitValue < minUnit || unitValue > maxUnit) {
+          continue;
+        }
+
+        ayah['_surahNumber'] = surahNumber;
+        ayah['_surahName'] = surah['name']?.toString() ?? '';
+        ayah['_surahRevelationType'] =
+            surah['revelationType']?.toString() ?? '';
+        ayah['_surahTotalAyah'] =
+            (surah['numberOfAyahs'] as num?)?.toInt() ?? ayahs.length;
+        selected.add(ayah);
+      }
+    }
+
+    return selected;
+  }
+
   Future<void> _loadVerses() async {
     setState(() {
       _isLoading = true;
@@ -172,66 +273,95 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       );
       final List<dynamic> jsonData = jsonDecode(jsonString) as List<dynamic>;
 
-      final Map<String, dynamic> surahData = jsonData
+      final List<Map<String, dynamic>> quran = jsonData
           .map((item) => Map<String, dynamic>.from(item as Map))
-          .firstWhere(
-            (item) => item['number'] == widget.surahNumber,
-            orElse: () => <String, dynamic>{},
-          );
+          .toList();
 
-      final List<Map<String, dynamic>> surahAyahs = surahData.isEmpty
-          ? <Map<String, dynamic>>[]
-          : (surahData['ayahs'] as List<dynamic>? ?? <dynamic>[])
-                .map((ayah) => Map<String, dynamic>.from(ayah as Map))
-                .toList();
+      final Map<String, dynamic> surahData = quran.firstWhere(
+        (item) => item['number'] == widget.surahNumber,
+        orElse: () => <String, dynamic>{},
+      );
+
+      final List<Map<String, dynamic>> surahAyahs = _ayahsForSurah(surahData);
 
       final int? rangeFromUnit = widget.rangeFromUnit;
       final int? rangeToUnit = widget.rangeToUnit;
-      final bool hasRange =
-          widget.rangeTrackingUnit != null &&
-          rangeFromUnit != null &&
-          rangeToUnit != null;
+      final bool hasRange = _hasUnitRange;
 
       final int minUnit;
       final int maxUnit;
       if (hasRange) {
-        minUnit = rangeFromUnit <= rangeToUnit ? rangeFromUnit : rangeToUnit;
-        maxUnit = rangeFromUnit <= rangeToUnit ? rangeToUnit : rangeFromUnit;
+        final int fromUnit = rangeFromUnit!;
+        final int toUnit = rangeToUnit!;
+        minUnit = fromUnit <= toUnit ? fromUnit : toUnit;
+        maxUnit = fromUnit <= toUnit ? toUnit : fromUnit;
       } else {
         minUnit = 0;
         maxUnit = 0;
       }
 
       final List<Map<String, dynamic>> selectedAyahs = hasRange
-          ? surahAyahs.where((ayah) {
-              final int? unitValue = _unitValueForAyah(ayah);
-              if (unitValue == null) return false;
-              return unitValue >= minUnit && unitValue <= maxUnit;
-            }).toList()
+          // Khatma ranges can cross Surah boundaries, especially Juz 1.
+          ? _ayahsForUnitRange(quran: quran, minUnit: minUnit, maxUnit: maxUnit)
           : surahAyahs;
 
       final List<_SurahPageData> paginatedVerses = [];
-      List<String> currentPageVerses = [];
+      List<_SurahVerseData> currentPageVerses = [];
       int currentLength = 0;
       int? currentPageStartVerseIndex;
+      int? currentRangeSurahNumber;
       const int maxCharsPerPage = 550;
 
       for (int i = 0; i < selectedAyahs.length; i++) {
         final Map<String, dynamic> ayah = selectedAyahs[i];
         final String verseText = (ayah['text'] as String? ?? '').trim();
         final int verseNumber = (ayah['numberInSurah'] as num?)?.toInt() ?? 1;
+        final int pageNumber = (ayah['page'] as num?)?.toInt() ?? 1;
+        final int surahNumber =
+            (ayah['_surahNumber'] as num?)?.toInt() ?? widget.surahNumber;
         if (verseText.isEmpty) {
           continue;
         }
 
+        final bool showSurahHeader =
+            hasRange && surahNumber != currentRangeSurahNumber;
+        if (showSurahHeader) {
+          if (currentPageVerses.isNotEmpty &&
+              currentPageStartVerseIndex != null) {
+            paginatedVerses.add(
+              _SurahPageData(
+                List<_SurahVerseData>.from(currentPageVerses),
+                currentPageStartVerseIndex,
+              ),
+            );
+            currentPageVerses = [];
+            currentLength = 0;
+            currentPageStartVerseIndex = null;
+          }
+          currentRangeSurahNumber = surahNumber;
+          currentLength += 180;
+        }
+
         currentPageStartVerseIndex ??= (verseNumber - 1).clamp(0, 9999);
-        currentPageVerses.add(verseText);
+        currentPageVerses.add(
+          _SurahVerseData(
+            text: verseText,
+            surahNumber: surahNumber,
+            verseNumber: verseNumber,
+            pageNumber: pageNumber,
+            surahName: ayah['_surahName']?.toString() ?? '',
+            revelationType: ayah['_surahRevelationType']?.toString() ?? '',
+            totalAyah: (ayah['_surahTotalAyah'] as num?)?.toInt() ?? 0,
+            showSurahHeader: showSurahHeader,
+            showBasmala: false,
+          ),
+        );
         currentLength += verseText.length;
 
         if (currentLength >= maxCharsPerPage) {
           paginatedVerses.add(
             _SurahPageData(
-              List<String>.from(currentPageVerses),
+              List<_SurahVerseData>.from(currentPageVerses),
               currentPageStartVerseIndex,
             ),
           );
@@ -244,7 +374,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       if (currentPageVerses.isNotEmpty && currentPageStartVerseIndex != null) {
         paginatedVerses.add(
           _SurahPageData(
-            List<String>.from(currentPageVerses),
+            List<_SurahVerseData>.from(currentPageVerses),
             currentPageStartVerseIndex,
           ),
         );
@@ -285,7 +415,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         top: !_immersiveMode,
         child: Column(
           children: [
-            if (!_immersiveMode && widget.surahNumber != 9)
+            if (!_immersiveMode && !_hasUnitRange && widget.surahNumber != 9)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),
                 padding: const EdgeInsets.symmetric(
@@ -328,6 +458,13 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
 
   PreferredSizeWidget _buildAppBar(ThemeData theme) {
     final Color primary = theme.colorScheme.primary;
+    final _SurahVerseData? currentVerse = _hasUnitRange
+        ? _currentPageLeadVerse
+        : null;
+    final String title = currentVerse?.surahName ?? widget.surah.name;
+    final String revelationType =
+        currentVerse?.revelationType ?? widget.surah.revelationType;
+    final int totalAyah = currentVerse?.totalAyah ?? widget.surah.totalAyah;
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -346,7 +483,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.surah.name,
+              title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -359,8 +496,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              '${_revelationLabel(widget.surah.revelationType)} '
-              '• ${widget.surah.totalAyah} آية',
+              '${_revelationLabel(revelationType)} • $totalAyah آية',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -601,7 +737,10 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                                 height: _lineHeight,
                                 fontWeight: FontWeight.w500,
                               ),
-                              children: _buildVersesWithNumbers(pageData),
+                              children: _buildVersesWithNumbers(
+                                pageData,
+                                constraints.maxWidth,
+                              ),
                             ),
                             textAlign: TextAlign.justify,
                           ),
@@ -618,14 +757,30 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     );
   }
 
-  List<InlineSpan> _buildVersesWithNumbers(_SurahPageData pageData) {
+  List<InlineSpan> _buildVersesWithNumbers(
+    _SurahPageData pageData,
+    double pageWidth,
+  ) {
     final List<InlineSpan> spans = [];
 
     for (int i = 0; i < pageData.verses.length; i++) {
-      final String verseText = pageData.verses[i];
-      final int verseNumber = pageData.startVerseIndex + i + 1;
+      final _SurahVerseData verse = pageData.verses[i];
 
-      spans.add(TextSpan(text: '$verseText  '));
+      if (verse.showSurahHeader) {
+        if (spans.isNotEmpty) {
+          spans.add(const TextSpan(text: '\n'));
+        }
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: _buildSurahHeader(verse, pageWidth),
+          ),
+        );
+        spans.add(const TextSpan(text: '\n'));
+      }
+
+      spans.add(TextSpan(text: '${verse.text}  '));
 
       if (_showVerseMarkers) {
         spans.add(
@@ -645,7 +800,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 ).colorScheme.primary.withValues(alpha: 0.08),
               ),
               child: Text(
-                verseNumber.toString(),
+                verse.verseNumber.toString(),
                 style: TextStyle(
                   fontSize: _fontSize * 0.45,
                   fontWeight: FontWeight.bold,
@@ -666,24 +821,140 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     return spans;
   }
 
+  Widget _buildSurahHeader(_SurahVerseData verse, double pageWidth) {
+    final ThemeData theme = Theme.of(context);
+    final Color primary = theme.colorScheme.primary;
+    final double headerWidth = pageWidth.clamp(180.0, 720.0);
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: SizedBox(
+        width: headerWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                key: Key('surah-header-${verse.surahNumber}'),
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 10, bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: primary.withValues(alpha: 0.18)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      verse.surahName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.amiri(
+                        fontSize: (_fontSize * 0.82).clamp(20.0, 28.0),
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_revelationLabel(verse.revelationType)} '
+                      '• ${verse.totalAyah} آية',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: primary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (verse.showBasmala)
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  key: Key('surah-basmala-${verse.surahNumber}'),
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: primary.withValues(alpha: 0.14)),
+                  ),
+                  child: Text(
+                    'بِسْمِ اللَّهِ '
+                    'الرَّحْمَٰنِ الرَّحِيمِ',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.amiri(
+                      fontSize: (_fontSize * 0.78).clamp(19.0, 26.0),
+                      fontWeight: FontWeight.bold,
+                      color: primary,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _saveBookmark() async {
     final bookmarkProvider = Provider.of<BookmarkProvider>(
       context,
       listen: false,
     );
+    final KhatmaProvider? khatmaProvider = _hasUnitRange
+        ? Provider.of<KhatmaProvider?>(context, listen: false)
+        : null;
+    final _SurahVerseData? currentVerse = _currentPageLeadVerse;
+
     await bookmarkProvider.saveBookmark(
       surahNumber: widget.surahNumber,
       surahName: widget.surah.name,
       pageIndex: _currentSurahPage,
     );
 
+    bool savedWirdPosition = false;
+    if (_hasUnitRange && currentVerse != null && khatmaProvider != null) {
+      savedWirdPosition = await khatmaProvider.saveWirdPosition(
+        trackingUnitValue: widget.rangeTrackingUnit!,
+        fromUnit: widget.rangeFromUnit!,
+        toUnit: widget.rangeToUnit!,
+        surahNumber: currentVerse.surahNumber,
+        ayahNumber: currentVerse.verseNumber,
+        pageNumber: currentVerse.pageNumber,
+        pageIndex: _currentSurahPage,
+      );
+    }
+
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'تم حفظ علامة القراءة بنجاح',
-          style: TextStyle(fontFamily: 'Amiri', fontSize: 16),
+        content: Text(
+          savedWirdPosition
+              ? 'تم حفظ موضع الورد الحالي'
+              : 'تم حفظ علامة القراءة بنجاح',
+          style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
           textAlign: TextAlign.center,
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,

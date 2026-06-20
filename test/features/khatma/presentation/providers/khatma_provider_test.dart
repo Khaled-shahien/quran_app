@@ -93,6 +93,68 @@ void main() {
     expect(active.isCompleted, isFalse);
   });
 
+  test(
+    'saved wird position is cleared when current wird is finished',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repository = KhatmaRepository(prefs: prefs);
+      final reminders = FakeKhatmaReminderService();
+
+      final provider = KhatmaProvider(
+        repository: repository,
+        reminderService: reminders,
+      );
+
+      await provider.startNewKhatma(_baseKhatma());
+      final bool saved = await provider.saveWirdPosition(
+        trackingUnitValue: 'juz',
+        fromUnit: 1,
+        toUnit: 1,
+        surahNumber: 2,
+        ayahNumber: 20,
+        pageNumber: 4,
+        pageIndex: 1,
+      );
+
+      expect(saved, isTrue);
+      expect(provider.savedWirdPosition, isNotNull);
+      expect(repository.getSavedWirdPosition(), isNotNull);
+
+      await provider.markCurrentWirdAsFinished();
+
+      expect(provider.savedWirdPosition, isNull);
+      expect(repository.getSavedWirdPosition(), isNull);
+    },
+  );
+
+  test('saved wird position ignores a different current range', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final repository = KhatmaRepository(prefs: prefs);
+    final reminders = FakeKhatmaReminderService();
+
+    final provider = KhatmaProvider(
+      repository: repository,
+      reminderService: reminders,
+    );
+
+    await provider.startNewKhatma(_baseKhatma());
+    final bool saved = await provider.saveWirdPosition(
+      trackingUnitValue: 'juz',
+      fromUnit: 2,
+      toUnit: 2,
+      surahNumber: 2,
+      ayahNumber: 142,
+      pageNumber: 22,
+      pageIndex: 0,
+    );
+
+    expect(saved, isFalse);
+    expect(provider.savedWirdPosition, isNull);
+    expect(repository.getSavedWirdPosition(), isNull);
+  });
+
   test('markCurrentWirdAsFinished cancels reminder on completion', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

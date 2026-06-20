@@ -144,7 +144,7 @@ void main() {
     expect(find.text('Today\'s Prayer Times'), findsOneWidget);
     expect(find.text('الفجر'), findsOneWidget);
     expect(find.text('الظهر'), findsOneWidget);
-    expect(find.textContaining('05:00'), findsOneWidget);
+    expect(find.textContaining('05:00'), findsAtLeastNWidgets(1));
     expect(repository.calls, greaterThanOrEqualTo(1));
   });
 

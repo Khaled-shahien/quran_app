@@ -43,8 +43,12 @@ final GoRouter appRouter = GoRouter(
         final Map<String, dynamic>? extra =
             state.extra as Map<String, dynamic>?;
         final SurahEntity? surah = extra?['surah'] as SurahEntity?;
-        final int? initialAyahNumber = extra?['initialAyahNumber'] as int?;
-        final int? initialPageNumber = extra?['initialPageNumber'] as int?;
+        final int? initialSurahNumber = (extra?['initialSurahNumber'] as num?)
+            ?.toInt();
+        final int? initialAyahNumber = (extra?['initialAyahNumber'] as num?)
+            ?.toInt();
+        final int? initialPageNumber = (extra?['initialPageNumber'] as num?)
+            ?.toInt();
         final String? rangeTrackingUnit =
             extra?['rangeTrackingUnit'] as String?;
         final int? rangeFromUnit = (extra?['rangeFromUnit'] as num?)?.toInt();
@@ -61,6 +65,7 @@ final GoRouter appRouter = GoRouter(
         if (surah == null) {
           return _SurahDetailsRouteLoader(
             surahNumber: surahNumber,
+            initialSurahNumber: initialSurahNumber,
             initialAyahNumber: initialAyahNumber,
             initialPageNumber: initialPageNumber,
             rangeTrackingUnit: rangeTrackingUnit,
@@ -72,6 +77,7 @@ final GoRouter appRouter = GoRouter(
         return SurahDetailsScreen(
           surah: surah,
           surahNumber: surahNumber,
+          initialSurahNumber: initialSurahNumber,
           initialAyahNumber: initialAyahNumber,
           initialPageNumber: initialPageNumber,
           rangeTrackingUnit: rangeTrackingUnit,
@@ -184,6 +190,7 @@ class _RouteDataErrorScreen extends StatelessWidget {
 
 class _SurahDetailsRouteLoader extends StatelessWidget {
   final int surahNumber;
+  final int? initialSurahNumber;
   final int? initialAyahNumber;
   final int? initialPageNumber;
   final String? rangeTrackingUnit;
@@ -192,6 +199,7 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
 
   const _SurahDetailsRouteLoader({
     required this.surahNumber,
+    this.initialSurahNumber,
     this.initialAyahNumber,
     this.initialPageNumber,
     this.rangeTrackingUnit,
@@ -222,6 +230,7 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
         return SurahDetailsScreen(
           surah: surah,
           surahNumber: surahNumber,
+          initialSurahNumber: initialSurahNumber,
           initialAyahNumber: initialAyahNumber,
           initialPageNumber: initialPageNumber,
           rangeTrackingUnit: rangeTrackingUnit,

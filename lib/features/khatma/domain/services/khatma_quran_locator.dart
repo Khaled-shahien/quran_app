@@ -98,6 +98,35 @@ class KhatmaQuranLocator {
     );
   }
 
+  Future<List<KhatmaAyahPosition>> resolvePositionsForUnitRange({
+    required KhatmaTrackingUnit trackingUnit,
+    required int fromUnit,
+    required int toUnit,
+  }) async {
+    final List<Map<String, dynamic>> quran = await _loadQuran();
+    final int minUnit = fromUnit <= toUnit ? fromUnit : toUnit;
+    final int maxUnit = fromUnit <= toUnit ? toUnit : fromUnit;
+    final List<KhatmaAyahPosition> positions = <KhatmaAyahPosition>[];
+
+    for (final Map<String, dynamic> surah in quran) {
+      final List<dynamic> ayahs =
+          surah['ayahs'] as List<dynamic>? ?? <dynamic>[];
+      for (final dynamic rawAyah in ayahs) {
+        final Map<String, dynamic> ayah = Map<String, dynamic>.from(
+          rawAyah as Map,
+        );
+        final int? unitValue = _unitValueForTrackingUnit(trackingUnit, ayah);
+        if (unitValue == null || unitValue < minUnit || unitValue > maxUnit) {
+          continue;
+        }
+
+        positions.add(_positionFromAyah(surah: surah, ayah: ayah));
+      }
+    }
+
+    return positions;
+  }
+
   Future<KhatmaAyahPosition> resolvePositionFromStoredOrUnit({
     required KhatmaModel khatma,
   }) async {
@@ -183,6 +212,35 @@ class KhatmaQuranLocator {
         }
       }
     }
+  }
+
+  int? _unitValueForTrackingUnit(
+    KhatmaTrackingUnit trackingUnit,
+    Map<String, dynamic> ayah,
+  ) {
+    switch (trackingUnit) {
+      case KhatmaTrackingUnit.page:
+        return (ayah['page'] as num?)?.toInt();
+      case KhatmaTrackingUnit.hizb:
+        final int? hizbQuarter = (ayah['hizbQuarter'] as num?)?.toInt();
+        if (hizbQuarter == null) return null;
+        return ((hizbQuarter - 1) ~/ 2) + 1;
+      case KhatmaTrackingUnit.juz:
+        return (ayah['juz'] as num?)?.toInt();
+    }
+  }
+
+  KhatmaAyahPosition _positionFromAyah({
+    required Map<String, dynamic> surah,
+    required Map<String, dynamic> ayah,
+  }) {
+    return KhatmaAyahPosition(
+      surahNumber: (surah['number'] as num?)?.toInt() ?? 1,
+      ayahNumber: (ayah['numberInSurah'] as num?)?.toInt() ?? 1,
+      pageNumber: (ayah['page'] as num?)?.toInt() ?? 1,
+      surahName: surah['name']?.toString() ?? '',
+      ayahText: ayah['text']?.toString() ?? '',
+    );
   }
 
   Future<List<Map<String, dynamic>>> _loadQuran() async {

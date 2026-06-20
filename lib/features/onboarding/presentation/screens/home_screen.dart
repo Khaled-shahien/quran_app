@@ -583,6 +583,7 @@ class _HomeScreenState extends State<HomeScreen> {
       '/quran/surah/${targetSurah.number}',
       extra: <String, dynamic>{
         'surah': targetSurah,
+        'initialSurahNumber': position.surahNumber,
         'initialAyahNumber': position.ayahNumber,
         'rangeTrackingUnit': khatma.trackingUnit.storageValue,
         'rangeFromUnit': unitIndex,
