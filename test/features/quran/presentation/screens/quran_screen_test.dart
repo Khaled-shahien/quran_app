@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:quran_app/core/widgets/pulse_loader.dart';
 import 'package:quran_app/features/quran/domain/entities/surah_entity.dart';
 import 'package:quran_app/features/quran/domain/repositories/surah_repository.dart';
 import 'package:quran_app/features/quran/presentation/providers/bookmark_provider.dart';
@@ -123,7 +124,7 @@ void main() {
 
     await tester.pumpWidget(buildQuranTestApp(repository: repository));
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PulseLoader), findsOneWidget);
   });
 
   testWidgets('keeps unknown revelation type as is', (tester) async {

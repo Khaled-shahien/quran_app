@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:quran_app/core/theme/app_colors.dart';
+import 'package:quran_app/core/widgets/pulse_loader.dart';
 import 'package:quran_app/features/prayers/presentation/providers/'
     'prayer_times_performance_provider.dart';
 
@@ -81,14 +82,13 @@ class _RefreshButton extends StatelessWidget {
         return IconButton(
           onPressed: provider.isLoading ? null : () => provider.refresh(),
           icon: provider.isLoading
-              ? SizedBox(
+              ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
-                    ),
+                  child: PulseLoader(
+                    lines: 1,
+                    lineHeight: 4,
+                    padding: EdgeInsets.zero,
                   ),
                 )
               : Icon(
@@ -136,16 +136,12 @@ class _LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text('جاري تحميل أوقات الصلاة...'),
+          PulseLoader(lines: 3),
+          SizedBox(height: 16),
+          Text('جاري تحميل أوقات الصلاة...'),
         ],
       ),
     );

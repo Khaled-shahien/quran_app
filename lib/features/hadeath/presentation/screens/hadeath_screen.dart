@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../providers/hadeath_provider.dart';
 import '../widgets/hadeath_card.dart';
 
@@ -53,13 +54,7 @@ class _HadeathScreenState extends State<HadeathScreen> {
           child: Consumer<HadeathProvider>(
             builder: (context, provider, child) {
               if (provider.isLoading) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                );
+                return const Center(child: PulseLoader(lines: 6));
               }
 
               if (provider.errorMessage != null) {

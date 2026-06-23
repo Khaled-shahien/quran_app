@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import 'package:quran_app/core/widgets/pulse_loader.dart';
 import 'package:quran_app/features/hadeath/domain/entities/hadeath_entity.dart';
 import 'package:quran_app/features/hadeath/domain/repositories/hadeath_repository.dart';
 import 'package:quran_app/features/hadeath/presentation/providers/hadeath_provider.dart';
@@ -69,7 +70,7 @@ void main() {
     await tester.pumpWidget(buildScreen(repo));
     await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PulseLoader), findsOneWidget);
 
     completer.complete(const <HadeathEntity>[
       HadeathEntity(title: 'حديث عن الصدق', content: <String>['نص الحديث']),
@@ -77,7 +78,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(PulseLoader), findsNothing);
     expect(find.text('حديث عن الصدق'), findsOneWidget);
   });
 

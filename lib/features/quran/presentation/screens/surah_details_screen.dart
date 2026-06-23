@@ -8,6 +8,10 @@ import 'package:provider/provider.dart';
 
 import '../../domain/entities/surah_entity.dart';
 import '../../../khatma/presentation/providers/khatma_provider.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../providers/bookmark_provider.dart';
 import '../widgets/quran_settings_dialog.dart';
 
@@ -80,6 +84,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   double _lineHeight = 1.95;
   bool _showVerseMarkers = true;
   bool _immersiveMode = false;
+  bool _pagePressed = false;
 
   bool get _hasUnitRange =>
       widget.rangeTrackingUnit != null &&
@@ -131,6 +136,13 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
 
     _pageController.dispose();
     _pageController = PageController(initialPage: pageIndex);
+  }
+
+  void _setPagePressed(bool pressed) {
+    if (_pagePressed == pressed || !mounted) return;
+    setState(() {
+      _pagePressed = pressed;
+    });
   }
 
   bool _focusInitialPageIfProvided() {
@@ -424,8 +436,9 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: pageSurface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: AppRadius.card,
                   border: Border.all(color: pageBorder),
+                  boxShadow: AppShadows.subtle,
                 ),
                 width: double.infinity,
                 child: SelectableText(
@@ -477,36 +490,55 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       titleSpacing: 4,
-      title: Container(
-        constraints: const BoxConstraints(maxWidth: 240),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.amiri(
-                fontSize: 21,
-                color: primary,
-                fontWeight: FontWeight.bold,
-                height: 1.15,
-              ),
+      title: AnimatedSwitcher(
+        duration: MediaQuery.of(context).disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          if (MediaQuery.of(context).disableAnimations) return child;
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
             ),
-            const SizedBox(height: 2),
-            Text(
-              '${_revelationLabel(revelationType)} • $totalAyah آية',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.cairo(
-                fontSize: 11,
-                color: primary.withValues(alpha: 0.72),
-                fontWeight: FontWeight.w600,
+          );
+        },
+        child: Container(
+          key: ValueKey<String>(title),
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.amiri(
+                  fontSize: 21,
+                  color: primary,
+                  fontWeight: FontWeight.bold,
+                  height: 1.15,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                '${_revelationLabel(revelationType)} • $totalAyah آية',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  fontSize: 11,
+                  color: primary.withValues(alpha: 0.72),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -527,12 +559,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             );
           },
         ),
-        _buildAppBarIconButton(
-          tooltip: 'حفظ العلامة',
-          icon: Icons.bookmark,
-          color: primary,
-          onPressed: _saveBookmark,
-        ),
+        _BookmarkButton(color: primary, onTap: _saveBookmark),
       ],
       centerTitle: true,
     );
@@ -574,74 +601,98 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     Color pageSurface,
     Color pageBorder,
   ) {
+    final int currentPage = _currentSurahPage + 1;
+    final int totalPages = _surahPages.length;
+    final double progress = totalPages == 0 ? 0 : currentPage / totalPages;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.92),
+        boxShadow: AppShadows.card,
+      ),
       child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
         decoration: BoxDecoration(
           color: pageSurface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border: Border.all(color: pageBorder),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            ClipRRect(
+              borderRadius: AppRadius.pill,
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: theme.colorScheme.secondary.withValues(
+                  alpha: 0.55,
+                ),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
+                _ReaderNavButton(
                   tooltip: 'الصفحة السابقة',
+                  icon: Icons.chevron_right,
                   onPressed: _currentSurahPage > 0
                       ? () => _pageController.previousPage(
                           duration: const Duration(milliseconds: 240),
                           curve: Curves.easeOut,
                         )
                       : null,
-                  icon: Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.primary,
-                  ),
                 ),
                 Expanded(
-                  child: Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: Slider(
-                      value: _currentSurahPage.toDouble(),
-                      min: 0,
-                      max: (_surahPages.length - 1).toDouble(),
-                      divisions: _surahPages.length > 1
-                          ? _surahPages.length - 1
-                          : 1,
-                      activeColor: theme.colorScheme.primary,
-                      inactiveColor: theme.colorScheme.secondary,
-                      onChanged: (value) {
-                        _pageController.jumpToPage(value.toInt());
-                      },
+                  child: AnimatedSwitcher(
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    transitionBuilder: (child, animation) {
+                      if (MediaQuery.of(context).disableAnimations) {
+                        return child;
+                      }
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.4),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'الصفحة $currentPage من $totalPages',
+                      key: ValueKey<int>(currentPage),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cairo(
+                        fontSize: 13,
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.78,
+                        ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                IconButton(
+                _ReaderNavButton(
                   tooltip: 'الصفحة التالية',
+                  icon: Icons.chevron_left,
                   onPressed: _currentSurahPage < _surahPages.length - 1
                       ? () => _pageController.nextPage(
                           duration: const Duration(milliseconds: 240),
                           curve: Curves.easeOut,
                         )
                       : null,
-                  icon: Icon(
-                    Icons.chevron_left,
-                    color: theme.colorScheme.primary,
-                  ),
                 ),
               ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                'انتقلت إلى الصفحة ${_currentSurahPage + 1}',
-                style: GoogleFonts.cairo(
-                  fontSize: 12,
-                  color: theme.colorScheme.primary.withValues(alpha: 0.75),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ],
         ),
@@ -655,11 +706,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     required Color pageBorder,
   }) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5D6363)),
-        ),
-      );
+      return const Center(child: PulseLoader(lines: 8));
     }
 
     if (_error != null) {
@@ -705,44 +752,50 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
 
             return Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: pageSurface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: pageBorder),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-                  child: SizedBox(
-                    width: constraints.maxWidth,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: constraints.maxWidth,
-                        child: Directionality(
-                          textDirection: TextDirection.rtl,
-                          child: SelectableText.rich(
-                            TextSpan(
-                              style: GoogleFonts.amiri(
-                                fontSize: _fontSize,
-                                color: textColor,
-                                height: _lineHeight,
-                                fontWeight: FontWeight.w500,
+              child: Listener(
+                onPointerDown: (_) => _setPagePressed(true),
+                onPointerUp: (_) => _setPagePressed(false),
+                onPointerCancel: (_) => _setPagePressed(false),
+                child: AnimatedContainer(
+                  duration: MediaQuery.of(context).disableAnimations
+                      ? Duration.zero
+                      : const Duration(milliseconds: 120),
+                  decoration: BoxDecoration(
+                    color: _pagePressed
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.07)
+                        : pageSurface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: pageBorder),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: SelectableText.rich(
+                              TextSpan(
+                                style: GoogleFonts.amiri(
+                                  fontSize: _fontSize,
+                                  color: textColor,
+                                  height: _lineHeight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                children: _buildVersesWithNumbers(
+                                  pageData,
+                                  constraints.maxWidth,
+                                ),
                               ),
-                              children: _buildVersesWithNumbers(
-                                pageData,
-                                constraints.maxWidth,
-                              ),
+                              textAlign: TextAlign.justify,
                             ),
-                            textAlign: TextAlign.justify,
                           ),
                         ),
                       ),
@@ -845,38 +898,53 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(14),
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.45),
+                  borderRadius: AppRadius.card,
                   border: Border.all(color: primary.withValues(alpha: 0.18)),
+                  boxShadow: AppShadows.subtle,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Row(
                   children: [
-                    Text(
-                      verse.surahName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.amiri(
-                        fontSize: (_fontSize * 0.82).clamp(20.0, 28.0),
-                        fontWeight: FontWeight.bold,
-                        color: primary,
-                        height: 1.2,
+                    Expanded(
+                      child: Divider(color: primary.withValues(alpha: 0.28)),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Flexible(
+                      flex: 4,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            verse.surahName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.amiri(
+                              fontSize: (_fontSize * 0.82).clamp(20.0, 28.0),
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_revelationLabel(verse.revelationType)} '
+                            '• ${verse.totalAyah} آية',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: primary.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_revelationLabel(verse.revelationType)} '
-                      '• ${verse.totalAyah} آية',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: primary.withValues(alpha: 0.7),
-                      ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Divider(color: primary.withValues(alpha: 0.28)),
                     ),
                   ],
                 ),
@@ -1059,6 +1127,100 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           },
         );
       },
+    );
+  }
+}
+
+class _BookmarkButton extends StatefulWidget {
+  final Color color;
+  final Future<void> Function() onTap;
+
+  const _BookmarkButton({required this.color, required this.onTap});
+
+  @override
+  State<_BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<_BookmarkButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      lowerBound: 0.85,
+      upperBound: 1,
+      value: 1,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    final bool disableAnimations = MediaQuery.of(context).disableAnimations;
+
+    await widget.onTap();
+
+    if (disableAnimations || !mounted) {
+      return;
+    }
+
+    await _controller.animateTo(0.85, curve: Curves.easeIn);
+    await _controller.animateTo(1, curve: Curves.elasticOut);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _controller,
+      child: IconButton(
+        tooltip: 'حفظ العلامة',
+        style: IconButton.styleFrom(
+          backgroundColor: widget.color.withValues(alpha: 0.1),
+          side: BorderSide(color: widget.color.withValues(alpha: 0.18)),
+        ),
+        icon: Icon(Icons.bookmark, color: widget.color),
+        onPressed: _handleTap,
+      ),
+    );
+  }
+}
+
+class _ReaderNavButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  const _ReaderNavButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
+    return IconButton(
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        backgroundColor: color.withValues(
+          alpha: onPressed == null ? 0.04 : 0.1,
+        ),
+        side: BorderSide(color: color.withValues(alpha: 0.14)),
+      ),
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        color: onPressed == null ? color.withValues(alpha: 0.35) : color,
+      ),
     );
   }
 }

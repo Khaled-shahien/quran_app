@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../khatma/domain/models/khatma_model.dart';
 import '../../../khatma/domain/models/wird_reading_position.dart';
 import '../../../khatma/domain/services/khatma_quran_locator.dart';
@@ -76,14 +78,8 @@ class CurrentWirdWidget extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     color: cardBgColor,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    borderRadius: AppRadius.card,
+                    boxShadow: AppShadows.card,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -363,14 +359,10 @@ class CurrentWirdWidget extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: activeKhatma.progress,
-                    minHeight: 12,
-                    backgroundColor: dividerColor,
-                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-                  ),
+                _KhatmaProgressBar(
+                  progress: activeKhatma.progress,
+                  fillColor: primaryColor,
+                  trackColor: dividerColor,
                 ),
                 const SizedBox(height: 12),
 
@@ -537,6 +529,46 @@ class CurrentWirdWidget extends StatelessWidget {
           : position.ayahText,
       reference:
           '${position.surahName} - الآية ${position.ayahNumber} - صفحة ${position.pageNumber}',
+    );
+  }
+}
+
+class _KhatmaProgressBar extends StatelessWidget {
+  final double progress;
+  final Color fillColor;
+  final Color trackColor;
+
+  const _KhatmaProgressBar({
+    required this.progress,
+    required this.fillColor,
+    required this.trackColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double safeProgress = progress.clamp(0.0, 1.0).toDouble();
+
+    Widget buildBar(double value) {
+      return ClipRRect(
+        borderRadius: AppRadius.pill,
+        child: LinearProgressIndicator(
+          value: value,
+          minHeight: 10,
+          backgroundColor: trackColor,
+          valueColor: AlwaysStoppedAnimation<Color>(fillColor),
+        ),
+      );
+    }
+
+    if (MediaQuery.of(context).disableAnimations) {
+      return buildBar(safeProgress);
+    }
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: safeProgress),
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => buildBar(value),
     );
   }
 }

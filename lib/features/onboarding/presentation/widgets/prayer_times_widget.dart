@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../../../prayers/presentation/providers/prayer_times_provider.dart';
 
 class PrayerTimesWidget extends StatefulWidget {
@@ -47,14 +48,10 @@ class _PrayerTimesWidgetState extends State<PrayerTimesWidget> {
     return Consumer<PrayerTimesProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
-              ),
+              padding: EdgeInsets.all(32),
+              child: PulseLoader(lines: 4),
             ),
           );
         }

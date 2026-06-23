@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../providers/prayer_times_provider.dart';
 
 /// Prayer Times Screen
@@ -61,7 +62,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: Consumer<PrayerTimesProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: PulseLoader(lines: 6));
             }
 
             if (provider.hasError) {

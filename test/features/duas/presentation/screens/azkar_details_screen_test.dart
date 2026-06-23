@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:quran_app/core/widgets/pulse_loader.dart';
 import 'package:quran_app/features/duas/data/models/azkar_model.dart';
 import 'package:quran_app/features/duas/data/repositories/azkar_repository.dart';
 import 'package:quran_app/features/duas/presentation/providers/azkar_provider.dart';
@@ -74,7 +75,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(PulseLoader), findsOneWidget);
     });
 
     testWidgets('should display error message when error occurs', (

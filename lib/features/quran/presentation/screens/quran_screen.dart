@@ -4,6 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/animated_entrance.dart';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../../domain/entities/surah_entity.dart';
 import '../../domain/repositories/surah_repository.dart';
 
@@ -75,90 +80,163 @@ class _QuranScreenState extends State<_QuranScreenContent> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'القرآن الكريم',
-          style: GoogleFonts.cairo(
-            fontWeight: FontWeight.bold,
-            color: primaryColor,
-          ),
-        ),
-        centerTitle: true,
-        leading: Semantics(
-          button: true,
-          label: 'الرجوع للشاشة السابقة',
-          child: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: primaryColor),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: _buildBody(theme, accentColor, cardBackground),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 150,
+              pinned: true,
+              stretch: true,
+              elevation: 0,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              leading: Semantics(
+                button: true,
+                label: 'الرجوع للشاشة السابقة',
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                stretchModes: const [
+                  StretchMode.zoomBackground,
+                  StretchMode.fadeTitle,
+                ],
+                centerTitle: true,
+                title: Text(
+                  'القرآن الكريم',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        primaryColor,
+                        primaryColor.withValues(alpha: 0.72),
+                      ],
+                    ),
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 24),
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: 92,
+                        color: theme.colorScheme.onPrimary.withValues(
+                          alpha: 0.12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ..._buildBodySlivers(theme, accentColor, cardBackground),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBody(ThemeData theme, Color accentColor, Color cardBackground) {
+  List<Widget> _buildBodySlivers(
+    ThemeData theme,
+    Color accentColor,
+    Color cardBackground,
+  ) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: PulseLoader(lines: 8)),
+        ),
+      ];
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: GoogleFonts.cairo(fontSize: 16, color: Colors.red),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Semantics(
-              button: true,
-              label: 'إعادة تحميل السور',
-              child: ElevatedButton(
-                onPressed: _loadSurahs,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: theme.colorScheme.error,
                 ),
-                child: const Text('إعادة المحاولة'),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  style: GoogleFonts.cairo(
+                    fontSize: 16,
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Semantics(
+                  button: true,
+                  label: 'إعادة تحميل السور',
+                  child: ElevatedButton(
+                    onPressed: _loadSurahs,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      );
+      ];
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      itemCount: _surahs.length,
-      itemBuilder: (context, index) {
-        final surah = _surahs[index];
-        return SurahCard(
-          index: index + 1,
-          arabicName: surah.name,
-          englishName: surah.englishName,
-          translation: surah.englishNameTranslation,
-          versesCount: surah.totalAyah,
-          type: _getRevelationPlaceArabic(surah.revelationType),
-          accentColor: accentColor,
-          cardBackground: cardBackground,
-          textColor: theme.colorScheme.onSurface,
-          secondaryTextColor: theme.colorScheme.onSurfaceVariant,
-          onTap: () => _onSurahTap(context, surah, index + 1),
-        );
-      },
-    );
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
+        sliver: SliverList.builder(
+          itemCount: _surahs.length,
+          itemBuilder: (context, index) {
+            final surah = _surahs[index];
+            return RepaintBoundary(
+              child: AnimatedEntrance(
+                delay: Duration(milliseconds: (index > 8 ? 8 : index) * 30),
+                child: SurahCard(
+                  index: index + 1,
+                  arabicName: surah.name,
+                  englishName: surah.englishName,
+                  translation: surah.englishNameTranslation,
+                  versesCount: surah.totalAyah,
+                  type: _getRevelationPlaceArabic(surah.revelationType),
+                  accentColor: accentColor,
+                  cardBackground: cardBackground,
+                  textColor: theme.colorScheme.onSurface,
+                  secondaryTextColor: theme.colorScheme.onSurfaceVariant,
+                  onTap: () => _onSurahTap(context, surah, index + 1),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ];
   }
 
   String _getRevelationPlaceArabic(String revelationPlace) {
@@ -220,14 +298,15 @@ class SurahCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: cardBackground,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: accentColor, width: 1),
+          borderRadius: AppRadius.card,
+          border: Border.all(color: accentColor.withValues(alpha: 0.28)),
+          boxShadow: AppShadows.subtle,
         ),
         child: Material(
           color: cardBackground,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: AppRadius.card,
           child: InkWell(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: AppRadius.card,
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(16.0),

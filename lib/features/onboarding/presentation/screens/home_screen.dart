@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../../core/widgets/animated_entrance.dart';
 import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/providers/settings_provider.dart';
 import '../../../khatma/domain/models/khatma_model.dart';
@@ -15,7 +18,6 @@ import '../../../quran/domain/entities/surah_entity.dart';
 import '../../../quran/domain/repositories/surah_repository.dart';
 import '../../../quran/presentation/providers/bookmark_provider.dart';
 import '../providers/favorites_provider.dart';
-import '../widgets/header_card_widget.dart';
 import '../widgets/current_wird_widget.dart';
 import '../widgets/daily_verse_section_widget.dart';
 import '../widgets/tab_switcher_widget.dart';
@@ -55,17 +57,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: _buildNavigationDrawer(),
-      appBar: _buildAppBar(),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              const SliverToBoxAdapter(child: HeaderCardWidget()),
-              const SliverToBoxAdapter(child: CurrentWirdWidget()),
-              const SliverToBoxAdapter(child: DailyVerseSectionWidget()),
-              SliverToBoxAdapter(
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(),
+            const SliverToBoxAdapter(
+              child: AnimatedEntrance(
+                delay: Duration(milliseconds: 100),
+                child: CurrentWirdWidget(),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: AnimatedEntrance(
+                delay: Duration(milliseconds: 180),
+                child: DailyVerseSectionWidget(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: AnimatedEntrance(
+                delay: const Duration(milliseconds: 260),
                 child: TabSwitcherWidget(
                   onTabChanged: (index) {
                     setState(() {
@@ -75,46 +87,60 @@ class _HomeScreenState extends State<HomeScreen> {
                   selectedIndex: selectedTabIndex,
                 ),
               ),
+            ),
 
-              // المحتوى المتغير
-              _buildDynamicContent(),
+            // المحتوى المتغير
+            _buildDynamicContent(),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 50)),
-            ],
-          ),
+            const SliverToBoxAdapter(child: SizedBox(height: 50)),
+          ],
         ),
       ),
     );
   }
 
-  // --- 1. AppBar ---
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
+  SliverAppBar _buildSliverAppBar() {
+    final theme = Theme.of(context);
+
+    return SliverAppBar(
+      expandedHeight: 220,
+      pinned: true,
+      stretch: true,
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      leading: Icon(
-        Icons.search,
-        color: Theme.of(context).colorScheme.primary,
-        size: 28,
+      leading: IconButton(
+        tooltip: 'بحث',
+        icon: const Icon(Icons.search, size: 26),
+        onPressed: () => _showFeatureMessage('البحث قيد التطوير'),
       ),
-      title: Text(
-        'القرآن الكريم',
-        style: GoogleFonts.cairo(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground, StretchMode.fadeTitle],
+        centerTitle: true,
+        titlePadding: const EdgeInsetsDirectional.only(
+          start: AppSpacing.xl,
+          end: AppSpacing.xl,
+          bottom: AppSpacing.md,
         ),
+        title: Text(
+          'القرآن الكريم',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        background: const _PrayerTimeHeader(),
       ),
       actions: [
         Semantics(
           button: true,
           label: 'فتح القائمة الجانبية',
           child: IconButton(
-            icon: Icon(
-              Icons.segment,
-              color: Theme.of(context).colorScheme.primary,
-              size: 30,
-            ),
+            icon: const Icon(Icons.segment, size: 30),
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ),
@@ -1195,5 +1221,134 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return const SliverToBoxAdapter(child: PrayerTimesWidget());
     }
+  }
+}
+
+class _PrayerTimeHeader extends StatelessWidget {
+  const _PrayerTimeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Consumer<PrayerTimesPerformanceProvider>(
+      builder: (context, provider, child) {
+        final prayerData = provider.getCurrentAndNextPrayer();
+        final currentName = prayerData['currentName'] ?? '---';
+        final currentTime = prayerData['currentTime'] ?? '--:--';
+        final nextName = prayerData['nextName'] ?? '---';
+        final nextTime = prayerData['nextTime'] ?? '--:--';
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withValues(alpha: 0.72),
+                theme.colorScheme.tertiary.withValues(alpha: 0.58),
+              ],
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PositionedDirectional(
+                top: -50,
+                end: -20,
+                child: Icon(
+                  Icons.auto_stories_rounded,
+                  size: 170,
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.08),
+                ),
+              ),
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 56, 24, 52),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        currentName,
+                        textAlign: TextAlign.right,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onPrimary.withValues(
+                            alpha: 0.78,
+                          ),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        currentTime,
+                        textAlign: TextAlign.right,
+                        style: GoogleFonts.cairo(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                          color: theme.colorScheme.onPrimary,
+                          height: 1.05,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onPrimary.withValues(
+                            alpha: 0.13,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: theme.colorScheme.onPrimary.withValues(
+                              alpha: 0.18,
+                            ),
+                          ),
+                          boxShadow: AppShadows.subtle,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 18,
+                              color: theme.colorScheme.onPrimary.withValues(
+                                alpha: 0.84,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'الصلاة التالية: $nextName',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onPrimary.withValues(
+                                    alpha: 0.82,
+                                  ),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              nextTime,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

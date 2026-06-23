@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../router/fade_slide_route.dart';
+import '../widgets/pulse_loader.dart';
 import '../../features/duas/presentation/screens/azkar_details_screen.dart';
 import '../../features/duas/presentation/screens/azkar_screen.dart';
 import '../../features/duas/presentation/screens/duas_screen.dart';
@@ -27,16 +29,30 @@ import '../../features/settings/presentation/screens/'
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
+Page<void> _fadePage(GoRouterState state, Widget child) {
+  return buildFadeSlidePage<void>(state: state, child: child);
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: appNavigatorKey,
   initialLocation: '/',
   routes: <RouteBase>[
-    GoRoute(path: '/', builder: (context, state) => const OnboardingScreen()),
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-    GoRoute(path: '/quran', builder: (context, state) => const QuranScreen()),
+    GoRoute(
+      path: '/',
+      pageBuilder: (context, state) =>
+          _fadePage(state, const OnboardingScreen()),
+    ),
+    GoRoute(
+      path: '/home',
+      pageBuilder: (context, state) => _fadePage(state, const HomeScreen()),
+    ),
+    GoRoute(
+      path: '/quran',
+      pageBuilder: (context, state) => _fadePage(state, const QuranScreen()),
+    ),
     GoRoute(
       path: '/quran/surah/:number',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final int? surahNumber = int.tryParse(
           state.pathParameters['number'] ?? '',
         );
@@ -55,15 +71,35 @@ final GoRouter appRouter = GoRouter(
         final int? rangeToUnit = (extra?['rangeToUnit'] as num?)?.toInt();
 
         if (surahNumber == null) {
-          return const _RouteDataErrorScreen(
-            message:
-                'تعذر فتح السورة:\n'
-                'رقم السورة غير صالح.',
+          return _fadePage(
+            state,
+            const _RouteDataErrorScreen(
+              message:
+                  'تعذر فتح السورة:\n'
+                  'رقم السورة غير صالح.',
+            ),
           );
         }
 
         if (surah == null) {
-          return _SurahDetailsRouteLoader(
+          return _fadePage(
+            state,
+            _SurahDetailsRouteLoader(
+              surahNumber: surahNumber,
+              initialSurahNumber: initialSurahNumber,
+              initialAyahNumber: initialAyahNumber,
+              initialPageNumber: initialPageNumber,
+              rangeTrackingUnit: rangeTrackingUnit,
+              rangeFromUnit: rangeFromUnit,
+              rangeToUnit: rangeToUnit,
+            ),
+          );
+        }
+
+        return _fadePage(
+          state,
+          SurahDetailsScreen(
+            surah: surah,
             surahNumber: surahNumber,
             initialSurahNumber: initialSurahNumber,
             initialAyahNumber: initialAyahNumber,
@@ -71,99 +107,114 @@ final GoRouter appRouter = GoRouter(
             rangeTrackingUnit: rangeTrackingUnit,
             rangeFromUnit: rangeFromUnit,
             rangeToUnit: rangeToUnit,
-          );
-        }
-
-        return SurahDetailsScreen(
-          surah: surah,
-          surahNumber: surahNumber,
-          initialSurahNumber: initialSurahNumber,
-          initialAyahNumber: initialAyahNumber,
-          initialPageNumber: initialPageNumber,
-          rangeTrackingUnit: rangeTrackingUnit,
-          rangeFromUnit: rangeFromUnit,
-          rangeToUnit: rangeToUnit,
+          ),
         );
       },
     ),
     GoRoute(
       path: '/prayers',
-      builder: (context, state) => const PrayerTimesScreen(),
+      pageBuilder: (context, state) =>
+          _fadePage(state, const PrayerTimesScreen()),
     ),
-    GoRoute(path: '/duas', builder: (context, state) => const AzkarScreen()),
-    GoRoute(path: '/duas/all', builder: (context, state) => const DuasScreen()),
+    GoRoute(
+      path: '/duas',
+      pageBuilder: (context, state) => _fadePage(state, const AzkarScreen()),
+    ),
+    GoRoute(
+      path: '/duas/all',
+      pageBuilder: (context, state) => _fadePage(state, const DuasScreen()),
+    ),
     GoRoute(
       path: '/azkar/details',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final Map<String, dynamic>? extra =
             state.extra as Map<String, dynamic>?;
-        return AzkarDetailsScreen(
-          categoryName: extra?['categoryName'] as String? ?? '',
+        return _fadePage(
+          state,
+          AzkarDetailsScreen(
+            categoryName: extra?['categoryName'] as String? ?? '',
+          ),
         );
       },
     ),
     GoRoute(
       path: '/duas/morning',
-      builder: (context, state) =>
-          const AzkarDetailsScreen(categoryName: 'أذكار الصباح'),
+      pageBuilder: (context, state) => _fadePage(
+        state,
+        const AzkarDetailsScreen(categoryName: 'أذكار الصباح'),
+      ),
     ),
     GoRoute(
       path: '/duas/evening',
-      builder: (context, state) =>
-          const AzkarDetailsScreen(categoryName: 'أذكار المساء'),
+      pageBuilder: (context, state) => _fadePage(
+        state,
+        const AzkarDetailsScreen(categoryName: 'أذكار المساء'),
+      ),
     ),
     GoRoute(
       path: '/hadeath',
-      builder: (context, state) => const HadeathScreen(),
+      pageBuilder: (context, state) => _fadePage(state, const HadeathScreen()),
     ),
     GoRoute(
       path: '/hadeath/details/:index',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final HadeathEntity? hadeath = state.extra as HadeathEntity?;
         final int? index = int.tryParse(state.pathParameters['index'] ?? '');
 
         if (index == null) {
-          return const _RouteDataErrorScreen(
-            message:
-                'تعذر فتح الحديث:\n'
-                'معرف الحديث غير صالح.',
+          return _fadePage(
+            state,
+            const _RouteDataErrorScreen(
+              message:
+                  'تعذر فتح الحديث:\n'
+                  'معرف الحديث غير صالح.',
+            ),
           );
         }
 
         if (hadeath == null) {
-          return _HadeathDetailsRouteLoader(index: index);
+          return _fadePage(state, _HadeathDetailsRouteLoader(index: index));
         }
 
-        return HadeathDetailsScreen(hadeath: hadeath);
+        return _fadePage(state, HadeathDetailsScreen(hadeath: hadeath));
       },
     ),
     GoRoute(
       path: '/tasbeeh',
-      builder: (context, state) => const TasbeehScreen(),
+      pageBuilder: (context, state) => _fadePage(state, const TasbeehScreen()),
     ),
     GoRoute(
       path: '/asma',
-      builder: (context, state) => const AsmaAlHusnaScreen(),
+      pageBuilder: (context, state) =>
+          _fadePage(state, const AsmaAlHusnaScreen()),
     ),
-    GoRoute(path: '/media', builder: (context, state) => const MediaScreen()),
+    GoRoute(
+      path: '/media',
+      pageBuilder: (context, state) => _fadePage(state, const MediaScreen()),
+    ),
     GoRoute(
       path: '/settings/notification-test',
-      builder: (context, state) => const NotificationTestScreen(),
+      pageBuilder: (context, state) =>
+          _fadePage(state, const NotificationTestScreen()),
     ),
     GoRoute(
       path: '/khatma/location',
-      builder: (context, state) => const KhatmaLocationScreen(),
+      pageBuilder: (context, state) =>
+          _fadePage(state, const KhatmaLocationScreen()),
     ),
     GoRoute(
       path: '/khatma/duration',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final Map<String, dynamic>? extra =
             state.extra as Map<String, dynamic>?;
         final String startMode =
             extra?['startMode'] as String? ?? 'بداية المصحف';
         final int? startJuz = extra?['startJuz'] as int?;
 
-        return KhatmaDurationScreen(startMode: startMode, startJuz: startJuz);
+        return _fadePage(
+          state,
+          KhatmaDurationScreen(startMode: startMode, startJuz: startJuz),
+        );
       },
     ),
   ],
@@ -213,9 +264,7 @@ class _SurahDetailsRouteLoader extends StatelessWidget {
       future: context.read<SurahRepository>().getSurahByIndex(surahNumber),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: PulseLoader(lines: 5)));
         }
 
         final SurahEntity? surah = snapshot.data;
@@ -253,9 +302,7 @@ class _HadeathDetailsRouteLoader extends StatelessWidget {
       future: context.read<HadeathRepository>().getAllAhadeth(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: PulseLoader(lines: 5)));
         }
 
         final List<HadeathEntity> all =

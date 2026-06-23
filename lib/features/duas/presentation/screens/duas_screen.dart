@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/widgets/pulse_loader.dart';
 import '../providers/duas_provider.dart';
 
 class DuasScreen extends StatelessWidget {
@@ -39,11 +40,7 @@ class DuasScreen extends StatelessWidget {
           child: Consumer<DuasProvider>(
             builder: (context, provider, child) {
               if (provider.isLoading) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                );
+                return const Center(child: PulseLoader(lines: 6));
               }
 
               if (provider.errorMessage != null) {

@@ -6,7 +6,7 @@ abstract class AppTypography {
   static TextStyle displayLarge = GoogleFonts.cairo(
     fontSize: 57,
     fontWeight: FontWeight.w400,
-    letterSpacing: -0.25,
+    letterSpacing: 0,
   );
 
   static TextStyle displayMedium = GoogleFonts.cairo(
@@ -50,50 +50,50 @@ abstract class AppTypography {
   static TextStyle titleMedium = GoogleFonts.cairo(
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
+    letterSpacing: 0,
   );
 
   static TextStyle titleSmall = GoogleFonts.cairo(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
+    letterSpacing: 0,
   );
 
   // Body styles
   static TextStyle bodyLarge = GoogleFonts.cairo(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    letterSpacing: 0.5,
+    letterSpacing: 0,
   );
 
   static TextStyle bodyMedium = GoogleFonts.cairo(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    letterSpacing: 0.25,
+    letterSpacing: 0,
   );
 
   static TextStyle bodySmall = GoogleFonts.cairo(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    letterSpacing: 0.4,
+    letterSpacing: 0,
   );
 
   // Label styles
   static TextStyle labelLarge = GoogleFonts.cairo(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
+    letterSpacing: 0,
   );
 
   static TextStyle labelMedium = GoogleFonts.cairo(
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.5,
+    letterSpacing: 0,
   );
 
   static TextStyle labelSmall = GoogleFonts.cairo(
     fontSize: 11,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.5,
+    letterSpacing: 0,
   );
 }
