@@ -1,0 +1,50 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:quran_app/core/services/cached_api_service.dart';
+import 'package:quran_app/features/media/data/models/reciter_model.dart';
+import 'package:quran_app/features/media/domain/errors/media_exception.dart';
+
+class AudioRemoteDataSource {
+  AudioRemoteDataSource({
+    required http.Client client,
+    required CachedApiService cache,
+  }) : _client = client,
+       _cache = cache;
+
+  final http.Client _client;
+  final CachedApiService _cache;
+
+  static const String _recitersUrl =
+      'https://mp3quran.net/api/v3/reciters?language=ar';
+  static const String _cacheKey = 'media_mp3quran_reciters_ar';
+
+  Future<List<ReciterModel>> getReciters() async {
+    final cached = await _cache.getCached(_cacheKey);
+    if (cached != null) {
+      return _parseReciters(cached);
+    }
+
+    final response = await _client
+        .get(Uri.parse(_recitersUrl))
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode != 200) {
+      throw MediaException('تعذر تحميل قائمة القراء (${response.statusCode})');
+    }
+
+    await _cache.cache(_cacheKey, response.body);
+    return _parseReciters(response.body);
+  }
+
+  List<ReciterModel> _parseReciters(String responseBody) {
+    final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+    final reciters = decoded['reciters'] as List<dynamic>? ?? const [];
+
+    return reciters
+        .map((item) => ReciterModel.fromJson(item as Map<String, dynamic>))
+        .where((reciter) => reciter.serverUrl.isNotEmpty)
+        .toList(growable: false);
+  }
+}

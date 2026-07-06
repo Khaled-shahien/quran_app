@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../di/service_locator.dart';
 import '../router/fade_slide_route.dart';
 import '../widgets/pulse_loader.dart';
 import '../../features/duas/presentation/screens/azkar_details_screen.dart';
@@ -14,6 +15,12 @@ import '../../features/hadeath/presentation/screens/'
 import '../../features/hadeath/presentation/screens/hadeath_screen.dart';
 import '../../features/khatma/presentation/screens/khatma_duration_screen.dart';
 import '../../features/khatma/presentation/screens/khatma_location_screen.dart';
+import '../../features/media/presentation/providers/articles_provider.dart';
+import '../../features/media/presentation/providers/audio_provider.dart';
+import '../../features/media/presentation/providers/video_provider.dart';
+import '../../features/media/presentation/screens/articles_screen.dart';
+import '../../features/media/presentation/screens/audio_screen.dart';
+import '../../features/media/presentation/screens/video_screen.dart';
 import '../../features/onboarding/presentation/screens/home_screen.dart';
 import '../../features/onboarding/presentation/screens/media_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -191,6 +198,36 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/media',
       pageBuilder: (context, state) => _fadePage(state, const MediaScreen()),
+    ),
+    GoRoute(
+      path: '/media/articles',
+      pageBuilder: (context, state) => _fadePage(
+        state,
+        ChangeNotifierProvider<ArticlesProvider>(
+          create: (_) => getIt<ArticlesProvider>()..loadArticles(),
+          child: const ArticlesScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/media/audio',
+      pageBuilder: (context, state) => _fadePage(
+        state,
+        ChangeNotifierProvider<AudioProvider>(
+          create: (_) => getIt<AudioProvider>()..loadReciters(),
+          child: const AudioScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/media/videos',
+      pageBuilder: (context, state) => _fadePage(
+        state,
+        ChangeNotifierProvider<VideoProvider>(
+          create: (_) => getIt<VideoProvider>()..loadVideos(),
+          child: const VideoScreen(),
+        ),
+      ),
     ),
     GoRoute(
       path: '/settings/notification-test',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MediaTilesWidget extends StatelessWidget {
@@ -8,26 +9,72 @@ class MediaTilesWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverList(
       delegate: SliverChildListDelegate([
-        _mediaTile('المقالات', const Color(0xFF235347)),
-        _mediaTile('الصوتيات', const Color(0xFF2D2D2D)),
-        _mediaTile('الفيديوهات', const Color(0xFF8B4242)),
+        _mediaTile(
+          'المقالات',
+          const Color(0xFF235347),
+          Icons.article_outlined,
+          () => context.push('/media/articles'),
+        ),
+        _mediaTile(
+          'الصوتيات',
+          const Color(0xFF2D2D2D),
+          Icons.graphic_eq_rounded,
+          () => context.push('/media/audio'),
+        ),
+        _mediaTile(
+          'الفيديوهات',
+          const Color(0xFF8B4242),
+          Icons.video_library_outlined,
+          () => context.push('/media/videos'),
+        ),
       ]),
     );
   }
 
-  Widget _mediaTile(String title, Color color) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(15),
-    ),
-    child: Text(
-      title,
-      style: GoogleFonts.cairo(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
+  Widget _mediaTile(
+    String title,
+    Color color,
+    IconData icon,
+    VoidCallback onTap,
+  ) => Semantics(
+    button: true,
+    label: title,
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.cairo(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     ),
   );
