@@ -177,16 +177,11 @@ Run tests using:
 flutter test
 ```
 
-Validate Dart line length locally for source files (default max: 80, `lib/`):
+Verify formatting and run static analysis:
 
 ```bash
-dart run tool/line_length_check.dart
-```
-
-Optional custom scan:
-
-```bash
-dart run tool/line_length_check.dart --max=80 --roots=lib,test
+dart format --output=none --set-exit-if-changed lib test integration_test
+flutter analyze
 ```
 
 ### Test Types

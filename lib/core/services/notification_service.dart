@@ -93,7 +93,6 @@ class NotificationService {
   }
 
   Future<void> _doInitialize(bool requestPermissions) async {
-
     try {
       tzdata.initializeTimeZones();
       await _configureLocalTimezone();
