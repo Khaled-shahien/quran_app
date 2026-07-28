@@ -44,5 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# API Keys - Never commit
+# API keys - never commit local values.
 .env
+.env.*
+!.env.example
