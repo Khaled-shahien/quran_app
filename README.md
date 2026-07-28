@@ -123,11 +123,15 @@ graph TD
 ### ⚙️ Installation
 
 ```bash
-git clone <REPO_URL>
+git clone https://github.com/Khaled-shahien/quran_app.git
 cd quran_app
 flutter pub get
-flutter run
+copy .env.example .env
+flutter run --dart-define-from-file=.env
 ```
+
+The API values are optional for features that do not call their corresponding
+services. Keep `.env` local and never commit real credentials.
 
 ## 📁 Project Structure
 
