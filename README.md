@@ -203,7 +203,8 @@ To contribute:
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+No license file is currently included. All rights remain with the repository
+owner unless a license is added in a future change.
 
 ## 🙏 Acknowledgements
 
